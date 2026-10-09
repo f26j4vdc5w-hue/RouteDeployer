@@ -2,10 +2,10 @@ import type { Tour } from '../domain/tour';
 
 const MEETING = { meetingTime: '17:00', meetingPlace: 'Garage - Weststr. 24' };
 
-// Saison 2027: ab dem ersten Dienstag nach der Zeitumstellung (28.03.2027), eine Tour pro Dienstag.
+// Saison 2027: eine Tour pro Dienstag, nach Tageslänge in Chemnitz geplant.
 export const tours: Tour[] = [
   {
-    id: '2027-03-30',
+    id: '2027-07-20',
     title: 'Windpark Gersdorf',
     teaser: 'Über die Kammstraße mit Panoramablick, vorbei am Windpark und mit knackigem Anstieg bei Rödlitz.',
     ...MEETING,
@@ -13,7 +13,7 @@ export const tours: Tour[] = [
     gpx: 'windpark-gersdorf.gpx',
   },
   {
-    id: '2027-04-06',
+    id: '2027-04-13',
     title: 'Zschopau und Augustusburg',
     teaser: 'Kurz, aber steil: durchs Zschopautal hinauf zur Augustusburg. Die Beine spüren jeden Höhenmeter.',
     ...MEETING,
@@ -21,7 +21,7 @@ export const tours: Tour[] = [
     gpx: 'zschopau.gpx',
   },
   {
-    id: '2027-04-13',
+    id: '2027-06-08',
     title: 'Glauchau-Runde',
     teaser: 'Lange Runde durchs Westsächsische: Callenberg, Remse und St. Egidien, dann über Gersdorf zurück.',
     ...MEETING,
@@ -29,7 +29,7 @@ export const tours: Tour[] = [
     gpx: 'glauchau.gpx',
   },
   {
-    id: '2027-04-20',
+    id: '2027-04-06',
     title: 'Burgstädt kompakt',
     teaser: 'Die kurze Feierabendvariante nach Burgstädt: wenig Höhenmeter, gutes Tempo.',
     ...MEETING,
@@ -37,7 +37,7 @@ export const tours: Tour[] = [
     gpx: 'burgstaedt-kompakt.gpx',
   },
   {
-    id: '2027-04-27',
+    id: '2027-07-13',
     title: 'Mittweida-Runde',
     teaser: 'Mit Blick auf Chemnitz und den bunten Schornstein, vorbei an Taura, Steinberg-Felsen und Stadtmuseum Ebersdorf.',
     ...MEETING,
@@ -45,7 +45,7 @@ export const tours: Tour[] = [
     gpx: 'mittweida.gpx',
   },
   {
-    id: '2027-05-04',
+    id: '2027-08-03',
     title: 'Oelsnitz Erzgebirge',
     teaser: 'Durch Oberlungwitz und Bernsdorf nach Lugau, zurück über Hohenstein-Ernstthal. Gleichmäßig und flott.',
     ...MEETING,
@@ -53,7 +53,7 @@ export const tours: Tour[] = [
     gpx: 'oelsnitz.gpx',
   },
   {
-    id: '2027-05-11',
+    id: '2027-06-22',
     title: 'Lieblings-100er',
     teaser: 'Die große Runde: über 100 Kilometer bis Geithain und Lunzenau. Verpflegung einpacken.',
     ...MEETING,
@@ -61,7 +61,7 @@ export const tours: Tour[] = [
     gpx: 'lieblings-100er.gpx',
   },
   {
-    id: '2027-05-18',
+    id: '2027-03-30',
     title: 'Feierabendrunde',
     teaser: 'Die kürzeste Tour im Programm: durchs Erzgebirgsvorland und wieder nach Hause, solange es noch hell ist.',
     ...MEETING,
@@ -69,7 +69,7 @@ export const tours: Tour[] = [
     gpx: 'feierabendrunde.gpx',
   },
   {
-    id: '2027-05-25',
+    id: '2027-07-27',
     title: 'Augustusburg über Erdmannsdorf',
     teaser: 'Vom Osterbrunnen Dittersdorf über die Zschopaubrücke Braunsdorf zur Augustusburg. Einkehr im Café Emmas Onkel.',
     ...MEETING,
@@ -77,7 +77,7 @@ export const tours: Tour[] = [
     gpx: 'augustusburg-erdmannsdorf.gpx',
   },
   {
-    id: '2027-06-01',
+    id: '2027-05-04',
     title: 'Frankenberg',
     teaser: 'Entspannte Runde über Frankenberg und Mittweida. Moderate Anstiege, ideal zum Quatschen.',
     ...MEETING,
@@ -85,7 +85,7 @@ export const tours: Tour[] = [
     gpx: 'frankenberg.gpx',
   },
   {
-    id: '2027-06-08',
+    id: '2027-06-15',
     title: 'Zwönitz',
     teaser: 'Lange Tour ins Erzgebirge über Thalheim und Zwönitz, zurück über Lößnitz und Oelsnitz.',
     ...MEETING,
@@ -93,7 +93,7 @@ export const tours: Tour[] = [
     gpx: 'zwoenitz.gpx',
   },
   {
-    id: '2027-06-15',
+    id: '2027-04-20',
     title: 'Penig und Lunzenau',
     teaser: 'Ins Muldental nach Penig und Lunzenau. Wenig Strecke, aber ein paar giftige Rampen.',
     ...MEETING,
@@ -101,7 +101,7 @@ export const tours: Tour[] = [
     gpx: 'penig-lunzenau.gpx',
   },
   {
-    id: '2027-06-22',
+    id: '2027-06-01',
     title: 'Stollberg',
     teaser: 'Zwönitztal-Route nach Stollberg, mit Imbiss an der Alten Ziegelei in Lugau und Blick auf das Rathaus Gersdorf.',
     ...MEETING,
@@ -109,7 +109,7 @@ export const tours: Tour[] = [
     gpx: 'stollberg.gpx',
   },
   {
-    id: '2027-06-29',
+    id: '2027-05-18',
     title: 'Auerbach',
     teaser: 'Über Amtsberg nach Zschopau und durch Gelenau zurück. Ein welliges Profil mit viel Abwechslung.',
     ...MEETING,
@@ -117,7 +117,7 @@ export const tours: Tour[] = [
     gpx: 'auerbach.gpx',
   },
   {
-    id: '2027-07-06',
+    id: '2027-05-25',
     title: 'Claußnitz und Flöha',
     teaser: 'Durch Claußnitz und Lichtenau nach Frankenberg und Flöha. Zügige Runde mit moderaten Höhenmetern.',
     ...MEETING,
@@ -125,7 +125,7 @@ export const tours: Tour[] = [
     gpx: 'claussnitz-floeha.gpx',
   },
   {
-    id: '2027-07-13',
+    id: '2027-06-29',
     title: 'Glauchau im Uhrzeigersinn',
     teaser: 'Lange Runde über Bernsdorf, Glauchau und Waldenburg, zurück durch Limbach-Oberfrohna.',
     ...MEETING,
@@ -133,7 +133,7 @@ export const tours: Tour[] = [
     gpx: 'glauchau-uzs.gpx',
   },
   {
-    id: '2027-07-20',
+    id: '2027-04-27',
     title: 'Lugau',
     teaser: 'Flache, schnelle Runde über Jahnsdorf und Lugau. Bestens für ein hohes Tempo.',
     ...MEETING,
@@ -141,7 +141,7 @@ export const tours: Tour[] = [
     gpx: 'lugau.gpx',
   },
   {
-    id: '2027-07-27',
+    id: '2027-07-06',
     title: 'Augustusburg-Anstieg',
     teaser: 'Die Königsetappe: über Burkhardtsdorf und Amtsberg hinauf nach Augustusburg. Viele Höhenmeter.',
     ...MEETING,
@@ -149,7 +149,7 @@ export const tours: Tour[] = [
     gpx: 'augustusburg-anstieg.gpx',
   },
   {
-    id: '2027-08-03',
+    id: '2027-05-11',
     title: 'Burgstädt',
     teaser: 'Über Hohenstein-Ernstthal und Limbach-Oberfrohna bis Penig, zurück über Claußnitz. Flach und lang.',
     ...MEETING,
