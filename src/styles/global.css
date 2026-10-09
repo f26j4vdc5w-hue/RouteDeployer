@@ -4,6 +4,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -22,6 +27,7 @@ select {
   max-width: 480px;
   min-height: 100vh;
   margin: 0 auto;
+  padding-top: 78px;
   background: var(--bg);
   display: flex;
   flex-direction: column;
@@ -29,8 +35,12 @@ select {
 
 /* Kopfbereich */
 .nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
   z-index: 10;
   height: 78px;
   padding: 0 24px;
