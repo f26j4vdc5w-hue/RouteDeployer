@@ -12,3 +12,13 @@
   --radius-md: 12px;
   --font: 'Inter', system-ui, sans-serif;
 }
+
+/* Kollektion „camp": rote Akzentfarbe */
+:root[data-collection='camp'] {
+  --muted: #876f72;
+  --border: #ecd3d5;
+  --accent: #ff4d57;
+  --accent-strong: #c4222d;
+  --tint: #ffebec;
+  --map-bg: #fbf3f3;
+}

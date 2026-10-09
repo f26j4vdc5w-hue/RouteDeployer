@@ -8,9 +8,11 @@ interface Props {
   selectedId: string;
   today: string;
   onSelect: (id: string) => void;
+  startLabel: string;
+  endLabel: string;
 }
 
-export function TourTimeline({ tours, selectedId, today, onSelect }: Props) {
+export function TourTimeline({ tours, selectedId, today, onSelect, startLabel, endLabel }: Props) {
   const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
@@ -31,7 +33,7 @@ export function TourTimeline({ tours, selectedId, today, onSelect }: Props) {
 
   return (
     <nav ref={timelineRef} className="timeline" aria-label="Dienstage">
-      <span className="timeline__label">SAISONBEGINN</span>
+      <span className="timeline__label">{startLabel}</span>
       <ol className="timeline__list">
         {tours.map((tour) => {
           const selected = tour.id === selectedId;
@@ -55,7 +57,7 @@ export function TourTimeline({ tours, selectedId, today, onSelect }: Props) {
           );
         })}
       </ol>
-      <span className="timeline__label">SAISONENDE</span>
+      <span className="timeline__label">{endLabel}</span>
     </nav>
   );
 }
