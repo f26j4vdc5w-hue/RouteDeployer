@@ -49,7 +49,7 @@ export function TourTimeline({ tours, selectedId, today, onSelect }: Props) {
                 <span className={`dot ${dotClass}`}>
                   {done && !selected && <Check size={14} />}
                 </span>
-                {formatShort(tour.id)}
+                <span className="timeline__date">{formatShort(tour.id)}</span>
               </button>
             </li>
           );

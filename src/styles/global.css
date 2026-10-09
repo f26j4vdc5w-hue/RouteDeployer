@@ -188,6 +188,7 @@ select {
 .timeline__item--selected::before {
   content: '';
   position: absolute;
+  z-index: 0;
   left: 1px;
   top: 0;
   width: 50px;
@@ -195,8 +196,13 @@ select {
   border-radius: var(--radius-sm);
   background: var(--tint);
 }
+.timeline__date {
+  position: relative;
+  z-index: 1;
+}
 .dot {
   position: relative;
+  z-index: 1;
   width: 26px;
   height: 26px;
   border-radius: 50%;
