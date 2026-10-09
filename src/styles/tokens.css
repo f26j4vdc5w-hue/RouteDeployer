@@ -2,12 +2,12 @@
   --bg: #f7f8f4;
   --surface: #ffffff;
   --ink: #202922;
-  --muted: #7b8196;
-  --muted-green: #748075;
-  --border: #d7dde7;
-  --accent: #5b6b8a;
-  --tint: #f3eef9;
-  --map-bg: #f4f6fa;
+  --muted: #7b7187;
+  --border: #ddd5e8;
+  --accent: #a45cff;
+  --accent-strong: #7134b5;
+  --tint: #f3eaff;
+  --map-bg: #f7f3fb;
   --radius-sm: 8px;
   --radius-md: 12px;
   --font: 'Inter', system-ui, sans-serif;

@@ -29,15 +29,19 @@ select {
 
 /* Kopfbereich */
 .nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   height: 78px;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--bg);
 }
 .nav__title {
   margin: 0;
-  color: #a45cff;
+  color: var(--accent);
   font-size: 27px;
   font-weight: 900;
   letter-spacing: 0.12em;
@@ -45,7 +49,7 @@ select {
   -webkit-text-stroke: 1px #17131d;
   text-shadow:
     2px 2px 0 #17131d,
-    4px 4px 0 #7134b5;
+    4px 4px 0 var(--accent-strong);
   transform: rotate(-2deg);
 }
 
@@ -176,7 +180,7 @@ select {
 }
 .timeline__item--selected {
   font-weight: 400;
-  color: var(--accent);
+  color: var(--accent-strong);
 }
 .timeline__item--selected::before {
   content: '';
@@ -244,7 +248,7 @@ select {
   padding: 5px 8px;
   border-radius: 4px;
   background: var(--tint);
-  color: var(--accent);
+  color: var(--accent-strong);
   font-weight: 700;
 }
 .details__date {
@@ -375,7 +379,7 @@ select {
 .download__button {
   height: 50px;
   border-radius: var(--radius-sm);
-  background: var(--accent);
+  background: var(--accent-strong);
   color: #fff;
   font-size: 14px;
   text-decoration: none;
@@ -403,7 +407,7 @@ select {
   gap: 10px;
   padding: 18px 24px;
   background: var(--tint);
-  color: var(--accent);
+  color: var(--accent-strong);
   font-size: 11px;
   line-height: 1.5;
 }
