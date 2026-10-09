@@ -33,12 +33,20 @@ select {
   padding: 0 24px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  justify-content: center;
 }
 .nav__title {
   margin: 0;
-  font-size: 21px;
-  font-weight: 800;
+  color: #a45cff;
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  -webkit-text-stroke: 1px #17131d;
+  text-shadow:
+    2px 2px 0 #17131d,
+    4px 4px 0 #7134b5;
+  transform: rotate(-2deg);
 }
 
 .season {
@@ -377,7 +385,6 @@ select {
   gap: 10px;
 }
 .download__button:focus-visible,
-.pager__button:focus-visible,
 .timeline__item:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -387,28 +394,6 @@ select {
   text-align: center;
   font-size: 10px;
   color: var(--muted);
-}
-
-/* Vor/Zurück */
-.pager {
-  display: flex;
-  gap: 8px;
-}
-.pager__button {
-  flex: 1;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  border: 0;
-  background: transparent;
-  padding: 0;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.pager__button--next {
-  justify-content: flex-end;
 }
 
 /* Fuß */

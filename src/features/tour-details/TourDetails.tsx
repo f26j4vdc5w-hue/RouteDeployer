@@ -1,7 +1,7 @@
-import { ArrowLeft, ArrowRight, CalendarCheck, CalendarDays, MapPin, Route as RouteIcon } from 'lucide-react';
+import { CalendarCheck, CalendarDays, MapPin, Route as RouteIcon } from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
-import { formatDayMonth, formatLong } from '../../shared/format/date';
+import { formatLong } from '../../shared/format/date';
 import { estimateDurationMin, formatDuration, formatNumber } from '../../shared/format/number';
 import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
@@ -13,12 +13,9 @@ interface Props {
   count: number;
   isPast: boolean;
   route?: RouteStats;
-  prev?: Tour;
-  next?: Tour;
-  onSelect: (id: string) => void;
 }
 
-export function TourDetails({ tour, position, count, isPast, route, prev, next, onSelect }: Props) {
+export function TourDetails({ tour, position, count, isPast, route }: Props) {
   const durationMin =
     tour.durationMin ?? (route ? estimateDurationMin(route.distanceKm, route.ascentM) : null);
   const stats = [
@@ -86,30 +83,6 @@ export function TourDetails({ tour, position, count, isPast, route, prev, next, 
         <p className="download__file">GPX folgt in Kürze.</p>
       )}
 
-      <hr className="divider" />
-
-      <div className="pager">
-        {prev ? (
-          <button type="button" className="pager__button" onClick={() => onSelect(prev.id)}>
-            <ArrowLeft size={15} />
-            {formatDayMonth(prev.id)}
-          </button>
-        ) : (
-          <span className="pager__button" />
-        )}
-        {next ? (
-          <button
-            type="button"
-            className="pager__button pager__button--next"
-            onClick={() => onSelect(next.id)}
-          >
-            {formatDayMonth(next.id)}
-            <ArrowRight size={15} />
-          </button>
-        ) : (
-          <span className="pager__button" />
-        )}
-      </div>
     </article>
   );
 }
