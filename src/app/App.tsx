@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { routes } from '../data/routes';
-import { tours } from '../data/tours';
+import { tours } from '../data/seasons/2027/after-work/tours';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { todayIso, yearOf } from '../shared/format/date';

@@ -1,4 +1,4 @@
-import type { Tour } from '../domain/tour';
+import type { Tour } from '../../../../domain/tour';
 
 const MEETING = { meetingTime: '17:00', meetingPlace: 'Garage - Weststr. 24' };
 
@@ -10,7 +10,7 @@ export const tours: Tour[] = [
     teaser: 'Über die Kammstraße mit Panoramablick, vorbei am Windpark und mit knackigem Anstieg bei Rödlitz.',
     ...MEETING,
     stations: ['Chemnitz', 'Oberlungwitz', 'Gersdorf', 'Oelsnitz', 'Erlbach-Kirchberg', 'Jahnsdorf', 'Chemnitz'],
-    gpx: 'windpark-gersdorf.gpx',
+    gpx: '2027/after-work/windpark-gersdorf.gpx',
   },
   {
     id: '2027-04-13',
@@ -18,7 +18,7 @@ export const tours: Tour[] = [
     teaser: 'Kurz, aber steil: durchs Zschopautal hinauf zur Augustusburg. Die Beine spüren jeden Höhenmeter.',
     ...MEETING,
     stations: ['Chemnitz', 'Gornau', 'Grünhainichen', 'Augustusburg', 'Chemnitz'],
-    gpx: 'zschopau.gpx',
+    gpx: '2027/after-work/zschopau.gpx',
   },
   {
     id: '2027-06-08',
@@ -26,7 +26,7 @@ export const tours: Tour[] = [
     teaser: 'Lange Runde durchs Westsächsische: Callenberg, Remse und St. Egidien, dann über Gersdorf zurück.',
     ...MEETING,
     stations: ['Chemnitz', 'Callenberg', 'Remse', 'St. Egidien', 'Gersdorf', 'Erlbach-Kirchberg', 'Chemnitz'],
-    gpx: 'glauchau.gpx',
+    gpx: '2027/after-work/glauchau.gpx',
   },
   {
     id: '2027-04-06',
@@ -34,7 +34,7 @@ export const tours: Tour[] = [
     teaser: 'Die kurze Feierabendvariante nach Burgstädt: wenig Höhenmeter, gutes Tempo.',
     ...MEETING,
     stations: ['Chemnitz', 'Lichtenau', 'Claußnitz', 'Hartmannsdorf', 'Limbach-Oberfrohna', 'Chemnitz'],
-    gpx: 'burgstaedt-kompakt.gpx',
+    gpx: '2027/after-work/burgstaedt-kompakt.gpx',
   },
   {
     id: '2027-07-13',
@@ -42,7 +42,7 @@ export const tours: Tour[] = [
     teaser: 'Mit Blick auf Chemnitz und den bunten Schornstein, vorbei an Taura, Steinberg-Felsen und Stadtmuseum Ebersdorf.',
     ...MEETING,
     stations: ['Chemnitz', 'Burgstädt', 'Claußnitz', 'Mittweida', 'Frankenberg', 'Lichtenau', 'Chemnitz'],
-    gpx: 'mittweida.gpx',
+    gpx: '2027/after-work/mittweida.gpx',
   },
   {
     id: '2027-08-03',
@@ -50,7 +50,7 @@ export const tours: Tour[] = [
     teaser: 'Durch Oberlungwitz und Bernsdorf nach Lugau, zurück über Hohenstein-Ernstthal. Gleichmäßig und flott.',
     ...MEETING,
     stations: ['Chemnitz', 'Oberlungwitz', 'Bernsdorf', 'Hohndorf', 'Lugau', 'Hohenstein-Ernstthal', 'Chemnitz'],
-    gpx: 'oelsnitz.gpx',
+    gpx: '2027/after-work/oelsnitz.gpx',
   },
   {
     id: '2027-06-22',
@@ -58,7 +58,7 @@ export const tours: Tour[] = [
     teaser: 'Die große Runde: über 100 Kilometer bis Geithain und Lunzenau. Verpflegung einpacken.',
     ...MEETING,
     stations: ['Chemnitz', 'Bernsdorf', 'Remse', 'Penig', 'Geithain', 'Lunzenau', 'Lichtenau', 'Chemnitz'],
-    gpx: 'lieblings-100er.gpx',
+    gpx: '2027/after-work/lieblings-100er.gpx',
   },
   {
     id: '2027-03-30',
@@ -66,7 +66,7 @@ export const tours: Tour[] = [
     teaser: 'Die kürzeste Tour im Programm: durchs Erzgebirgsvorland und wieder nach Hause, solange es noch hell ist.',
     ...MEETING,
     stations: ['Chemnitz', 'Neukirchen', 'Jahnsdorf', 'Erlbach-Kirchberg', 'Chemnitz'],
-    gpx: 'feierabendrunde.gpx',
+    gpx: '2027/after-work/feierabendrunde.gpx',
   },
   {
     id: '2027-07-27',
@@ -74,7 +74,7 @@ export const tours: Tour[] = [
     teaser: 'Vom Osterbrunnen Dittersdorf über die Zschopaubrücke Braunsdorf zur Augustusburg. Einkehr im Café Emmas Onkel.',
     ...MEETING,
     stations: ['Chemnitz', 'Amtsberg', 'Augustusburg', 'Niederwiesa', 'Chemnitz'],
-    gpx: 'augustusburg-erdmannsdorf.gpx',
+    gpx: '2027/after-work/augustusburg-erdmannsdorf.gpx',
   },
   {
     id: '2027-05-04',
@@ -82,7 +82,7 @@ export const tours: Tour[] = [
     teaser: 'Entspannte Runde über Frankenberg und Mittweida. Moderate Anstiege, ideal zum Quatschen.',
     ...MEETING,
     stations: ['Chemnitz', 'Frankenberg', 'Mittweida', 'Claußnitz', 'Lichtenau', 'Chemnitz'],
-    gpx: 'frankenberg.gpx',
+    gpx: '2027/after-work/frankenberg.gpx',
   },
   {
     id: '2027-06-15',
@@ -90,7 +90,7 @@ export const tours: Tour[] = [
     teaser: 'Lange Tour ins Erzgebirge über Thalheim und Zwönitz, zurück über Lößnitz und Oelsnitz.',
     ...MEETING,
     stations: ['Chemnitz', 'Amtsberg', 'Thalheim', 'Zwönitz', 'Lößnitz', 'Oelsnitz', 'Chemnitz'],
-    gpx: 'zwoenitz.gpx',
+    gpx: '2027/after-work/zwoenitz.gpx',
   },
   {
     id: '2027-04-20',
@@ -98,7 +98,7 @@ export const tours: Tour[] = [
     teaser: 'Ins Muldental nach Penig und Lunzenau. Wenig Strecke, aber ein paar giftige Rampen.',
     ...MEETING,
     stations: ['Chemnitz', 'Niederfrohna', 'Penig', 'Lunzenau', 'Taura', 'Chemnitz'],
-    gpx: 'penig-lunzenau.gpx',
+    gpx: '2027/after-work/penig-lunzenau.gpx',
   },
   {
     id: '2027-06-01',
@@ -106,7 +106,7 @@ export const tours: Tour[] = [
     teaser: 'Zwönitztal-Route nach Stollberg, mit Imbiss an der Alten Ziegelei in Lugau und Blick auf das Rathaus Gersdorf.',
     ...MEETING,
     stations: ['Chemnitz', 'Amtsberg', 'Burkhardtsdorf', 'Stollberg', 'Lugau', 'Oberlungwitz', 'Chemnitz'],
-    gpx: 'stollberg.gpx',
+    gpx: '2027/after-work/stollberg.gpx',
   },
   {
     id: '2027-05-18',
@@ -114,7 +114,7 @@ export const tours: Tour[] = [
     teaser: 'Über Amtsberg nach Zschopau und durch Gelenau zurück. Ein welliges Profil mit viel Abwechslung.',
     ...MEETING,
     stations: ['Chemnitz', 'Amtsberg', 'Zschopau', 'Gelenau', 'Gornsdorf', 'Burkhardtsdorf', 'Chemnitz'],
-    gpx: 'auerbach.gpx',
+    gpx: '2027/after-work/auerbach.gpx',
   },
   {
     id: '2027-05-25',
@@ -122,7 +122,7 @@ export const tours: Tour[] = [
     teaser: 'Durch Claußnitz und Lichtenau nach Frankenberg und Flöha. Zügige Runde mit moderaten Höhenmetern.',
     ...MEETING,
     stations: ['Chemnitz', 'Claußnitz', 'Lichtenau', 'Frankenberg', 'Flöha', 'Chemnitz'],
-    gpx: 'claussnitz-floeha.gpx',
+    gpx: '2027/after-work/claussnitz-floeha.gpx',
   },
   {
     id: '2027-06-29',
@@ -130,7 +130,7 @@ export const tours: Tour[] = [
     teaser: 'Lange Runde über Bernsdorf, Glauchau und Waldenburg, zurück durch Limbach-Oberfrohna.',
     ...MEETING,
     stations: ['Chemnitz', 'Bernsdorf', 'Glauchau', 'Waldenburg', 'Callenberg', 'Limbach-Oberfrohna', 'Chemnitz'],
-    gpx: 'glauchau-uzs.gpx',
+    gpx: '2027/after-work/glauchau-uzs.gpx',
   },
   {
     id: '2027-04-27',
@@ -138,7 +138,7 @@ export const tours: Tour[] = [
     teaser: 'Flache, schnelle Runde über Jahnsdorf und Lugau. Bestens für ein hohes Tempo.',
     ...MEETING,
     stations: ['Chemnitz', 'Jahnsdorf', 'Lugau', 'Gersdorf', 'Hohenstein-Ernstthal', 'Chemnitz'],
-    gpx: 'lugau.gpx',
+    gpx: '2027/after-work/lugau.gpx',
   },
   {
     id: '2027-07-06',
@@ -146,7 +146,7 @@ export const tours: Tour[] = [
     teaser: 'Die Königsetappe: über Burkhardtsdorf und Amtsberg hinauf nach Augustusburg. Viele Höhenmeter.',
     ...MEETING,
     stations: ['Chemnitz', 'Burkhardtsdorf', 'Amtsberg', 'Augustusburg', 'Chemnitz'],
-    gpx: 'augustusburg-anstieg.gpx',
+    gpx: '2027/after-work/augustusburg-anstieg.gpx',
   },
   {
     id: '2027-05-11',
@@ -154,6 +154,6 @@ export const tours: Tour[] = [
     teaser: 'Über Hohenstein-Ernstthal und Limbach-Oberfrohna bis Penig, zurück über Claußnitz. Flach und lang.',
     ...MEETING,
     stations: ['Chemnitz', 'Hohenstein-Ernstthal', 'Limbach-Oberfrohna', 'Niederfrohna', 'Penig', 'Claußnitz', 'Chemnitz'],
-    gpx: 'burgstaedt.gpx',
+    gpx: '2027/after-work/burgstaedt.gpx',
   },
 ];

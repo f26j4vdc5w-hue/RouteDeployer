@@ -1,7 +1,7 @@
 # KLLKTV Roadbook
 
 Eine statische Roadbook-Seite für die Dienstagstouren. Die Touren werden aus
-den GPX-Dateien unter `public/routes/` berechnet und als Download angeboten.
+den GPX-Dateien unter `public/routes/<saison>/<kollektion>/` berechnet und als Download angeboten.
 
 ## Lokal starten
 
@@ -21,13 +21,16 @@ npm run preview
 
 ## Touren und GPX-Dateien pflegen
 
-1. Lege die GPX-Datei unter `public/routes/` ab.
-2. Trage die Tour in `src/data/tours.ts` ein. Der Wert von `gpx` muss exakt dem
-   Dateinamen entsprechen.
+1. Lege die GPX-Datei im passenden Saison-/Kollektion-Ordner ab, aktuell unter
+   `public/routes/2027/after-work/`.
+2. Trage die Tour in `src/data/seasons/2027/after-work/tours.ts` ein. Der Wert
+   von `gpx` muss dem relativen Pfad ab `public/routes/` entsprechen, z. B.
+   `2027/after-work/auerbach.gpx`.
 3. Erstelle einen Build oder führe `npm run routes` aus, um Distanz, Höhenmeter,
    Höhenprofil und Kartenverlauf neu zu berechnen.
 
-Weitere Hinweise stehen in [`public/routes/README.txt`](public/routes/README.txt).
+Weitere Hinweise stehen in
+[`public/routes/2027/after-work/README.txt`](public/routes/2027/after-work/README.txt).
 
 ## Auf GitHub Pages veröffentlichen
 

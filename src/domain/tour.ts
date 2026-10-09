@@ -8,7 +8,7 @@ export interface Tour {
   meetingPlace: string;
   /** Orte entlang der Strecke. */
   stations: string[];
-  /** Dateiname in public/routes. */
+  /** Relativer GPX-Pfad unter public/routes. */
   gpx: string;
   /** Optional: überschreibt die geschätzte Dauer. */
   durationMin?: number;

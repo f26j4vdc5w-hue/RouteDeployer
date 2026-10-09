@@ -1,6 +1,7 @@
 // Liest alle GPX-Dateien aus public/routes und berechnet Kennzahlen, Höhenprofil
 // und einen normalisierten Kartenverlauf. Ergebnis: src/data/routes.generated.json
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { join, relative, sep } from 'node:path';
 
 const ROUTES_DIR = 'public/routes';
 const OUT_FILE = 'src/data/routes.generated.json';
@@ -92,15 +93,28 @@ function analyze(points) {
 
 const round = (value, digits) => Number(value.toFixed(digits));
 
-const files = (await readdir(ROUTES_DIR)).filter((f) => f.toLowerCase().endsWith('.gpx'));
+async function findGpxFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) return findGpxFiles(path);
+      return entry.isFile() && entry.name.toLowerCase().endsWith('.gpx') ? [path] : [];
+    }),
+  );
+  return files.flat().sort();
+}
+
+const files = await findGpxFiles(ROUTES_DIR);
 const routes = {};
-for (const file of files.sort()) {
-  const points = parsePoints(await readFile(`${ROUTES_DIR}/${file}`, 'utf8'));
+for (const file of files) {
+  const key = relative(ROUTES_DIR, file).split(sep).join('/');
+  const points = parsePoints(await readFile(file, 'utf8'));
   if (points.length < 2) {
-    console.warn(`[routes] ${file}: keine Track-/Routenpunkte gefunden, übersprungen`);
+    console.warn(`[routes] ${key}: keine Track-/Routenpunkte gefunden, übersprungen`);
     continue;
   }
-  routes[file] = analyze(points);
+  routes[key] = analyze(points);
 }
 
 await mkdir('src/data', { recursive: true });
