@@ -175,7 +175,7 @@ select {
   height: calc(100dvh - 78px);
   overflow-y: auto;
   overflow-x: hidden;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
   touch-action: pan-y;
   scrollbar-width: none;
   display: flex;
