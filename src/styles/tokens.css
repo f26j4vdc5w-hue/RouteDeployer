@@ -1,0 +1,14 @@
+:root {
+  --bg: #f7f8f4;
+  --surface: #ffffff;
+  --ink: #202922;
+  --muted: #7b8196;
+  --muted-green: #748075;
+  --border: #d7dde7;
+  --accent: #5b6b8a;
+  --tint: #f3eef9;
+  --map-bg: #f4f6fa;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --font: 'Inter', system-ui, sans-serif;
+}
