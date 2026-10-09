@@ -134,6 +134,9 @@ select {
   width: 52px;
   max-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   scrollbar-width: none;
   display: flex;
   flex-direction: column;

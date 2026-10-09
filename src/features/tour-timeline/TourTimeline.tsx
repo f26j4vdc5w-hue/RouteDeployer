@@ -11,14 +11,26 @@ interface Props {
 }
 
 export function TourTimeline({ tours, selectedId, today, onSelect }: Props) {
+  const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({ block: 'nearest' });
+    const timeline = timelineRef.current;
+    const selected = selectedRef.current;
+    if (!timeline || !selected) return;
+
+    const timelineBounds = timeline.getBoundingClientRect();
+    const selectedBounds = selected.getBoundingClientRect();
+
+    if (selectedBounds.top < timelineBounds.top) {
+      timeline.scrollTop += selectedBounds.top - timelineBounds.top;
+    } else if (selectedBounds.bottom > timelineBounds.bottom) {
+      timeline.scrollTop += selectedBounds.bottom - timelineBounds.bottom;
+    }
   }, [selectedId]);
 
   return (
-    <nav className="timeline" aria-label="Dienstage">
+    <nav ref={timelineRef} className="timeline" aria-label="Dienstage">
       <span className="timeline__label">SAISONBEGINN</span>
       <ol className="timeline__list">
         {tours.map((tour) => {

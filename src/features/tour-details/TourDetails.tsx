@@ -41,7 +41,7 @@ export function TourDetails({ tour, position, count, isPast, route }: Props) {
             {isPast ? 'GEFAHREN' : 'GEPLANT'}
           </span>
           <span>
-            TOUR {position} / {count}
+            ETAPPE {position} / {count}
           </span>
         </div>
         <p className="details__date">{formatLong(tour.id)}</p>
