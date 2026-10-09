@@ -9,7 +9,7 @@ export interface Tour {
   /** Orte entlang der Strecke. */
   stations: string[];
   /** Relativer GPX-Pfad unter public/routes. */
-  gpx: string;
+  gpx?: string;
   /** Optional: überschreibt die geschätzte Dauer. */
   durationMin?: number;
 }

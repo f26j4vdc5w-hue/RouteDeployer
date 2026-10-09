@@ -65,7 +65,7 @@ export default function App() {
           position={index + 1}
           count={season.length}
           isPast={selected.id < today}
-          route={routes[selected.gpx]}
+          route={selected.gpx ? routes[selected.gpx] : undefined}
         />
       </main>
     </div>

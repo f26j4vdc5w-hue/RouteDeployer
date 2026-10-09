@@ -54,33 +54,41 @@ export function TourDetails({ tour, position, count, isPast, route }: Props) {
         {tour.meetingTime} · {tour.meetingPlace}
       </div>
 
-      <RouteMap route={route} />
+      {tour.gpx ? (
+        <>
+          <RouteMap route={route} />
 
-      <div className="stats">
-        {stats.map((s) => (
-          <div className="stats__item" key={s.label}>
-            <div className="stats__value">
-              <b>{s.value}</b>
-              {s.unit}
-            </div>
-            {s.label}
+          <div className="stats">
+            {stats.map((s) => (
+              <div className="stats__item" key={s.label}>
+                <div className="stats__value">
+                  <b>{s.value}</b>
+                  {s.unit}
+                </div>
+                {s.label}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <hr className="divider" />
+          <hr className="divider" />
 
-      {route && <ElevationProfile route={route} />}
+          {route && <ElevationProfile route={route} />}
 
-      <div className="stations">
-        <RouteIcon size={15} />
-        <span>{tour.stations.join(' → ')}</span>
-      </div>
+          <div className="stations">
+            <RouteIcon size={15} />
+            <span>{tour.stations.join(' → ')}</span>
+          </div>
 
-      {route ? (
-        <GpxDownload file={tour.gpx} />
+          {route ? (
+            <GpxDownload file={tour.gpx} />
+          ) : (
+            <p className="download__file">GPX folgt in Kürze.</p>
+          )}
+        </>
       ) : (
-        <p className="download__file">GPX folgt in Kürze.</p>
+        <p className="route-pending" role="status">
+          Die Route für diesen Dienstag wird noch bekanntgegeben.
+        </p>
       )}
 
     </article>
