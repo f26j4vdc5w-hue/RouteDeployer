@@ -11,24 +11,62 @@ interface Location {
   season: Season;
   collection: Collection;
   tourId: string | null;
+  isHome: boolean;
 }
 
 const pathFor = (season: Season, collection: Collection) =>
   `${BASE}${season.slug}/${collection.slug}/`;
 
+function currentSeason(today: string): Season {
+  const afterWorkSeasons = seasons
+    .map((season) => ({
+      season,
+      collection: season.collections.find((collection) => collection.slug === 'after-work'),
+      dates: season.collections
+        .find((collection) => collection.slug === 'after-work')
+        ?.tours.map((tour) => tour.id)
+        .sort(),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is { season: Season; collection: Collection; dates: string[] } =>
+        entry.collection != null && entry.dates != null && entry.dates.length > 0,
+    )
+    .sort((a, b) => a.dates[0].localeCompare(b.dates[0]));
+
+  return (
+    afterWorkSeasons.find((entry) => entry.dates[0] <= today && today <= entry.dates.at(-1)!)?.season ??
+    afterWorkSeasons.find((entry) => entry.dates[0] > today)?.season ??
+    afterWorkSeasons.at(-1)?.season ??
+    defaultSeason
+  );
+}
+
 /** Saison/Kollektion stecken im Pfad (<base>s27/after-work/), die Tour in ?tour=YYYY-MM-DD. */
 function readLocation(): Location {
+  const isHome = window.location.pathname === BASE;
   const [seasonSlug, collectionSlug] = window.location.pathname.slice(BASE.length).split('/');
-  const season = seasons.find((s) => s.slug === seasonSlug) ?? defaultSeason;
+  const season = seasons.find((s) => s.slug === seasonSlug) ?? currentSeason(todayIso());
+  const defaultCollection =
+    season.collections.find((collection) => collection.slug === 'after-work') ?? season.collections[0];
   const collection =
-    season.collections.find((c) => c.slug === collectionSlug) ?? season.collections[0];
-  return { season, collection, tourId: new URLSearchParams(window.location.search).get('tour') };
+    season.collections.find((c) => c.slug === collectionSlug) ?? defaultCollection;
+  return {
+    season,
+    collection,
+    tourId: new URLSearchParams(window.location.search).get('tour'),
+    isHome,
+  };
 }
 
 function useLocation() {
   const [loc, setLoc] = useState(readLocation);
 
   useEffect(() => {
+    // Die Startseite bleibt für Homescreen-Verknüpfungen unter der Basis-URL.
+    if (loc.isHome) return;
+
     // Nicht (mehr) gültige Pfade auf die aufgelöste Saison/Kollektion normalisieren.
     const expected = pathFor(loc.season, loc.collection);
     if (window.location.pathname !== expected) {
@@ -36,7 +74,7 @@ function useLocation() {
       url.pathname = expected;
       window.history.replaceState(null, '', url);
     }
-  }, [loc.season, loc.collection]);
+  }, [loc.season, loc.collection, loc.isHome]);
 
   useEffect(() => {
     const onPop = () => setLoc(readLocation());
@@ -50,7 +88,7 @@ function useLocation() {
     url.search = '';
     if (tourId) url.searchParams.set('tour', tourId);
     window.history.pushState(null, '', url);
-    setLoc({ season, collection, tourId });
+    setLoc({ season, collection, tourId, isHome: false });
   }, []);
 
   return [loc, go] as const;
