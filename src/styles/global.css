@@ -248,6 +248,11 @@ select {
   position: relative;
   z-index: 1;
 }
+.timeline__item:not(.timeline__item--selected) .timeline__date {
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  background: #eceeeb;
+}
 .dot {
   position: relative;
   z-index: 1;
