@@ -5,8 +5,14 @@ import { routes } from '../data/routes';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { todayIso } from '../shared/format/date';
+import { estimateDurationMin } from '../shared/format/number';
 
 const BASE = import.meta.env.BASE_URL;
+const CHEMNITZ_WEATHER_LOCATION = {
+  place: 'Chemnitz',
+  latitude: 50.8278,
+  longitude: 12.9214,
+};
 
 interface Location {
   season: Season;
@@ -103,6 +109,15 @@ function useLocation() {
 
 const next = <T,>(items: T[], current: T) => items[(items.indexOf(current) + 1) % items.length];
 
+function isWithinNextSevenDays(date: string, today: string): boolean {
+  const toUtcDay = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  const daysUntil = (toUtcDay(date) - toUtcDay(today)) / 86_400_000;
+  return daysUntil >= 0 && daysUntil <= 7;
+}
+
 export default function App() {
   const today = todayIso(new Date());
   const [{ season, collection, tourId, variant }, go] = useLocation();
@@ -123,6 +138,22 @@ export default function App() {
       : selected;
   const displayedVariant = variant === 'B' && selected?.alternative ? 'B' : 'A';
   const displayedRoute = displayedTour?.gpx ? routes[displayedTour.gpx] : undefined;
+  const durationMin =
+    displayedTour?.durationMin ??
+    (displayedRoute
+      ? estimateDurationMin(displayedRoute.distanceKm, displayedRoute.ascentM)
+      : null);
+  const routeStart = displayedRoute?.geoPath[0];
+  const weatherLocation =
+    displayedTour && isWithinNextSevenDays(displayedTour.id, today)
+      ? routeStart
+        ? {
+            place: displayedTour.stations[0] ?? 'Startpunkt',
+            longitude: routeStart[0],
+            latitude: routeStart[1],
+          }
+        : CHEMNITZ_WEATHER_LOCATION
+      : undefined;
 
   const nextSeason = next(seasons, season);
   const nextCollection = next(season.collections, collection);
@@ -179,6 +210,8 @@ export default function App() {
             count={sorted.length}
             isPast={selected.id < today}
             route={displayedRoute}
+            durationMin={durationMin}
+            weatherLocation={weatherLocation}
             variant={displayedVariant}
             onVariantChange={
               selected.alternative
