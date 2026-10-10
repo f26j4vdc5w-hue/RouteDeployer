@@ -2,10 +2,11 @@ import { CalendarCheck, CalendarDays, MapPin, Route as RouteIcon } from 'lucide-
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
 import { formatLong } from '../../shared/format/date';
-import { estimateDurationMin, formatDuration, formatNumber } from '../../shared/format/number';
+import { formatDuration, formatNumber } from '../../shared/format/number';
 import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
 import { RouteMap } from '../route-map/RouteMap';
+import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 
 interface Props {
   tour: Tour;
@@ -13,6 +14,12 @@ interface Props {
   count: number;
   isPast: boolean;
   route?: RouteStats;
+  durationMin: number | null;
+  weatherLocation?: {
+    place: string;
+    latitude: number;
+    longitude: number;
+  };
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
 }
@@ -23,11 +30,11 @@ export function TourDetails({
   count,
   isPast,
   route,
+  durationMin,
+  weatherLocation,
   variant,
   onVariantChange,
 }: Props) {
-  const durationMin =
-    tour.durationMin ?? (route ? estimateDurationMin(route.distanceKm, route.ascentM) : null);
   const stats = [
     { value: route ? formatNumber(route.distanceKm) : '–', unit: 'km', label: 'Länge' },
     {
@@ -76,6 +83,16 @@ export function TourDetails({
         {tour.meetingTime} · {tour.meetingPlace}
       </div>
 
+      {weatherLocation && (
+        <WeatherForecast
+          date={tour.id}
+          meetingTime={tour.meetingTime}
+          place={weatherLocation.place}
+          latitude={weatherLocation.latitude}
+          longitude={weatherLocation.longitude}
+        />
+      )}
+
       {tour.gpx ? (
         <>
           <RouteMap route={route} />
@@ -96,10 +113,12 @@ export function TourDetails({
 
           {route && <ElevationProfile route={route} />}
 
-          <div className="stations">
-            <RouteIcon size={15} />
-            <span>{tour.stations.join(' → ')}</span>
-          </div>
+          {tour.stations.length > 0 && (
+            <div className="stations">
+              <RouteIcon size={15} />
+              <span>{tour.stations.join(' → ')}</span>
+            </div>
+          )}
 
           {route ? (
             <GpxDownload file={tour.gpx} />

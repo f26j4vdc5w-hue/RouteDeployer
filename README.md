@@ -36,6 +36,12 @@ Die Kartenansicht verwendet OpenStreetMap-Kacheln und benötigt deshalb beim
 Aufruf eine Internetverbindung. Die Kartenquelle wird in der Ansicht mit
 `© OpenStreetMap-Mitwirkende` ausgewiesen.
 
+Für Touren innerhalb der nächsten sieben Tage lädt die Seite beim Aufruf eine
+Wettervorhersage von [Open-Meteo](https://open-meteo.com/) für den Startpunkt
+der Route. Ist noch keine GPX-Datei vorhanden, wird Chemnitz als Treffpunkt
+verwendet. Die Vorhersage enthält Wetterlage, Temperatur, Windrichtung und
+Sonnenuntergang. Dafür ist eine Internetverbindung erforderlich.
+
 Weitere Hinweise stehen in
 [`public/routes/2027/after-work/README.txt`](public/routes/2027/after-work/README.txt).
 

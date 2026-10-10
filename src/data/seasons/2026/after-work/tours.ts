@@ -202,10 +202,11 @@ export const tours: Tour[] = [
   },
   {
     id: '2026-10-13',
-    title: 'Route wird noch bekanntgegeben',
-    teaser: 'Die Details zur Strecke folgen.',
+    title: 'After-Work-Runde Chemnitz',
+    teaser: '44 km lange Rundtour ab Chemnitz mit 469 Höhenmetern.',
     ...MEETING,
     stations: [],
+    gpx: '2026/after-work/ppp b4 miworu.gpx',
   },
   {
     id: '2026-10-20',
