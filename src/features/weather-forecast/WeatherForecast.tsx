@@ -59,7 +59,7 @@ export function WeatherForecast({
       <header className="weather__head">
         <div>
           <h2 id="weather-title">Wetter am {formatDayMonth(date)}</h2>
-          <p>{place} · zum Tourstart um {meetingTime} Uhr</p>
+          <p>{place} · zum Start um {meetingTime} Uhr</p>
         </div>
         {forecast.status === 'ready' && (
           <strong className="weather__temperature">
@@ -93,8 +93,7 @@ export function WeatherForecast({
             <strong>{formatSunset(forecast.data.sunset)} Uhr</strong>
           </div>
           <div className="weather__condition">
-            <condition.Icon size={26} aria-hidden="true" />
-            <span>{condition.label}</span>
+            <condition.Icon size={32} aria-hidden="true" />
           </div>
         </div>
       )}

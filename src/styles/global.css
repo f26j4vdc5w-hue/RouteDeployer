@@ -418,8 +418,9 @@ select {
 }
 .weather__facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.5fr) auto;
+  column-gap: 2px;
+  row-gap: 8px;
 }
 .weather__facts > div {
   display: flex;
@@ -432,8 +433,14 @@ select {
 }
 .weather__fact-label {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   gap: 5px;
+}
+.weather__fact-label > span,
+.weather__condition > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .weather__fact-label svg,
 .weather__condition svg {
@@ -448,7 +455,6 @@ select {
   justify-self: end;
   flex-direction: row;
   align-items: center;
-  gap: 5px;
   color: var(--accent-strong);
   font-size: 12px;
 }
