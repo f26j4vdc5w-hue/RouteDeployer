@@ -202,11 +202,11 @@ export const tours: Tour[] = [
   },
   {
     id: '2026-10-13',
-    title: 'After-Work-Runde Chemnitz',
-    teaser: '44 km lange Rundtour ab Chemnitz mit 469 Höhenmetern.',
+    title: 'Chemnitz–Kemtau-Runde',
+    teaser: 'Südliche Feierabendrunde ab Chemnitz über Reichenhain und Einsiedel bis ins Erzgebirgsvorland bei Kemtau und Adorf – 44,3 km mit 469 Höhenmetern.',
     ...MEETING,
-    stations: [],
-    gpx: '2026/after-work/ppp b4 miworu.gpx',
+    stations: ['Chemnitz', 'Reichenhain', 'Einsiedel', 'Kemtau', 'Adorf', 'Chemnitz'],
+    gpx: '2026/after-work/chemnitz-kemtau-runde.gpx',
   },
   {
     id: '2026-10-20',
