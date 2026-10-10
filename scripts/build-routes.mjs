@@ -87,6 +87,7 @@ function analyze(points) {
     ascentM: hasElevation ? Math.round(ascentM) : null,
     isLoop: haversineKm(points[0], points.at(-1)) <= LOOP_TOLERANCE_KM,
     path,
+    geoPath: sample(points, MAX_POINTS).map((p) => [round(p.lon, 6), round(p.lat, 6)]),
     profile,
   };
 }
