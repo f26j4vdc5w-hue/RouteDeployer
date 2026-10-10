@@ -132,7 +132,11 @@ export default function App() {
         >
           {season.label}
         </button>
-        <h2 className="nav__title">KLLKTV</h2>
+        <h2 className="nav__title">
+          <a href={BASE} aria-label="Zur Startseite">
+            KLLKTV
+          </a>
+        </h2>
         <button
           type="button"
           className="nav__button nav__button--filled"

@@ -90,6 +90,14 @@ select {
     4px 4px 0 var(--accent-strong);
   transform: rotate(-2deg);
 }
+.nav__title a {
+  color: inherit;
+  text-decoration: none;
+}
+.nav__title a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
 
 .season {
   padding: 8px 24px 24px;
