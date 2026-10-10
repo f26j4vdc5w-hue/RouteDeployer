@@ -1,11 +1,14 @@
 :root {
+  color-scheme: light;
   --bg: #f7f8f4;
   --surface: #ffffff;
+  --surface-muted: #eceeeb;
   --ink: #202922;
   --muted: #7b7187;
   --border: #ddd5e8;
   --accent: #a45cff;
   --accent-strong: #7134b5;
+  --on-accent: #ffffff;
   --tint: #f3eaff;
   --map-bg: #f7f3fb;
   --radius-sm: 8px;
@@ -21,4 +24,31 @@
   --accent-strong: #c4222d;
   --tint: #ffebec;
   --map-bg: #fbf3f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #17151b;
+    --surface: #211e27;
+    --surface-muted: #302c35;
+    --ink: #f1edf5;
+    --muted: #b1a7ba;
+    --border: #403847;
+    --accent: #c391ff;
+    --accent-strong: #c99aff;
+    --on-accent: #24182f;
+    --tint: #342842;
+    --map-bg: #211e27;
+  }
+
+  :root[data-collection='camp'] {
+    --muted: #c4a5a7;
+    --border: #50373a;
+    --accent: #ff727b;
+    --accent-strong: #ff858b;
+    --on-accent: #351316;
+    --tint: #40272b;
+    --map-bg: #261d20;
+  }
 }

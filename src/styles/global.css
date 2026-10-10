@@ -75,7 +75,7 @@ select {
 .nav__button--filled {
   justify-self: end;
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--on-accent);
 }
 .nav__title {
   margin: 0;
@@ -251,7 +251,7 @@ select {
 .timeline__item:not(.timeline__item--selected) .timeline__date {
   padding: 2px 4px;
   border-radius: var(--radius-sm);
-  background: #eceeeb;
+  background: var(--surface-muted);
 }
 .dot {
   position: relative;
@@ -488,7 +488,7 @@ select {
   height: 50px;
   border-radius: var(--radius-sm);
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 14px;
   text-decoration: none;
   display: flex;
