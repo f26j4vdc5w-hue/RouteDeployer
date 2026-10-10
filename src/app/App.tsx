@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { defaultSeason, seasons, type Collection, type Season } from '../data/catalog';
+import type { Tour } from '../domain/tour';
 import { routes } from '../data/routes';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
@@ -11,6 +12,7 @@ interface Location {
   season: Season;
   collection: Collection;
   tourId: string | null;
+  variant: 'A' | 'B';
   isHome: boolean;
 }
 
@@ -56,6 +58,7 @@ function readLocation(): Location {
     season,
     collection,
     tourId: new URLSearchParams(window.location.search).get('tour'),
+    variant: new URLSearchParams(window.location.search).get('variant') === 'B' ? 'B' : 'A',
     isHome,
   };
 }
@@ -82,14 +85,18 @@ function useLocation() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const go = useCallback((season: Season, collection: Collection, tourId: string | null) => {
+  const go = useCallback(
+    (season: Season, collection: Collection, tourId: string | null, variant: 'A' | 'B' = 'A') => {
     const url = new URL(window.location.href);
     url.pathname = pathFor(season, collection);
     url.search = '';
     if (tourId) url.searchParams.set('tour', tourId);
+    if (tourId && variant === 'B') url.searchParams.set('variant', variant);
     window.history.pushState(null, '', url);
-    setLoc({ season, collection, tourId, isHome: false });
-  }, []);
+      setLoc({ season, collection, tourId, variant, isHome: false });
+    },
+    [],
+  );
 
   return [loc, go] as const;
 }
@@ -98,7 +105,7 @@ const next = <T,>(items: T[], current: T) => items[(items.indexOf(current) + 1) 
 
 export default function App() {
   const today = todayIso(new Date());
-  const [{ season, collection, tourId }, go] = useLocation();
+  const [{ season, collection, tourId, variant }, go] = useLocation();
 
   useEffect(() => {
     document.documentElement.dataset.collection = collection.slug;
@@ -110,6 +117,12 @@ export default function App() {
   );
   const selected =
     sorted.find((t) => t.id === tourId) ?? sorted.find((t) => t.id >= today) ?? sorted.at(-1);
+  const displayedTour: Tour | undefined =
+    selected && variant === 'B' && selected.alternative
+      ? { ...selected.alternative, id: selected.id }
+      : selected;
+  const displayedVariant = variant === 'B' && selected?.alternative ? 'B' : 'A';
+  const displayedRoute = displayedTour?.gpx ? routes[displayedTour.gpx] : undefined;
 
   const nextSeason = next(seasons, season);
   const nextCollection = next(season.collections, collection);
@@ -154,15 +167,24 @@ export default function App() {
             selectedId={selected.id}
             today={today}
             onSelect={(id) => go(season, collection, id)}
+            onToggleAlternative={(id) =>
+              go(season, collection, id, displayedVariant === 'A' ? 'B' : 'A')
+            }
             startLabel={collection.startLabel}
             endLabel={collection.endLabel}
           />
           <TourDetails
-            tour={selected}
+            tour={displayedTour ?? selected}
             position={sorted.indexOf(selected) + 1}
             count={sorted.length}
             isPast={selected.id < today}
-            route={selected.gpx ? routes[selected.gpx] : undefined}
+            route={displayedRoute}
+            variant={displayedVariant}
+            onVariantChange={
+              selected.alternative
+                ? (nextVariant) => go(season, collection, selected.id, nextVariant)
+                : undefined
+            }
           />
         </main>
       ) : (

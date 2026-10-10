@@ -1,6 +1,4 @@
-export interface Tour {
-  /** Datum im Format YYYY-MM-DD, zugleich eindeutige ID und URL-Parameter. */
-  id: string;
+export interface TourRoute {
   title: string;
   teaser: string;
   /** Uhrzeit, z. B. "17:00". */
@@ -12,4 +10,11 @@ export interface Tour {
   gpx?: string;
   /** Optional: überschreibt die geschätzte Dauer. */
   durationMin?: number;
+}
+
+export interface Tour extends TourRoute {
+  /** Datum im Format YYYY-MM-DD, zugleich eindeutige ID und URL-Parameter. */
+  id: string;
+  /** Optionale zweite Route für denselben Termin. */
+  alternative?: TourRoute;
 }

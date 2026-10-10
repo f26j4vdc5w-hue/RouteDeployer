@@ -8,11 +8,20 @@ interface Props {
   selectedId: string;
   today: string;
   onSelect: (id: string) => void;
+  onToggleAlternative: (id: string) => void;
   startLabel: string;
   endLabel: string;
 }
 
-export function TourTimeline({ tours, selectedId, today, onSelect, startLabel, endLabel }: Props) {
+export function TourTimeline({
+  tours,
+  selectedId,
+  today,
+  onSelect,
+  onToggleAlternative,
+  startLabel,
+  endLabel,
+}: Props) {
   const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
 
@@ -38,7 +47,13 @@ export function TourTimeline({ tours, selectedId, today, onSelect, startLabel, e
         {tours.map((tour) => {
           const selected = tour.id === selectedId;
           const done = tour.id < today;
-          const dotClass = selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming';
+          const dotClass = [
+            selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming',
+            tour.alternative ? 'dot--alternative' : '',
+          ]
+            .filter(Boolean)
+            .join(' ');
+          const backDotClass = selected || done ? 'dot--done' : 'dot--upcoming';
           return (
             <li key={tour.id}>
               <button
@@ -46,11 +61,22 @@ export function TourTimeline({ tours, selectedId, today, onSelect, startLabel, e
                 type="button"
                 className={`timeline__item${selected ? ' timeline__item--selected' : ''}`}
                 aria-current={selected ? 'true' : undefined}
-                onClick={() => onSelect(tour.id)}
+                onClick={() =>
+                  selected && tour.alternative ? onToggleAlternative(tour.id) : onSelect(tour.id)
+                }
               >
-                <span className={`dot ${dotClass}`}>
-                  {done && !selected && <Check size={14} />}
-                </span>
+                {tour.alternative ? (
+                  <span className="dots dots--alternative" aria-hidden="true">
+                    <span className={`dot dot--back ${backDotClass}`} />
+                    <span className={`dot dot--front ${dotClass}`}>
+                      {done && !selected && <Check size={14} />}
+                    </span>
+                  </span>
+                ) : (
+                  <span className={`dot ${dotClass}`}>
+                    {done && !selected && <Check size={14} />}
+                  </span>
+                )}
                 <span className="timeline__date">{formatShort(tour.id)}</span>
               </button>
             </li>

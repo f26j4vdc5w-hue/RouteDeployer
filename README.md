@@ -26,6 +26,9 @@ npm run preview
 2. Trage die Tour in `src/data/seasons/2027/after-work/tours.ts` ein. Der Wert
    von `gpx` muss dem relativen Pfad ab `public/routes/` entsprechen, z. B.
    `2027/after-work/auerbach.gpx`.
+   Eine zweite Route für denselben Termin wird als `alternative` am jeweiligen
+   Tour-Eintrag gepflegt. Sie enthält dieselben Felder wie die Haupttour, ohne
+   `id`, und wird über den Routenumschalter als Variante B angezeigt.
 3. Erstelle einen Build oder führe `npm run routes` aus, um Distanz, Höhenmeter,
    Höhenprofil und Kartenverlauf neu zu berechnen.
 

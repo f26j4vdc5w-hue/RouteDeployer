@@ -13,9 +13,19 @@ interface Props {
   count: number;
   isPast: boolean;
   route?: RouteStats;
+  variant: 'A' | 'B';
+  onVariantChange?: (variant: 'A' | 'B') => void;
 }
 
-export function TourDetails({ tour, position, count, isPast, route }: Props) {
+export function TourDetails({
+  tour,
+  position,
+  count,
+  isPast,
+  route,
+  variant,
+  onVariantChange,
+}: Props) {
   const durationMin =
     tour.durationMin ?? (route ? estimateDurationMin(route.distanceKm, route.ascentM) : null);
   const stats = [
@@ -45,7 +55,19 @@ export function TourDetails({ tour, position, count, isPast, route }: Props) {
           </span>
         </div>
         <p className="details__date">{formatLong(tour.id)}</p>
-        <h1 className="details__title">{tour.title}</h1>
+        <div className="details__title-row">
+          {onVariantChange && (
+            <button
+              type="button"
+              className="route-variant"
+              onClick={() => onVariantChange(variant === 'A' ? 'B' : 'A')}
+              aria-label={`Route ${variant === 'A' ? 'B' : 'A'} anzeigen`}
+            >
+              {variant}
+            </button>
+          )}
+          <h1 className="details__title">{tour.title}</h1>
+        </div>
         <p className="details__teaser">{tour.teaser}</p>
       </header>
 
