@@ -5,7 +5,9 @@ import {
   ChevronDown,
   ChevronUp,
   MapPin,
+  Mountain,
   Route as RouteIcon,
+  Timer,
 } from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
@@ -70,16 +72,18 @@ export function TourDetails({
   }, [tour.teaser]);
 
   const stats = [
-    { value: route ? formatNumber(route.distanceKm) : '–', unit: 'km', label: 'Länge' },
+    { value: route ? formatNumber(route.distanceKm) : '–', unit: 'km', label: 'Distanz', icon: 'distance' },
     {
       value: route?.ascentM != null ? formatNumber(route.ascentM) : '–',
       unit: 'm',
-      label: 'Höhenmeter',
+      label: 'Anstieg',
+      icon: <Mountain size={14} aria-hidden="true" />,
     },
     {
       value: durationMin != null ? formatDuration(durationMin) : '–',
       unit: 'h',
       label: 'Dauer ca.',
+      icon: <Timer size={14} aria-hidden="true" />,
     },
   ];
 
@@ -159,7 +163,23 @@ export function TourDetails({
                   <b>{s.value}</b>
                   {s.unit}
                 </div>
-                {s.label}
+                <div className="stats__label">
+                  {s.icon === 'distance' ? (
+                    <svg
+                      className="stats__icon"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      aria-hidden="true"
+                    >
+                      <path d="M2.5 2v10M11.5 2v10M4.5 7h5M7.5 5l2 2-2 2" />
+                    </svg>
+                  ) : (
+                    <span className="stats__icon">{s.icon}</span>
+                  )}
+                  <span>{s.label}</span>
+                </div>
               </div>
             ))}
           </div>

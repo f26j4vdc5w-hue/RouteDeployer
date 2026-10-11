@@ -578,6 +578,22 @@ select {
   font-weight: 400;
   color: var(--ink);
 }
+.stats__label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stats__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: inherit;
+}
+.stats__icon path {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .divider {
   height: 1px;
   background: var(--border);
