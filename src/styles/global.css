@@ -376,6 +376,49 @@ select {
   line-height: 1.5;
   color: var(--muted);
 }
+.details__teaser-row {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.details__teaser-row > .details__teaser {
+  flex: 1;
+  min-width: 0;
+}
+.details__teaser--collapsed {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.details__teaser-measure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+}
+.details__teaser-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: -1px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+.details__teaser-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .meeting {
   display: flex;
   align-items: center;

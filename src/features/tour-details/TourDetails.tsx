@@ -1,4 +1,12 @@
-import { CalendarCheck, CalendarDays, MapPin, Route as RouteIcon } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import {
+  CalendarCheck,
+  CalendarDays,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Route as RouteIcon,
+} from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
 import { formatLong } from '../../shared/format/date';
@@ -35,6 +43,32 @@ export function TourDetails({
   variant,
   onVariantChange,
 }: Props) {
+  const teaserContainerRef = useRef<HTMLDivElement>(null);
+  const teaserRef = useRef<HTMLParagraphElement>(null);
+  const teaserMeasureRef = useRef<HTMLSpanElement>(null);
+  const [teaserCanExpand, setTeaserCanExpand] = useState(false);
+  const [teaserExpanded, setTeaserExpanded] = useState(false);
+
+  useLayoutEffect(() => {
+    const container = teaserContainerRef.current;
+    const teaser = teaserRef.current;
+    const measure = teaserMeasureRef.current;
+    if (!container || !teaser || !measure) return;
+
+    setTeaserExpanded(false);
+    const updateOverflow = () => {
+      const lineHeight = Number.parseFloat(window.getComputedStyle(teaser).lineHeight);
+      measure.style.width = `${teaser.clientWidth}px`;
+      setTeaserCanExpand(measure.scrollHeight > lineHeight * 2 + 1);
+    };
+
+    updateOverflow();
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, [tour.teaser]);
+
   const stats = [
     { value: route ? formatNumber(route.distanceKm) : '–', unit: 'km', label: 'Länge' },
     {
@@ -75,7 +109,28 @@ export function TourDetails({
           )}
           <h1 className="details__title">{tour.title}</h1>
         </div>
-        <p className="details__teaser">{tour.teaser}</p>
+        <div className="details__teaser-row" ref={teaserContainerRef}>
+          <p
+            className={`details__teaser${!teaserExpanded ? ' details__teaser--collapsed' : ''}`}
+            ref={teaserRef}
+          >
+            {tour.teaser}
+          </p>
+          <span className="details__teaser details__teaser-measure" ref={teaserMeasureRef} aria-hidden="true">
+            {tour.teaser}
+          </span>
+          {teaserCanExpand && (
+            <button
+              type="button"
+              className="details__teaser-toggle"
+              onClick={() => setTeaserExpanded((expanded) => !expanded)}
+              aria-label={teaserExpanded ? 'Teaser einklappen' : 'Teaser vollständig anzeigen'}
+              aria-expanded={teaserExpanded}
+            >
+              {teaserExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          )}
+        </div>
       </header>
 
       <div className="meeting">
