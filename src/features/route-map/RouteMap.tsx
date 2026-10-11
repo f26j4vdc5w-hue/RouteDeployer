@@ -47,9 +47,10 @@ const arrowIndexes = (coords: number[][]) => {
 
 interface Props {
   route?: RouteStats;
+  activeDistanceKm: number | null;
 }
 
-export function RouteMap({ route }: Props) {
+export function RouteMap({ route, activeDistanceKm }: Props) {
   const points = route?.path ?? [];
   const geoPath = route?.geoPath ?? [];
   const geoWorld = geoPath.map(([longitude, latitude]) => project(longitude, latitude, 0));
@@ -95,6 +96,26 @@ export function RouteMap({ route }: Props) {
         return points.map(([x, y]) => [offsetX + x * scale, offsetY + y * scale]);
       })();
   const start = coords[0];
+  let activePoint: [number, number] | null = null;
+  if (
+    activeDistanceKm !== null &&
+    route &&
+    route.profile.length > 1 &&
+    route.profile.length === coords.length
+  ) {
+    const nextIndex = route.profile.findIndex(([km]) => km >= activeDistanceKm);
+    const rightIndex = nextIndex < 0 ? route.profile.length - 1 : nextIndex;
+    const leftIndex = Math.max(0, rightIndex - 1);
+    const [leftKm] = route.profile[leftIndex];
+    const [rightKm] = route.profile[rightIndex];
+    const progress = rightKm === leftKm ? 0 : (activeDistanceKm - leftKm) / (rightKm - leftKm);
+    const [leftX, leftY] = coords[leftIndex];
+    const [rightX, rightY] = coords[rightIndex];
+    activePoint = [
+      leftX + (rightX - leftX) * progress,
+      leftY + (rightY - leftY) * progress,
+    ];
+  }
   const arrows = arrowIndexes(coords).map((index) => {
     const previous = coords[index - 1];
     const current = coords[index];
@@ -176,6 +197,14 @@ export function RouteMap({ route }: Props) {
               <polygon key={index} points={points} fill="var(--accent)" />
             ))}
             <circle cx={start[0]} cy={start[1]} r={7} fill="#fff" stroke="var(--accent)" strokeWidth={3} />
+            {activePoint && (
+              <circle
+                className="map__active-point"
+                cx={activePoint[0]}
+                cy={activePoint[1]}
+                r={6}
+              />
+            )}
           </>
         )}
       </svg>

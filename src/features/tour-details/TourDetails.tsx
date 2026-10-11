@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   CalendarCheck,
   CalendarDays,
@@ -12,7 +12,7 @@ import {
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
 import { formatLong } from '../../shared/format/date';
-import { formatDuration, formatNumber } from '../../shared/format/number';
+import { estimateDurationMin, formatDuration, formatNumber } from '../../shared/format/number';
 import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
 import { RouteMap } from '../route-map/RouteMap';
@@ -34,6 +34,35 @@ interface Props {
   onVariantChange?: (variant: 'A' | 'B') => void;
 }
 
+function getAscentUntilDistance(route: RouteStats, distanceKm: number) {
+  if (route.ascentM === null || route.profile.length < 2) return null;
+  if (distanceKm >= route.distanceKm) return route.ascentM;
+
+  let referenceElevation = route.profile[0][1];
+  let ascent = 0;
+  const addElevation = (elevation: number) => {
+    if (elevation - referenceElevation >= 3) {
+      ascent += elevation - referenceElevation;
+      referenceElevation = elevation;
+    } else if (referenceElevation - elevation >= 3) {
+      referenceElevation = elevation;
+    }
+  };
+
+  for (let index = 1; index < route.profile.length; index++) {
+    const [previousKm, previousElevation] = route.profile[index - 1];
+    const [currentKm, currentElevation] = route.profile[index];
+    if (currentKm > distanceKm) {
+      const progress = (distanceKm - previousKm) / (currentKm - previousKm);
+      addElevation(previousElevation + (currentElevation - previousElevation) * progress);
+      break;
+    }
+    addElevation(currentElevation);
+  }
+
+  return Math.round(ascent);
+}
+
 export function TourDetails({
   tour,
   position,
@@ -50,6 +79,11 @@ export function TourDetails({
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
+  const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
+
+  useEffect(() => {
+    setActiveDistanceKm(null);
+  }, [route]);
 
   useLayoutEffect(() => {
     const container = teaserContainerRef.current;
@@ -71,16 +105,45 @@ export function TourDetails({
     return () => observer.disconnect();
   }, [tour.teaser]);
 
+  const isPartialStats = route !== undefined && activeDistanceKm !== null;
+  const partialAscent =
+    isPartialStats && route ? getAscentUntilDistance(route, activeDistanceKm) : null;
+  const partialDuration =
+    isPartialStats && durationMin !== null && route
+      ? tour.durationMin !== null && tour.durationMin !== undefined
+        ? route.distanceKm > 0
+          ? durationMin * (activeDistanceKm / route.distanceKm)
+          : 0
+        : estimateDurationMin(activeDistanceKm, partialAscent)
+      : null;
   const stats = [
-    { value: route ? formatNumber(route.distanceKm) : '–', unit: 'km', label: 'Distanz', icon: 'distance' },
     {
-      value: route?.ascentM != null ? formatNumber(route.ascentM) : '–',
+      value: route
+        ? formatNumber(isPartialStats ? activeDistanceKm : route.distanceKm)
+        : '–',
+      unit: 'km',
+      label: 'Distanz',
+      icon: 'distance',
+    },
+    {
+      value: isPartialStats
+        ? partialAscent !== null
+          ? formatNumber(partialAscent)
+          : '–'
+        : route?.ascentM != null
+          ? formatNumber(route.ascentM)
+          : '–',
       unit: 'm',
       label: 'Anstieg',
       icon: <Mountain size={14} aria-hidden="true" />,
     },
     {
-      value: durationMin != null ? formatDuration(durationMin) : '–',
+      value:
+        isPartialStats && partialDuration !== null
+          ? formatDuration(partialDuration)
+          : durationMin != null
+            ? formatDuration(durationMin)
+            : '–',
       unit: 'h',
       label: 'Dauer ca.',
       icon: <Timer size={14} aria-hidden="true" />,
@@ -154,9 +217,9 @@ export function TourDetails({
 
       {tour.gpx ? (
         <>
-          <RouteMap route={route} />
+          <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
 
-          <div className="stats">
+          <div className={`stats${isPartialStats ? ' stats--partial' : ''}`}>
             {stats.map((s) => (
               <div className="stats__item" key={s.label}>
                 <div className="stats__value">
@@ -184,9 +247,15 @@ export function TourDetails({
             ))}
           </div>
 
-          <hr className="divider" />
+          {/* <hr className="divider" /> */}
 
-          {route && <ElevationProfile route={route} />}
+          {route && (
+            <ElevationProfile
+              route={route}
+              activeDistanceKm={activeDistanceKm}
+              onHoverDistance={setActiveDistanceKm}
+            />
+          )}
 
           {tour.stations.length > 0 && (
             <div className="stations">

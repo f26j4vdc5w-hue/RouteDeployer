@@ -537,6 +537,11 @@ select {
   border-radius: var(--radius-md);
   background: var(--map-bg);
 }
+.map__active-point {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 3;
+}
 .map__legend {
   display: flex;
   justify-content: space-between;
@@ -559,6 +564,9 @@ select {
   display: flex;
   gap: 10px;
 }
+.stats--partial {
+  color: var(--accent);
+}
 .stats__item {
   flex: 1;
   min-width: 0;
@@ -577,6 +585,9 @@ select {
   font-size: 27px;
   font-weight: 400;
   color: var(--ink);
+}
+.stats--partial .stats__value b {
+  color: var(--accent);
 }
 .stats__label {
   display: flex;
@@ -621,6 +632,16 @@ select {
   width: 100%;
   height: auto;
   font-family: var(--font);
+}
+.profile__interaction {
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+.profile__active-elevation rect {
+  fill: var(--surface-muted);
+}
+.profile__active-elevation text {
+  fill: var(--accent);
 }
 
 .stations {
