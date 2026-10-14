@@ -157,11 +157,13 @@ export const tours: Tour[] = [
     gpx: '2027/after-work/burgstaedt.gpx',
   },
   {
-    id: '2027-08-10',
-    title: 'Route wird noch bekanntgegeben',
-    teaser: 'Die Details zur Strecke folgen.',
-    ...MEETING,
-    stations: [],
+    id: "2027-08-10",
+    title: "Mountain Stage",
+    teaser: "So viele Höhenmeter wie in eine Runde passen.",
+    meetingTime: "17:00",
+    meetingPlace: "Garage - Weststr. 24",
+    stations: ["Garage","Anstiege","Garage"],
+    gpx: "2027/after-work/mountain-stage.gpx",
   },
   {
     id: '2027-08-17',

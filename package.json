@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "add:route": "node scripts/add-route.mjs",
     "routes": "node scripts/build-routes.mjs",
     "predev": "npm run routes",
     "dev": "vite",

@@ -1,8 +1,32 @@
 # How to use: Eine Route hinzufügen
 
-Diese Anleitung beschreibt den aktuellen Ablauf, um eine Tour mit GPX-Route in
-das Roadbook aufzunehmen. Für das Beispiel wird die Saison 2027 und die
-Kollektion „After Work“ verwendet.
+Am einfachsten geht es mit dem interaktiven Skript:
+
+```sh
+npm run add:route
+```
+
+Es fragt Saison und Kollektion ab, anschließend die Tourendaten und den Pfad zur
+GPX-Datei. Die Quelldatei wird in den passenden `public/routes/`-Ordner kopiert,
+der Toureneintrag wird angelegt und `src/data/routes.generated.json` wird neu
+berechnet. Bei einer neuen Saison oder Kollektion aktualisiert das Skript auch
+den Katalog und die Build-Pfade. Vor dem Schreiben zeigt es eine Zusammenfassung
+und bittet um Bestätigung.
+
+Bei einer bestehenden Kollektion werden Standard-Treffzeit und -Treffpunkt aus
+`const MEETING` in deren `tours.ts` als Vorgaben übernommen. Einfach Enter
+drücken, um die Standards zu verwenden, oder abweichende Werte eingeben. Bei
+einer neuen Kollektion werden Treffzeit und Treffpunkt abgefragt.
+
+Ist für das eingegebene Datum bereits ein Toureneintrag vorhanden, ersetzt das
+Skript Einträge ohne GPX automatisch. Hat der bestehende Eintrag bereits eine
+GPX-Datei, fragt das Skript vor der Eingabe weiterer Tourdaten nach einer
+Bestätigung. Bei Ablehnung bleibt der vorhandene Eintrag unverändert. Wird beim
+bestätigten Ersetzen derselbe GPX-Zielpfad wiederverwendet, wird auch diese
+Datei durch die ausgewählte GPX-Datei ersetzt.
+
+Für das Beispiel wird im Folgenden die Saison S27 und die Kollektion „After
+Work“ verwendet. Der manuelle Ablauf ist weiterhin möglich.
 
 ## Kurzüberblick
 
@@ -139,6 +163,9 @@ zusätzlich in der Anwendung registriert werden:
    Reloads in den Build übernommen.
 4. Führe `npm run build` aus und prüfe sowohl die Kollektion als auch ihren
    direkten URL-Aufruf.
+
+`npm run add:route` übernimmt diese Anpassungen bei interaktiver Auswahl einer
+neuen Saison oder Kollektion automatisch.
 
 ## Typische Fehler
 

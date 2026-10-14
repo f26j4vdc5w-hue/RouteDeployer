@@ -21,6 +21,11 @@ npm run preview
 
 ## Touren und GPX-Dateien pflegen
 
+Neue Touren lassen sich interaktiv mit `npm run add:route` hinzufügen. Das
+Skript fragt Saison, Kollektion, Tourendaten und GPX-Quelldatei ab und übernimmt
+die notwendigen Einträge und Routendaten. Die ausführliche Anleitung steht in
+[How2Use.md](How2Use.md).
+
 1. Lege die GPX-Datei im passenden Saison-/Kollektion-Ordner ab, aktuell unter
    `public/routes/2027/after-work/`.
 2. Trage die Tour in `src/data/seasons/2027/after-work/tours.ts` ein. Der Wert
