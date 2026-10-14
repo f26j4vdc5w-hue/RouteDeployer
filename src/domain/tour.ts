@@ -1,6 +1,8 @@
 export interface TourRoute {
   title: string;
   teaser: string;
+  /** Name der Person, die die Route geplant hat. */
+  plannedBy?: string;
   /** Uhrzeit, z. B. "17:00". */
   meetingTime: string;
   meetingPlace: string;

@@ -23,6 +23,10 @@ Highlight markiert werden soll. In der Timeline erscheint für markierte
 Touren ein Stern. Bei manueller Pflege kannst du dafür im jeweiligen Tour-
 Objekt `highlight: true` setzen.
 
+Beim Hinzufügen kann optional angegeben werden, wer die Route geplant hat. Der
+Name erscheint in der Routenansicht klein unter dem Titel als „by <Name>“.
+Manuell wird dafür `plannedBy: 'Name'` im Tour-Objekt gesetzt.
+
 Ist für das eingegebene Datum bereits ein Toureneintrag vorhanden, ersetzt das
 Skript Einträge ohne GPX automatisch. Hat der bestehende Eintrag bereits eine
 GPX-Datei, fragt das Skript vor der Eingabe weiterer Tourdaten nach einer

@@ -160,6 +160,7 @@ export const tours: Tour[] = [
     id: "2027-08-10",
     title: "Mountain Stage",
     teaser: "So viele Höhenmeter wie in eine Runde passen.",
+    plannedBy: "Thomas Vingegaard",
     meetingTime: "17:00",
     meetingPlace: "Garage - Weststr. 24",
     stations: ["Garage","Anstiege","Garage"],

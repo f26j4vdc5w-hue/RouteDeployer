@@ -380,6 +380,17 @@ select {
   align-items: flex-start;
   gap: 10px;
 }
+.details__title-stack {
+  min-width: 0;
+}
+.details__planner {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  line-height: 1.3;
+  opacity: 0.65;
+}
 .route-variant {
   flex: 0 0 auto;
   width: 28px;

@@ -174,7 +174,10 @@ export function TourDetails({
               {variant}
             </button>
           )}
-          <h1 className="details__title">{tour.title}</h1>
+          <div className="details__title-stack">
+            <h1 className="details__title">{tour.title}</h1>
+            {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
+          </div>
         </div>
         <div className="details__teaser-row" ref={teaserContainerRef}>
           <p

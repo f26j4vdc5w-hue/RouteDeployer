@@ -189,7 +189,8 @@ function formatRoute(route, indent, id = null) {
   const pad = ' '.repeat(indent);
   const lines = ['{'];
   if (id) lines.push(`${pad}id: ${quote(id)},`);
-  for (const key of ['title', 'teaser', 'meetingTime', 'meetingPlace']) {
+  for (const key of ['title', 'teaser', 'plannedBy', 'meetingTime', 'meetingPlace']) {
+    if (key === 'plannedBy' && !route[key]) continue;
     lines.push(`${pad}${key}: ${quote(route[key])},`);
   }
   lines.push(`${pad}stations: ${JSON.stringify(route.stations)},`);
@@ -489,6 +490,7 @@ async function main() {
   }
   const title = await askRequired('Tour-Titel');
   const teaser = await askRequired('Kurzbeschreibung');
+  const plannedBy = await ask('Geplant von (optional)');
   const meetingTime = await promptTime(meetingDefaults?.meetingTime);
   const meetingPlace = await askRequired('Treffpunkt', meetingDefaults?.meetingPlace ?? '');
   const stations = await promptStations();
@@ -501,6 +503,7 @@ async function main() {
     id,
     title,
     teaser,
+    plannedBy,
     meetingTime,
     meetingPlace,
     stations,
@@ -516,6 +519,7 @@ async function main() {
   if (addAlternative) {
     const alternativeTitle = await askRequired('Alternativroute Titel');
     const alternativeTeaser = await askRequired('Alternativroute Kurzbeschreibung');
+    const alternativePlannedBy = await ask('Alternativroute geplant von (optional)');
     const alternativeStations = await promptStations(stations);
     const alternativeHighlight = (await ask('Alternativroute als Highlight markieren? (j/N)'))
       .toLowerCase()
@@ -525,6 +529,7 @@ async function main() {
     tour.alternative = {
       title: alternativeTitle,
       teaser: alternativeTeaser,
+      plannedBy: alternativePlannedBy,
       meetingTime,
       meetingPlace,
       stations: alternativeStations,
