@@ -193,6 +193,7 @@ function formatRoute(route, indent, id = null) {
     lines.push(`${pad}${key}: ${quote(route[key])},`);
   }
   lines.push(`${pad}stations: ${JSON.stringify(route.stations)},`);
+  if (route.highlight) lines.push(`${pad}highlight: true,`);
   lines.push(`${pad}gpx: ${quote(route.gpx)},`);
   if (route.durationMin != null) lines.push(`${pad}durationMin: ${route.durationMin},`);
   if (route.alternative) {
@@ -491,6 +492,9 @@ async function main() {
   const meetingTime = await promptTime(meetingDefaults?.meetingTime);
   const meetingPlace = await askRequired('Treffpunkt', meetingDefaults?.meetingPlace ?? '');
   const stations = await promptStations();
+  const highlight = (await ask('Route als Highlight markieren? (j/N)'))
+    .toLowerCase()
+    .startsWith('j');
   const mainGpx = await promptGpx(title, routeDirectory);
   const durationMin = await promptDuration();
   const tour = {
@@ -500,6 +504,7 @@ async function main() {
     meetingTime,
     meetingPlace,
     stations,
+    highlight,
     gpx: mainGpx.relativePath,
     durationMin,
   };
@@ -512,6 +517,9 @@ async function main() {
     const alternativeTitle = await askRequired('Alternativroute Titel');
     const alternativeTeaser = await askRequired('Alternativroute Kurzbeschreibung');
     const alternativeStations = await promptStations(stations);
+    const alternativeHighlight = (await ask('Alternativroute als Highlight markieren? (j/N)'))
+      .toLowerCase()
+      .startsWith('j');
     alternativeGpx = await promptGpx(alternativeTitle, routeDirectory);
     const alternativeDuration = await promptDuration();
     tour.alternative = {
@@ -520,6 +528,7 @@ async function main() {
       meetingTime,
       meetingPlace,
       stations: alternativeStations,
+      highlight: alternativeHighlight,
       gpx: alternativeGpx.relativePath,
       durationMin: alternativeDuration,
     };

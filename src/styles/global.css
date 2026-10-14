@@ -207,10 +207,11 @@ select {
 .timeline__list::before {
   content: '';
   position: absolute;
-  left: 25px;
+  left: 50%;
   top: 12px;
   bottom: 12px;
   width: 1px;
+  transform: translateX(-50%);
   background: var(--border);
 }
 .timeline__item {
@@ -305,6 +306,33 @@ select {
 }
 .dot--upcoming {
   border-color: var(--border);
+}
+.dot--highlight {
+  border-color: transparent;
+  background: transparent;
+  color: var(--border);
+}
+.dot--highlight.dot--done,
+.dot--highlight.dot--selected {
+  color: var(--accent);
+}
+.dot--highlight.dot--selected::after {
+  display: none;
+}
+.dot__highlight-shape {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  stroke-width: 1px;
+}
+.dot__highlight-center {
+  position: relative;
+  z-index: 2;
+  color: #fff;
 }
 
 .details {

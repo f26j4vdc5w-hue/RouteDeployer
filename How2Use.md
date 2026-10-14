@@ -18,6 +18,11 @@ Bei einer bestehenden Kollektion werden Standard-Treffzeit und -Treffpunkt aus
 drücken, um die Standards zu verwenden, oder abweichende Werte eingeben. Bei
 einer neuen Kollektion werden Treffzeit und Treffpunkt abgefragt.
 
+Das Skript fragt auch, ob die Haupt- oder eine optionale Alternativroute als
+Highlight markiert werden soll. In der Timeline erscheint für markierte
+Touren ein Stern. Bei manueller Pflege kannst du dafür im jeweiligen Tour-
+Objekt `highlight: true` setzen.
+
 Ist für das eingegebene Datum bereits ein Toureneintrag vorhanden, ersetzt das
 Skript Einträge ohne GPX automatisch. Hat der bestehende Eintrag bereits eine
 GPX-Datei, fragt das Skript vor der Eingabe weiterer Tourdaten nach einer

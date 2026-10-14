@@ -6,6 +6,8 @@ export interface TourRoute {
   meetingPlace: string;
   /** Orte entlang der Strecke. */
   stations: string[];
+  /** Hebt die Route in der Timeline mit einem Stern hervor. */
+  highlight?: boolean;
   /** Relativer GPX-Pfad unter public/routes. */
   gpx?: string;
   /** Optional: überschreibt die geschätzte Dauer. */

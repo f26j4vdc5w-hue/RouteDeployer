@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, Star } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { Tour } from '../../domain/tour';
 import { formatShort } from '../../shared/format/date';
@@ -47,13 +47,32 @@ export function TourTimeline({
         {tours.map((tour) => {
           const selected = tour.id === selectedId;
           const done = tour.id < today;
+          const highlighted = tour.highlight || tour.alternative?.highlight;
           const dotClass = [
             selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming',
             tour.alternative ? 'dot--alternative' : '',
+            highlighted ? 'dot--highlight' : '',
           ]
             .filter(Boolean)
             .join(' ');
           const backDotClass = selected || done ? 'dot--done' : 'dot--upcoming';
+          const marker = highlighted ? (
+            <>
+              <Star
+                className="dot__highlight-shape"
+                size={30}
+                fill={selected || done ? 'currentColor' : 'var(--bg)'}
+                strokeWidth={1}
+              />
+              {selected ? (
+                <Star className="dot__highlight-center" size={9} fill="currentColor" />
+              ) : (
+                done && <Check className="dot__highlight-center" size={14} />
+              )}
+            </>
+          ) : (
+            done && !selected && <Check size={14} />
+          );
           return (
             <li key={tour.id}>
               <button
@@ -61,6 +80,7 @@ export function TourTimeline({
                 type="button"
                 className={`timeline__item${selected ? ' timeline__item--selected' : ''}`}
                 aria-current={selected ? 'true' : undefined}
+                aria-label={`${formatShort(tour.id)}${highlighted ? ', Highlight' : ''}`}
                 onClick={() =>
                   selected && tour.alternative ? onToggleAlternative(tour.id) : onSelect(tour.id)
                 }
@@ -69,12 +89,12 @@ export function TourTimeline({
                   <span className="dots dots--alternative" aria-hidden="true">
                     <span className={`dot dot--back ${backDotClass}`} />
                     <span className={`dot dot--front ${dotClass}`}>
-                      {done && !selected && <Check size={14} />}
+                      {marker}
                     </span>
                   </span>
                 ) : (
                   <span className={`dot ${dotClass}`}>
-                    {done && !selected && <Check size={14} />}
+                    {marker}
                   </span>
                 )}
                 <span className="timeline__date">{formatShort(tour.id)}</span>

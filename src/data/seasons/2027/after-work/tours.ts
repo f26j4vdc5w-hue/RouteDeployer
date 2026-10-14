@@ -163,6 +163,7 @@ export const tours: Tour[] = [
     meetingTime: "17:00",
     meetingPlace: "Garage - Weststr. 24",
     stations: ["Garage","Anstiege","Garage"],
+    highlight: true,
     gpx: "2027/after-work/mountain-stage.gpx",
   },
   {
