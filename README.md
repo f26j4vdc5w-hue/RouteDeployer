@@ -32,6 +32,9 @@ npm run preview
 3. Erstelle einen Build oder führe `npm run routes` aus, um Distanz, Höhenmeter,
    Höhenprofil und Kartenverlauf neu zu berechnen.
 
+Eine ausführliche Schritt-für-Schritt-Anleitung gibt es in
+[How2Use.md](How2Use.md).
+
 Die Kartenansicht verwendet OpenStreetMap-Kacheln und benötigt deshalb beim
 Aufruf eine Internetverbindung. Die Kartenquelle wird in der Ansicht mit
 `© OpenStreetMap-Mitwirkende` ausgewiesen.
