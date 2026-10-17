@@ -56,6 +56,8 @@ export const tours: Tour[] = [
     id: '2027-06-22',
     title: 'Lieblings-100er',
     teaser: 'Die große Runde: über 100 Kilometer bis Geithain und Lunzenau. Verpflegung einpacken.',
+    plannedBy: 'Krischaaan',
+    highlight: true,
     ...MEETING,
     stations: ['Chemnitz', 'Bernsdorf', 'Remse', 'Penig', 'Geithain', 'Lunzenau', 'Lichtenau', 'Chemnitz'],
     gpx: '2027/after-work/lieblings-100er.gpx',
