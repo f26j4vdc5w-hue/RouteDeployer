@@ -209,10 +209,13 @@ export const tours: Tour[] = [
     gpx: '2026/after-work/chemnitz-kemtau-runde.gpx',
   },
   {
-    id: '2026-10-20',
-    title: 'Route wird noch bekanntgegeben',
-    teaser: 'Die Details zur Strecke folgen.',
-    ...MEETING,
-    stations: [],
+    id: "2026-10-20",
+    title: "Last dance",
+    teaser: "Wir treffen uns ein letztes Mal zur Dienstagsrunde in der Saison 2026. Auf ein erfolgreiches und wunderschönes Jahr mit viele gemeinsamen Kilometern und Geschichten.",
+    plannedBy: "Reino",
+    meetingTime: "17:00",
+    meetingPlace: "Garage - Weststr. 24",
+    stations: ["Garage","Rabenstein","Kändler","Pleißa","Wüstenbrand","Ursprung","Leukersdorf","Jahnsdorf","Harthau","Garage"],
+    gpx: "2026/after-work/last-dance.gpx",
   },
 ];
