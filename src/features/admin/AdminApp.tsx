@@ -17,6 +17,7 @@ function AdminAppContent() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     const client = requireSupabase();
@@ -33,8 +34,10 @@ function AdminAppContent() {
         setAuthLoading(false);
       }
     });
-    const { data } = client.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = client.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
+      if (event === 'SIGNED_OUT') setPasswordRecovery(false);
       setAuthError(null);
       setAuthLoading(false);
     });
@@ -48,6 +51,7 @@ function AdminAppContent() {
   if (authError) {
     return <AdminMessage>Sitzung konnte nicht geladen werden: {authError}</AdminMessage>;
   }
+  if (passwordRecovery) return <PasswordRecoveryForm />;
   if (!session) return <LoginForm />;
   if (session.user.app_metadata.role !== 'admin') {
     return <AccessDenied email={session.user.email ?? ''} />;
@@ -83,11 +87,13 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setNotice(null);
     setBusy(true);
     try {
       const { error: signInError } = await requireSupabase().auth.signInWithPassword({
@@ -95,6 +101,33 @@ function LoginForm() {
         password,
       });
       if (signInError) throw signInError;
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendPasswordRecovery() {
+    setError(null);
+    setNotice(null);
+    if (!email.trim()) {
+      setError('Bitte gib zuerst deine E-Mail-Adresse ein.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const redirectTo = new URL(
+        `${import.meta.env.BASE_URL}admin/`,
+        window.location.origin,
+      ).toString();
+      const { error: recoveryError } = await requireSupabase().auth.resetPasswordForEmail(
+        email.trim(),
+        { redirectTo },
+      );
+      if (recoveryError) throw recoveryError;
+      setNotice('Falls ein Konto mit dieser Adresse existiert, erhältst du eine E-Mail zum Zurücksetzen des Passworts.');
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -135,10 +168,113 @@ function LoginForm() {
             />
           </label>
           {error && <p className="admin-error" role="alert">{error}</p>}
+          {notice && <p className="admin-alert" role="status">{notice}</p>}
           <button className="admin-button admin-button--primary" disabled={busy}>
             {busy ? 'Anmeldung …' : 'Anmelden'}
           </button>
+          <button
+            className="admin-button"
+            type="button"
+            disabled={busy}
+            onClick={sendPasswordRecovery}
+          >
+            Passwort zurücksetzen
+          </button>
         </form>
+      </section>
+    </main>
+  );
+}
+
+function PasswordRecoveryForm() {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    if (password !== confirmPassword) {
+      setError('Die Passwörter stimmen nicht überein.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const { error: updateError } = await requireSupabase().auth.updateUser({ password });
+      if (updateError) throw updateError;
+      setCompleted(true);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function continueToLogin() {
+    setError(null);
+    setBusy(true);
+    try {
+      const { error: signOutError } = await requireSupabase().auth.signOut();
+      if (signOutError) throw signOutError;
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="admin-shell">
+      <section className="admin-panel admin-login">
+        <header className="admin-header">
+          <div>
+            <p className="admin-kicker">KLLKTV Roadbook</p>
+            <h1>Passwort zurücksetzen</h1>
+          </div>
+          <a className="admin-link" href={import.meta.env.BASE_URL}>Zur Website</a>
+        </header>
+        {completed ? (
+          <>
+            <p className="admin-alert" role="status">Dein Passwort wurde geändert.</p>
+            {error && <p className="admin-error" role="alert">{error}</p>}
+            <button className="admin-button admin-button--primary" disabled={busy} onClick={continueToLogin}>
+              Zur Anmeldung
+            </button>
+          </>
+        ) : (
+          <>
+            <p>Lege ein neues Passwort für dein Admin-Konto fest.</p>
+            <form className="admin-form" onSubmit={submit}>
+              <label>
+                Neues Passwort
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                Neues Passwort bestätigen
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                />
+              </label>
+              {error && <p className="admin-error" role="alert">{error}</p>}
+              <button className="admin-button admin-button--primary" disabled={busy}>
+                {busy ? 'Wird gespeichert …' : 'Passwort speichern'}
+              </button>
+            </form>
+          </>
+        )}
       </section>
     </main>
   );

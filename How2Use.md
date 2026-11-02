@@ -9,6 +9,9 @@ für den einmaligen Supabase-Import.
 Öffne `/admin/` auf der veröffentlichten Website oder lokal unter
 `http://localhost:5173/admin/` und melde dich mit dem Supabase-Admin-Benutzer an.
 Es gibt keine öffentliche Registrierungsfunktion.
+Wenn du dein Passwort vergessen hast, gib deine E-Mail-Adresse ein und wähle
+„Passwort zurücksetzen“. Über den Link in der E-Mail kannst du ein neues Passwort
+festlegen.
 
 ## Saison oder Kollektion anlegen
 
