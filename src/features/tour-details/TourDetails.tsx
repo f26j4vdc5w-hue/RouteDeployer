@@ -203,10 +203,12 @@ export function TourDetails({
         </div>
       </header>
 
-      <div className="meeting">
-        <MapPin size={16} />
-        {tour.meetingTime} · {tour.meetingPlace}
-      </div>
+      {(tour.meetingTime || tour.meetingPlace) && (
+        <div className="meeting">
+          <MapPin size={16} />
+          {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
+        </div>
+      )}
 
       {weatherLocation && (
         <WeatherForecast
@@ -275,7 +277,7 @@ export function TourDetails({
         </>
       ) : (
         <p className="route-pending" role="status">
-          Die Route für diesen Dienstag wird noch bekanntgegeben.
+          Details zu dieser Tour werden noch bekanntgegeben.
         </p>
       )}
 

@@ -7,6 +7,7 @@ import type { Tour, TourRoute } from '../../domain/tour';
 import { deleteStoredRoutes, deleteTour, fetchRoadbook } from '../../data/backend';
 import { requireSupabase, supabase } from '../../lib/supabase';
 import { analyzeGpx } from './analyzeGpx';
+import { generateTourDates, WEEKDAYS, type TourCadence } from './generateTourDates';
 import './admin.css';
 
 function errorText(error: unknown) {
@@ -368,6 +369,12 @@ function AdminDashboard({ session }: { session: Session }) {
     startLabel: 'SAISONBEGINN',
     endLabel: 'SAISONENDE',
   });
+  const [collectionSchedule, setCollectionSchedule] = useState({
+    startDate: '',
+    endDate: '',
+    cadence: '' as TourCadence,
+    weekdays: [] as number[],
+  });
   const [seasonOriginalSlug, setSeasonOriginalSlug] = useState<string | null>(null);
   const [collectionOriginalSlug, setCollectionOriginalSlug] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -430,6 +437,7 @@ function AdminDashboard({ session }: { session: Session }) {
 
   useEffect(() => {
     setCollectionOriginalSlug(selectedCollection?.slug ?? null);
+    setCollectionSchedule({ startDate: '', endDate: '', cadence: '', weekdays: [] });
     setCollectionDraft({
       slug: selectedCollection?.slug ?? '',
       label: selectedCollection?.label ?? '',
@@ -512,6 +520,30 @@ function AdminDashboard({ session }: { session: Session }) {
     setNotice(null);
     setBusy(true);
     try {
+      const creating = collectionOriginalSlug === null;
+      const hasStartDate = Boolean(collectionSchedule.startDate);
+      const hasEndDate = Boolean(collectionSchedule.endDate);
+      const hasSchedule =
+        hasStartDate ||
+        hasEndDate ||
+        Boolean(collectionSchedule.cadence) ||
+        collectionSchedule.weekdays.length > 0;
+      let generatedDates: string[] = [];
+      if (creating && hasSchedule) {
+        if (!hasStartDate || !hasEndDate) {
+          throw new Error('Gib Start- und Enddatum an, wenn du Termine automatisch anlegen möchtest.');
+        }
+        generatedDates = generateTourDates(
+          collectionSchedule.startDate,
+          collectionSchedule.endDate,
+          collectionSchedule.cadence,
+          collectionSchedule.weekdays,
+        );
+        if (generatedDates.length === 0) {
+          throw new Error('Der gewählte Rhythmus ergibt im Zeitraum keine Termine.');
+        }
+      }
+
       const values = {
         season_slug: selectedSeason.slug,
         slug: collectionDraft.slug,
@@ -520,16 +552,66 @@ function AdminDashboard({ session }: { session: Session }) {
         start_label: collectionDraft.startLabel,
         end_label: collectionDraft.endLabel,
       };
-      const result = collectionOriginalSlug
-        ? await client
-            .from('collections')
-            .update(values)
-            .eq('season_slug', selectedSeason.slug)
-            .eq('slug', collectionOriginalSlug)
-        : await client.from('collections').insert({ ...values, sort_order: selectedSeason.collections.length });
-      if (result.error) throw result.error;
+      if (creating) {
+        const { error: insertError } = await client
+          .from('collections')
+          .insert({ ...values, sort_order: selectedSeason.collections.length });
+        if (insertError) throw insertError;
+
+        for (let index = 0; index < generatedDates.length; index += 500) {
+          const batch = generatedDates.slice(index, index + 500).map((id) => ({
+            id,
+            season_slug: selectedSeason.slug,
+            collection_slug: collectionDraft.slug,
+            title: 'Tour in Planung',
+            teaser: 'Weitere Informationen folgen.',
+            planned_by: null,
+            meeting_time: '',
+            meeting_place: '',
+            stations: [],
+            highlight: false,
+            duration_min: null,
+            gpx_key: null,
+            route_stats: null,
+            alternative: null,
+          }));
+          const { error: insertToursError } = await client
+            .from('tours')
+            .upsert(batch, {
+              onConflict: 'season_slug,collection_slug,id',
+              ignoreDuplicates: true,
+            });
+          if (insertToursError) {
+            const { error: rollbackError } = await client
+              .from('collections')
+              .delete()
+              .eq('season_slug', selectedSeason.slug)
+              .eq('slug', collectionDraft.slug);
+            if (rollbackError) {
+              throw new Error(
+                `Kollektion gespeichert, Termine fehlgeschlagen: ${insertToursError.message}. ` +
+                `Die Kollektion konnte auch nicht zurückgenommen werden: ${rollbackError.message}`,
+              );
+            }
+            throw new Error(
+              `Termine konnten nicht angelegt werden; die neue Kollektion wurde zurückgenommen: ${insertToursError.message}`,
+            );
+          }
+        }
+      } else {
+        const { error: updateError } = await client
+          .from('collections')
+          .update(values)
+          .eq('season_slug', selectedSeason.slug)
+          .eq('slug', collectionOriginalSlug);
+        if (updateError) throw updateError;
+      }
       setSelectedCollectionSlug(collectionDraft.slug);
-      setNotice('Kollektion gespeichert.');
+      setNotice(
+        generatedDates.length > 0
+          ? `Kollektion gespeichert. ${generatedDates.length} Termine ohne GPX wurden angelegt.`
+          : 'Kollektion gespeichert.',
+      );
       await reload();
     } catch (cause) {
       reportFailure(cause);
@@ -713,6 +795,12 @@ function AdminDashboard({ session }: { session: Session }) {
                   disabled={!selectedSeason}
                   onClick={() => {
                     setCollectionOriginalSlug(null);
+                    setCollectionSchedule({
+                      startDate: '',
+                      endDate: '',
+                      cadence: '',
+                      weekdays: [],
+                    });
                     setCollectionDraft({
                       slug: '',
                       label: '',
@@ -775,6 +863,70 @@ function AdminDashboard({ session }: { session: Session }) {
                   />
                 </label>
               </div>
+              {!collectionOriginalSlug && (
+                <fieldset className="admin-schedule">
+                  <legend>Termine automatisch anlegen (optional)</legend>
+                  <p>Der Zeitraum ist einschließlich Start- und Enddatum. Bereits vorhandene Termine bleiben unverändert.</p>
+                  <div className="admin-form__row">
+                    <label>
+                      Startdatum
+                      <input
+                        type="date"
+                        value={collectionSchedule.startDate}
+                        onChange={(event) => setCollectionSchedule({ ...collectionSchedule, startDate: event.target.value })}
+                        disabled={!selectedSeason}
+                      />
+                    </label>
+                    <label>
+                      Enddatum
+                      <input
+                        type="date"
+                        value={collectionSchedule.endDate}
+                        onChange={(event) => setCollectionSchedule({ ...collectionSchedule, endDate: event.target.value })}
+                        disabled={!selectedSeason}
+                      />
+                    </label>
+                  </div>
+                  <label>
+                    Rhythmus
+                    <select
+                      value={collectionSchedule.cadence}
+                      onChange={(event) => {
+                        const cadence = event.target.value;
+                        setCollectionSchedule({
+                          ...collectionSchedule,
+                          cadence: cadence === 'daily' || cadence === 'weekly' ? cadence : '',
+                        });
+                      }}
+                      disabled={!selectedSeason}
+                    >
+                      <option value="">Bitte auswählen</option>
+                      <option value="daily">Täglich</option>
+                      <option value="weekly">Wöchentlich an ausgewählten Tagen</option>
+                    </select>
+                  </label>
+                  {collectionSchedule.cadence === 'weekly' && (
+                    <div className="admin-weekdays" role="group" aria-label="Wochentage">
+                      {WEEKDAYS.map((day) => (
+                        <label className="admin-checkbox" key={day.value}>
+                          <input
+                            type="checkbox"
+                            checked={collectionSchedule.weekdays.includes(day.value)}
+                            onChange={(event) => setCollectionSchedule({
+                              ...collectionSchedule,
+                              weekdays: event.target.checked
+                                ? [...collectionSchedule.weekdays, day.value]
+                                : collectionSchedule.weekdays.filter((weekday) => weekday !== day.value),
+                            })}
+                          />
+                          {day.label}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <p>Neue Termine erhalten den Titel „Tour in Planung“ und können danach einzeln bearbeitet werden.</p>
+                </fieldset>
+              )}
               <div className="admin-actions">
                 <button className="admin-button admin-button--primary" disabled={busy || !selectedSeason}>
                   <Save size={16} /> {collectionOriginalSlug ? 'Kollektion speichern' : 'Kollektion anlegen'}
