@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { CalendarDays } from 'lucide-react';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
 import { fetchRoadbook } from '../data/backend';
 import { supabase } from '../lib/supabase';
+import { TourCalendar } from '../features/calendar/TourCalendar';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { todayIso } from '../shared/format/date';
@@ -181,6 +183,7 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
     [seasons],
   );
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--collection-color', collection.color);
@@ -218,26 +221,20 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
         : CHEMNITZ_WEATHER_LOCATION
       : undefined;
 
-  const nextSeason = next(availableSeasons, season);
   const nextCollection = next(season.collections, collection);
-
-  const switchSeason = () => {
-    const target =
-      nextSeason.collections.find((c) => c.slug === collection.slug) ?? nextSeason.collections[0];
-    go(nextSeason, target, null);
-  };
 
   return (
     <div className="page">
       <header className="nav">
         <button
           type="button"
-          className="nav__button nav__button--outline"
-          onClick={switchSeason}
-          disabled={availableSeasons.length < 2}
-          aria-label={`Saison wechseln (aktuell ${season.label})`}
+          className="nav__calendar-button"
+          onClick={() => setCalendarOpen(true)}
+          aria-label="Kalender öffnen"
+          aria-haspopup="dialog"
+          aria-expanded={calendarOpen}
         >
-          {season.label}
+          <CalendarDays size={21} aria-hidden="true" />
         </button>
         <h2 className="nav__title">
           <a href={BASE} aria-label="Zur Startseite">
@@ -254,6 +251,17 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
           {collection.label}
         </button>
       </header>
+      {calendarOpen && (
+        <TourCalendar
+          seasons={availableSeasons}
+          selectedId={selected?.id ?? today}
+          onClose={() => setCalendarOpen(false)}
+          onSelect={(targetSeason, targetCollection, id) => {
+            setCalendarOpen(false);
+            go(targetSeason, targetCollection, id);
+          }}
+        />
+      )}
       {selected ? (
         <main className="tour">
           <TourTimeline
