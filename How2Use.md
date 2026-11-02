@@ -19,6 +19,12 @@ festlegen.
    Der Slug bestimmt den URL-Teil, etwa `s28`.
 2. Lege für die gewählte Saison eine Kollektion an, zum Beispiel `after-work`.
 3. Vergib die Beschriftungen am Anfang und Ende der Timeline.
+4. Optional kannst du beim Anlegen Start- und Enddatum sowie einen Rhythmus
+   angeben. Der Zeitraum ist einschließlich beider Daten; bei wöchentlichem
+   Rhythmus kannst du mehrere Wochentage auswählen. Für jeden passenden Termin
+   wird eine Tour ohne GPX mit dem Titel „Tour in Planung“ erstellt. Termine
+   lassen sich anschließend einzeln vervollständigen. Bei einer Kollektion ohne
+   ausgewählten Zeitraum werden keine Touren automatisch angelegt.
 
 Löschen einer Saison oder Kollektion entfernt auch die zugehörigen Touren.
 Bestätige die Rückfrage daher nur, wenn der gesamte Bestand wirklich entfernt

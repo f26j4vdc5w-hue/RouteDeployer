@@ -205,7 +205,10 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
       : null);
   const routeStart = displayedRoute?.geoPath[0];
   const weatherLocation =
-    displayedTour && isWithinNextSevenDays(displayedTour.id, today)
+    displayedTour &&
+    displayedTour.meetingTime &&
+    (routeStart || displayedTour.meetingPlace) &&
+    isWithinNextSevenDays(displayedTour.id, today)
       ? routeStart
         ? {
             place: displayedTour.stations[0] ?? 'Startpunkt',
