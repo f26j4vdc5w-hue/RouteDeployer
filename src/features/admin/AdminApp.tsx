@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { LogOut, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { Check, LogOut, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { RouteStats } from '../../domain/route';
 import type { Tour, TourRoute } from '../../domain/tour';
@@ -356,6 +356,15 @@ function slugify(value: string) {
 
 function AdminDashboard({ session }: { session: Session }) {
   const [seasons, setSeasons] = useState<Season[]>([]);
+  const [pendingMembers, setPendingMembers] = useState<{
+    user_id: string;
+    email: string;
+    display_name: string;
+    email_confirmed_at: string | null;
+    created_at: string;
+  }[]>([]);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [membersError, setMembersError] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedSeasonSlug, setSelectedSeasonSlug] = useState('');
   const [selectedCollectionSlug, setSelectedCollectionSlug] = useState('');
@@ -410,6 +419,32 @@ function AdminDashboard({ session }: { session: Session }) {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const { data, error: queryError } = await client
+          .from('community_members')
+          .select('user_id, email, display_name, email_confirmed_at, created_at')
+          .eq('status', 'pending')
+          .order('created_at', { ascending: true });
+        if (!active) return;
+        if (queryError) {
+          setMembersError(queryError.message);
+        } else {
+          setPendingMembers(data ?? []);
+        }
+      } catch (cause) {
+        if (active) setMembersError(errorText(cause));
+      } finally {
+        if (active) setMembersLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [client]);
 
   const selectedSeason = seasons.find((season) => season.slug === selectedSeasonSlug);
   const selectedCollection = selectedSeason?.collections.find(
@@ -684,6 +719,32 @@ function AdminDashboard({ session }: { session: Session }) {
     if (signOutError) setError(signOutError.message);
   }
 
+  async function reviewMember(userId: string, status: 'approved' | 'rejected') {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const { data, error: updateError } = await client
+        .from('community_members')
+        .update({ status })
+        .eq('user_id', userId)
+        .eq('status', 'pending')
+        .not('email_confirmed_at', 'is', null)
+        .select('user_id')
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (!data) {
+        throw new Error('Das Konto wurde nicht geändert. Prüfe, ob die E-Mail bestätigt ist und der Status noch aussteht.');
+      }
+      setPendingMembers((members) => members.filter((member) => member.user_id !== userId));
+      setNotice(status === 'approved' ? 'Mitgliedschaft freigegeben.' : 'Registrierung abgelehnt.');
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="admin-shell">
       <div className="admin-dashboard">
@@ -704,6 +765,59 @@ function AdminDashboard({ session }: { session: Session }) {
             {error ?? notice}
           </p>
         )}
+
+        <section className="admin-card">
+          <div className="admin-card__heading">
+            <div>
+              <h2>Community-Freigaben</h2>
+              <p>Nur bestätigte E-Mail-Adressen können freigegeben werden.</p>
+            </div>
+            <span className="admin-pending-count">{pendingMembers.length}</span>
+          </div>
+          {membersError ? (
+            <p className="admin-error" role="alert">Mitgliedsanträge konnten nicht geladen werden: {membersError}</p>
+          ) : membersLoading ? (
+            <p className="admin-muted" role="status">Mitgliedsanträge werden geladen …</p>
+          ) : pendingMembers.length > 0 ? (
+            <div className="admin-member-list">
+              {pendingMembers.map((member) => (
+                <article className="admin-member" key={member.user_id}>
+                  <div>
+                    <strong>{member.display_name}</strong>
+                    <span>{member.email}</span>
+                    <small>
+                      {member.email_confirmed_at
+                        ? 'E-Mail bestätigt'
+                        : 'Wartet auf E-Mail-Bestätigung'}
+                    </small>
+                  </div>
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="admin-button admin-button--primary"
+                      onClick={() => reviewMember(member.user_id, 'approved')}
+                      disabled={busy || !member.email_confirmed_at}
+                      aria-label={`${member.display_name} freigeben`}
+                    >
+                      <Check size={16} /> Freigeben
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-button admin-button--danger"
+                      onClick={() => reviewMember(member.user_id, 'rejected')}
+                      disabled={busy || !member.email_confirmed_at}
+                      aria-label={`${member.display_name} ablehnen`}
+                    >
+                      <X size={16} /> Ablehnen
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="admin-muted">Keine ausstehenden Mitgliedsanträge.</p>
+          )}
+        </section>
 
         <section className="admin-card">
           <h2>Saison und Kollektion</h2>

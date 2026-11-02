@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarDays } from 'lucide-react';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
 import { fetchRoadbook } from '../data/backend';
@@ -7,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import { TourCalendar } from '../features/calendar/TourCalendar';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
+import { CommunityAccount } from '../features/community/CommunityAccount';
+import { useCommunityAuth } from '../features/community/useCommunityAuth';
 import { todayIso } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
 
@@ -184,6 +185,11 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
   );
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const community = useCommunityAuth();
+  const memberId =
+    community.member?.status === 'approved' && community.member.email_confirmed_at
+      ? community.session?.user.id ?? null
+      : null;
 
   useEffect(() => {
     document.documentElement.style.setProperty('--collection-color', collection.color);
@@ -228,28 +234,27 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
       <header className="nav">
         <button
           type="button"
-          className="nav__calendar-button"
-          onClick={() => setCalendarOpen(true)}
-          aria-label="Kalender öffnen"
-          aria-haspopup="dialog"
-          aria-expanded={calendarOpen}
-        >
-          <CalendarDays size={21} aria-hidden="true" />
-        </button>
-        <h2 className="nav__title">
-          <a href={BASE} aria-label="Zur Startseite">
-            KLLKTV
-          </a>
-        </h2>
-        <button
-          type="button"
-          className="nav__button nav__button--filled"
+          className="nav__button nav__button--filled nav__collection-button"
           onClick={() => go(season, nextCollection, null)}
           disabled={season.collections.length < 2}
           aria-label={`Kollektion wechseln (aktuell ${collection.label})`}
         >
           {collection.label}
         </button>
+        <h2 className="nav__title">
+          <a href={BASE} aria-label="Zur Startseite">
+            KLLKTV
+          </a>
+        </h2>
+        <div className="nav__profile">
+          <CommunityAccount
+            email={community.session?.user.email ?? null}
+            member={community.member}
+            loading={community.loading}
+            error={community.error}
+            onRefresh={community.refresh}
+          />
+        </div>
       </header>
       {calendarOpen && (
         <TourCalendar
@@ -274,9 +279,13 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
             }
             startLabel={collection.startLabel}
             endLabel={collection.endLabel}
+            onOpenCalendar={() => setCalendarOpen(true)}
           />
           <TourDetails
             tour={displayedTour ?? selected}
+            seasonSlug={season.slug}
+            collectionSlug={collection.slug}
+            memberId={memberId}
             position={sorted.indexOf(selected) + 1}
             count={sorted.length}
             isPast={selected.id < today}

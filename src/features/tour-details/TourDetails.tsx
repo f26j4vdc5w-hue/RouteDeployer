@@ -6,8 +6,11 @@ import {
   ChevronUp,
   MapPin,
   Mountain,
+  Plus,
   Route as RouteIcon,
   Timer,
+  UserRound,
+  Check,
 } from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
@@ -17,9 +20,13 @@ import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
 import { RouteMap } from '../route-map/RouteMap';
 import { WeatherForecast } from '../weather-forecast/WeatherForecast';
+import { useTourAttendance } from '../community/useTourAttendance';
 
 interface Props {
   tour: Tour;
+  seasonSlug: string;
+  collectionSlug: string;
+  memberId: string | null;
   position: number;
   count: number;
   isPast: boolean;
@@ -65,6 +72,9 @@ function getAscentUntilDistance(route: RouteStats, distanceKm: number) {
 
 export function TourDetails({
   tour,
+  seasonSlug,
+  collectionSlug,
+  memberId,
   position,
   count,
   isPast,
@@ -80,6 +90,27 @@ export function TourDetails({
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
   const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
+  const [attendeeListOpen, setAttendeeListOpen] = useState(false);
+  const attendance = useTourAttendance({
+    seasonSlug,
+    collectionSlug,
+    tourId: tour.id,
+    userId: memberId,
+    isPast,
+  });
+  const attendanceButton = attendance.canAttend ? (
+    <button
+      type="button"
+      className={`attendance__toggle${attendance.isAttending ? ' attendance__toggle--active' : ''}`}
+      onClick={attendance.toggleAttendance}
+      disabled={attendance.busy || attendance.loading}
+      aria-label={attendance.isAttending ? 'Zusage zurücknehmen' : 'Für diese Tour zusagen'}
+      aria-pressed={attendance.isAttending}
+      title={attendance.isAttending ? 'Zusage zurücknehmen' : 'Für diese Tour zusagen'}
+    >
+      {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
+    </button>
+  ) : null;
 
   useEffect(() => {
     setActiveDistanceKm(null);
@@ -178,7 +209,37 @@ export function TourDetails({
             <h1 className="details__title">{tour.title}</h1>
             {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
           </div>
+          {attendance.canAttend && (
+            <button
+              type="button"
+              className="attendance__people"
+              onClick={() => setAttendeeListOpen((open) => !open)}
+              aria-label={`${attendance.attendees.length} Zusagen anzeigen`}
+              aria-expanded={attendeeListOpen}
+              aria-controls="tour-attendees"
+              disabled={attendance.loading}
+            >
+              <UserRound size={20} aria-hidden="true" />
+              <span>{attendance.attendees.length}</span>
+            </button>
+          )}
         </div>
+        {attendance.canAttend && attendeeListOpen && (
+          <div className="attendance__list" id="tour-attendees">
+            <h2>Wer ist dabei?</h2>
+            {attendance.loading ? (
+              <p role="status">Zusagen werden geladen …</p>
+            ) : attendance.attendees.length > 0 ? (
+              <ul>
+                {attendance.attendees.map((attendee) => (
+                  <li key={attendee.user_id}>{attendee.display_name}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>Noch keine Zusagen.</p>
+            )}
+          </div>
+        )}
         <div className="details__teaser-row" ref={teaserContainerRef}>
           <p
             className={`details__teaser${!teaserExpanded ? ' details__teaser--collapsed' : ''}`}
@@ -270,15 +331,23 @@ export function TourDetails({
           )}
 
           {route ? (
-            <GpxDownload file={tour.gpx} />
+            <GpxDownload file={tour.gpx} action={attendanceButton} />
           ) : (
-            <p className="download__file">GPX folgt in Kürze.</p>
+            <div className="download__actions">
+              <p className="download__file">GPX folgt in Kürze.</p>
+              {attendanceButton}
+            </div>
           )}
+          {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
         </>
       ) : (
-        <p className="route-pending" role="status">
-          Details zu dieser Tour werden noch bekanntgegeben.
-        </p>
+        <>
+          <p className="route-pending" role="status">
+            Details zu dieser Tour werden noch bekanntgegeben.
+          </p>
+          <div className="download__actions">{attendanceButton}</div>
+          {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
+        </>
       )}
 
     </article>

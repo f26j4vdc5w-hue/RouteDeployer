@@ -5,7 +5,8 @@ Das Roadbook ist eine React-/Vite-Website mit getrenntem Frontend und Backend:
 - **Frontend:** GitHub Pages
 - **Backend:** Supabase für PostgreSQL, Anmeldung und GPX-Dateispeicher
 - **Besucher:** können Touren, Karten und GPX-Downloads ohne Anmeldung ansehen.
-- **Admin:** kann sich anmelden, Saisons, Kollektionen und Touren verwalten sowie GPX-Dateien hochladen.
+- **Community-Mitglieder:** können nach E-Mail-Bestätigung und Admin-Freigabe Touren-Zusagen verwalten und sehen, wer teilnimmt.
+- **Admin:** kann Touren verwalten, GPX-Dateien hochladen und Community-Mitgliedschaften freigeben.
 
 Touren und GPX-Dateien werden zur Laufzeit aus Supabase geladen. GPX-Kennzahlen,
 Kartenverlauf und Höhenprofil werden beim Upload im Admin-Bereich berechnet.
@@ -39,9 +40,10 @@ einer leeren oder veralteten Tourenansicht.
 2. Öffne in Supabase **SQL Editor** und führe
    [`supabase/migrations/202611020001_initial_schema.sql`](supabase/migrations/202611020001_initial_schema.sql)
    aus. Das legt Tabellen, den öffentlichen GPX-Bucket und Row-Level-Security-
-   Regeln an. Öffentliche Schreibzugriffe sind nicht erlaubt.
-   Bei einem bestehenden Projekt führe nach Änderungen die jeweils neue SQL-
-   Migration aus dem Ordner `supabase/migrations/` ebenfalls im SQL Editor aus.
+   Regeln an. Öffentliche Schreibzugriffe sind nicht erlaubt. Führe für neue
+   Projekte anschließend alle weiteren Migrationen in aufsteigender Reihenfolge
+   aus. Bei bestehenden Projekten führe nur Migrationen aus, die dort noch
+   nicht angewendet wurden.
 3. Kopiere die Projekt-URL und den Publishable-/Anon-Key in `.env.local`:
 
    ```dotenv
@@ -64,9 +66,19 @@ einer leeren oder veralteten Tourenansicht.
    erhalten bleiben sollen.
 5. Lege in Supabase unter **Authentication → Users** einen Benutzer an. Setze
    bei diesem Benutzer unter **App Metadata** die Rolle auf
-   `{"role":"admin"}`. Eine öffentliche Registrierung bietet die Website nicht
-   an; deaktiviere sie zusätzlich in den Auth-Einstellungen des Projekts.
-6. Melde dich auf der Website unter `/admin/` an. Bei GitHub-Pages-Projektseiten
+   `{"role":"admin"}`.
+6. Führe für ein bestehendes Projekt nach den bisherigen Migrationen zusätzlich
+   [`supabase/migrations/202611020003_community_members_and_rsvps.sql`](supabase/migrations/202611020003_community_members_and_rsvps.sql)
+   im SQL Editor aus. Die Migration legt Mitgliederprofile, Admin-Freigaben
+   und Tour-Zusagen mit Row-Level Security an.
+7. Aktiviere danach in Supabase unter **Authentication → Settings** die
+   Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
+   `https://f26j4vdc5w-hue.github.io/RouteDeployer/` sowie
+   `http://localhost:5173/` in den erlaubten Redirect-URLs.
+8. Registrierte Nutzer müssen ihre E-Mail bestätigen. Danach kann ein Admin
+   ihren Antrag im Admin-Bereich unter **Community-Freigaben** freigeben oder
+   ablehnen. Nur freigegebene Mitglieder können Zusagen sehen oder verwalten.
+9. Melde dich auf der Website unter `/admin/` an. Bei GitHub-Pages-Projektseiten
    lautet der Pfad beispielsweise `/RouteDeployer/admin/`.
 
 Die kostenlose Supabase-Stufe kann Projekte nach Inaktivität pausieren. Für
