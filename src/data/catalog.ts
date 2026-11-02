@@ -13,15 +13,15 @@ export const seasons: Season[] = [
     slug: 's26',
     label: 'S26',
     collections: [
-      { slug: 'camp', label: 'Camp', tours: camp2026, ...CAMP_LABELS },
-      { slug: 'after-work', label: 'After Work', tours: afterWork2026, ...SEASON_LABELS },
+      { slug: 'camp', label: 'Camp', color: '#ff4d57', tours: camp2026, ...CAMP_LABELS },
+      { slug: 'after-work', label: 'After Work', color: '#a45cff', tours: afterWork2026, ...SEASON_LABELS },
     ],
   },
   {
     slug: 's27',
     label: 'S27',
     collections: [
-      { slug: 'after-work', label: 'After Work', tours: afterWork2027, ...SEASON_LABELS },
+      { slug: 'after-work', label: 'After Work', color: '#a45cff', tours: afterWork2027, ...SEASON_LABELS },
     ],
   },
 ];

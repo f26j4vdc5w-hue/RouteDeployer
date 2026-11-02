@@ -8,6 +8,7 @@ create table public.collections (
   season_slug text not null references public.seasons(slug) on update cascade on delete cascade,
   slug text not null,
   label text not null,
+  color text not null default '#a45cff' check (color ~ '^#[0-9A-Fa-f]{6}$'),
   start_label text not null,
   end_label text not null,
   sort_order integer not null default 0,

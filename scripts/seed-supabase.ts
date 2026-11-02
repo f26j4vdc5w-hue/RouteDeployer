@@ -64,6 +64,7 @@ const collectionRows = seasons.flatMap((season) =>
     season_slug: season.slug,
     slug: collection.slug,
     label: collection.label,
+    color: collection.color,
     start_label: collection.startLabel,
     end_label: collection.endLabel,
     sort_order: index,

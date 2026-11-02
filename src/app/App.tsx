@@ -183,8 +183,8 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
 
   useEffect(() => {
-    document.documentElement.dataset.collection = collection.slug;
-  }, [collection.slug]);
+    document.documentElement.style.setProperty('--collection-color', collection.color);
+  }, [collection.color]);
 
   const sorted = useMemo(
     () => [...collection.tours].sort((a, b) => a.id.localeCompare(b.id)),

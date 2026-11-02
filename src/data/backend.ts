@@ -13,6 +13,7 @@ interface CollectionRow {
   season_slug: string;
   slug: string;
   label: string;
+  color: string;
   start_label: string;
   end_label: string;
   sort_order: number;
@@ -76,7 +77,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
     client.from('seasons').select('slug, label, sort_order').order('sort_order'),
     client
       .from('collections')
-      .select('season_slug, slug, label, start_label, end_label, sort_order')
+      .select('season_slug, slug, label, color, start_label, end_label, sort_order')
       .order('sort_order'),
     client
       .from('tours')
@@ -97,6 +98,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
       .map((collection): Collection => ({
         slug: collection.slug,
         label: collection.label,
+        color: collection.color,
         startLabel: collection.start_label,
         endLabel: collection.end_label,
         tours: (tourResult.data as TourRow[])

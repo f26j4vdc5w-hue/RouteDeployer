@@ -40,6 +40,8 @@ einer leeren oder veralteten Tourenansicht.
    [`supabase/migrations/202611020001_initial_schema.sql`](supabase/migrations/202611020001_initial_schema.sql)
    aus. Das legt Tabellen, den öffentlichen GPX-Bucket und Row-Level-Security-
    Regeln an. Öffentliche Schreibzugriffe sind nicht erlaubt.
+   Bei einem bestehenden Projekt führe nach Änderungen die jeweils neue SQL-
+   Migration aus dem Ordner `supabase/migrations/` ebenfalls im SQL Editor aus.
 3. Kopiere die Projekt-URL und den Publishable-/Anon-Key in `.env.local`:
 
    ```dotenv
