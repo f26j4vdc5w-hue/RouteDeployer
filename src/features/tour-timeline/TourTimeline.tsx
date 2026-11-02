@@ -1,4 +1,4 @@
-import { Check, Star } from 'lucide-react';
+import { CalendarDays, Check, Star } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { Tour } from '../../domain/tour';
 import { formatShort } from '../../shared/format/date';
@@ -11,6 +11,7 @@ interface Props {
   onToggleAlternative: (id: string) => void;
   startLabel: string;
   endLabel: string;
+  onOpenCalendar: () => void;
 }
 
 export function TourTimeline({
@@ -21,6 +22,7 @@ export function TourTimeline({
   onToggleAlternative,
   startLabel,
   endLabel,
+  onOpenCalendar,
 }: Props) {
   const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
@@ -41,69 +43,80 @@ export function TourTimeline({
   }, [selectedId]);
 
   return (
-    <nav ref={timelineRef} className="timeline" aria-label="Dienstage">
-      <span className="timeline__label">{startLabel}</span>
-      <ol className="timeline__list">
-        {tours.map((tour) => {
-          const selected = tour.id === selectedId;
-          const done = tour.id < today;
-          const highlighted = tour.highlight || tour.alternative?.highlight;
-          const dotClass = [
-            selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming',
-            tour.alternative ? 'dot--alternative' : '',
-            highlighted ? 'dot--highlight' : '',
-          ]
-            .filter(Boolean)
-            .join(' ');
-          const backDotClass = selected || done ? 'dot--done' : 'dot--upcoming';
-          const marker = highlighted ? (
-            <>
-              <Star
-                className="dot__highlight-shape"
-                size={30}
-                fill={selected || done ? 'currentColor' : 'var(--bg)'}
-                strokeWidth={1}
-              />
-              {selected ? (
-                <Star className="dot__highlight-center" size={9} fill="currentColor" />
-              ) : (
-                done && <Check className="dot__highlight-center" size={14} />
-              )}
-            </>
-          ) : (
-            done && !selected && <Check size={14} />
-          );
-          return (
-            <li key={tour.id}>
-              <button
-                ref={selected ? selectedRef : undefined}
-                type="button"
-                className={`timeline__item${selected ? ' timeline__item--selected' : ''}`}
-                aria-current={selected ? 'true' : undefined}
-                aria-label={`${formatShort(tour.id)}${highlighted ? ', Highlight' : ''}`}
-                onClick={() =>
-                  selected && tour.alternative ? onToggleAlternative(tour.id) : onSelect(tour.id)
-                }
-              >
-                {tour.alternative ? (
-                  <span className="dots dots--alternative" aria-hidden="true">
-                    <span className={`dot dot--back ${backDotClass}`} />
-                    <span className={`dot dot--front ${dotClass}`}>
+    <div className="timeline-rail">
+      <button
+        type="button"
+        className="timeline-rail__calendar"
+        onClick={onOpenCalendar}
+        aria-label="Kalender öffnen"
+        aria-haspopup="dialog"
+      >
+        <CalendarDays size={21} aria-hidden="true" />
+      </button>
+      <nav ref={timelineRef} className="timeline" aria-label="Dienstage">
+        <span className="timeline__label">{startLabel}</span>
+        <ol className="timeline__list">
+          {tours.map((tour) => {
+            const selected = tour.id === selectedId;
+            const done = tour.id < today;
+            const highlighted = tour.highlight || tour.alternative?.highlight;
+            const dotClass = [
+              selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming',
+              tour.alternative ? 'dot--alternative' : '',
+              highlighted ? 'dot--highlight' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
+            const backDotClass = selected || done ? 'dot--done' : 'dot--upcoming';
+            const marker = highlighted ? (
+              <>
+                <Star
+                  className="dot__highlight-shape"
+                  size={30}
+                  fill={selected || done ? 'currentColor' : 'var(--bg)'}
+                  strokeWidth={1}
+                />
+                {selected ? (
+                  <Star className="dot__highlight-center" size={9} fill="currentColor" />
+                ) : (
+                  done && <Check className="dot__highlight-center" size={14} />
+                )}
+              </>
+            ) : (
+              done && !selected && <Check size={14} />
+            );
+            return (
+              <li key={tour.id}>
+                <button
+                  ref={selected ? selectedRef : undefined}
+                  type="button"
+                  className={`timeline__item${selected ? ' timeline__item--selected' : ''}`}
+                  aria-current={selected ? 'true' : undefined}
+                  aria-label={`${formatShort(tour.id)}${highlighted ? ', Highlight' : ''}`}
+                  onClick={() =>
+                    selected && tour.alternative ? onToggleAlternative(tour.id) : onSelect(tour.id)
+                  }
+                >
+                  {tour.alternative ? (
+                    <span className="dots dots--alternative" aria-hidden="true">
+                      <span className={`dot dot--back ${backDotClass}`} />
+                      <span className={`dot dot--front ${dotClass}`}>
+                        {marker}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className={`dot ${dotClass}`}>
                       {marker}
                     </span>
-                  </span>
-                ) : (
-                  <span className={`dot ${dotClass}`}>
-                    {marker}
-                  </span>
-                )}
-                <span className="timeline__date">{formatShort(tour.id)}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
-      <span className="timeline__label">{endLabel}</span>
-    </nav>
+                  )}
+                  <span className="timeline__date">{formatShort(tour.id)}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <span className="timeline__label">{endLabel}</span>
+      </nav>
+    </div>
   );
 }

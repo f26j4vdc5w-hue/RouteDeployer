@@ -98,6 +98,60 @@
   color: var(--muted);
 }
 
+.admin-pending-count {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-member-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-member {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.admin-member > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-member strong {
+  color: var(--ink);
+}
+
+.admin-member span,
+.admin-member small,
+.admin-muted {
+  color: var(--muted);
+}
+
+.admin-member span {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.admin-member small {
+  font-size: 11px;
+}
+
 .admin-selectors,
 .admin-management {
   display: grid;
@@ -380,7 +434,8 @@
 
   .admin-dashboard__header,
   .admin-card__heading,
-  .admin-tour {
+  .admin-tour,
+  .admin-member {
     align-items: flex-start;
     flex-direction: column;
   }
@@ -397,5 +452,10 @@
 
   .admin-tour .admin-actions {
     width: 100%;
+  }
+
+  .admin-member .admin-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
