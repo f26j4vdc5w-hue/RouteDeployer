@@ -364,6 +364,7 @@ function AdminDashboard({ session }: { session: Session }) {
   const [collectionDraft, setCollectionDraft] = useState({
     slug: '',
     label: '',
+    color: '#a45cff',
     startLabel: 'SAISONBEGINN',
     endLabel: 'SAISONENDE',
   });
@@ -432,6 +433,7 @@ function AdminDashboard({ session }: { session: Session }) {
     setCollectionDraft({
       slug: selectedCollection?.slug ?? '',
       label: selectedCollection?.label ?? '',
+      color: selectedCollection?.color ?? '#a45cff',
       startLabel: selectedCollection?.startLabel ?? 'SAISONBEGINN',
       endLabel: selectedCollection?.endLabel ?? 'SAISONENDE',
     });
@@ -514,6 +516,7 @@ function AdminDashboard({ session }: { session: Session }) {
         season_slug: selectedSeason.slug,
         slug: collectionDraft.slug,
         label: collectionDraft.label,
+        color: collectionDraft.color,
         start_label: collectionDraft.startLabel,
         end_label: collectionDraft.endLabel,
       };
@@ -713,6 +716,7 @@ function AdminDashboard({ session }: { session: Session }) {
                     setCollectionDraft({
                       slug: '',
                       label: '',
+                      color: '#a45cff',
                       startLabel: 'SAISONBEGINN',
                       endLabel: 'SAISONENDE',
                     });
@@ -738,6 +742,16 @@ function AdminDashboard({ session }: { session: Session }) {
                   onChange={(event) => setCollectionDraft({ ...collectionDraft, label: event.target.value })}
                   placeholder="After Work"
                   required
+                  disabled={!selectedSeason}
+                />
+              </label>
+              <label>
+                Farbe
+                <input
+                  type="color"
+                  value={collectionDraft.color}
+                  onChange={(event) => setCollectionDraft({ ...collectionDraft, color: event.target.value })}
+                  aria-label="Kollektionfarbe"
                   disabled={!selectedSeason}
                 />
               </label>
