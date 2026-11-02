@@ -5,11 +5,10 @@ interface Props {
 }
 
 export function GpxDownload({ file }: Props) {
-  const href = `${import.meta.env.BASE_URL}routes/${file}`;
-  const filename = file.split('/').at(-1) ?? file;
+  const filename = decodeURIComponent(new URL(file).pathname.split('/').at(-1) ?? 'route.gpx');
   return (
     <div className="download">
-      <a className="download__button" href={href} download={filename}>
+      <a className="download__button" href={file} download={filename}>
         <Download size={18} />
         Route als .gpx herunterladen
       </a>

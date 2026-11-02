@@ -1,11 +1,11 @@
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 
 // Pfade wie /s27/after-work/ sind echte Unterordner auf dem statischen Host:
 // index.html wird dorthin kopiert, damit Direktaufrufe und Reloads funktionieren.
-const COLLECTION_PATHS = ['s26/camp', 's26/after-work', 's27/after-work'];
+const COLLECTION_PATHS = ['s26/camp', 's26/after-work', 's27/after-work', 'admin'];
 
 function collectionPages(): Plugin {
   let outDir = 'dist';
@@ -22,6 +22,7 @@ function collectionPages(): Plugin {
         mkdirSync(join(outDir, path), { recursive: true });
         copyFileSync(index, join(outDir, path, 'index.html'));
       }
+      rmSync(join(outDir, 'routes'), { recursive: true, force: true });
     },
   };
 }

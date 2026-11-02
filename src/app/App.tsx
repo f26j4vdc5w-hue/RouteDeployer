@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { defaultSeason, seasons, type Collection, type Season } from '../data/catalog';
+import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
-import { routes } from '../data/routes';
+import { fetchRoadbook } from '../data/backend';
+import { supabase } from '../lib/supabase';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { todayIso } from '../shared/format/date';
@@ -25,8 +26,9 @@ interface Location {
 const pathFor = (season: Season, collection: Collection) =>
   `${BASE}${season.slug}/${collection.slug}/`;
 
-function currentSeason(today: string): Season {
-  const afterWorkSeasons = seasons
+function currentSeason(today: string, seasons: Season[]): Season {
+  const availableSeasons = seasons.filter((season) => season.collections.length > 0);
+  const afterWorkSeasons = availableSeasons
     .map((season) => ({
       season,
       collection: season.collections.find((collection) => collection.slug === 'after-work'),
@@ -47,15 +49,19 @@ function currentSeason(today: string): Season {
     afterWorkSeasons.find((entry) => entry.dates[0] <= today && today <= entry.dates.at(-1)!)?.season ??
     afterWorkSeasons.find((entry) => entry.dates[0] > today)?.season ??
     afterWorkSeasons.at(-1)?.season ??
-    defaultSeason
+    (availableSeasons.at(-1) as Season)
   );
 }
 
 /** Saison/Kollektion stecken im Pfad (<base>s27/after-work/), die Tour in ?tour=YYYY-MM-DD. */
-function readLocation(): Location {
+function readLocation(seasons: Season[]): Location {
   const isHome = window.location.pathname === BASE;
   const [seasonSlug, collectionSlug] = window.location.pathname.slice(BASE.length).split('/');
-  const season = seasons.find((s) => s.slug === seasonSlug) ?? currentSeason(todayIso());
+  const requestedSeason = seasons.find((s) => s.slug === seasonSlug);
+  const season =
+    requestedSeason?.collections.length
+      ? requestedSeason
+      : currentSeason(todayIso(), seasons.filter((entry) => entry.collections.length > 0));
   const defaultCollection =
     season.collections.find((collection) => collection.slug === 'after-work') ?? season.collections[0];
   const collection =
@@ -69,8 +75,8 @@ function readLocation(): Location {
   };
 }
 
-function useLocation() {
-  const [loc, setLoc] = useState(readLocation);
+function useLocation(seasons: Season[]) {
+  const [loc, setLoc] = useState(() => readLocation(seasons));
 
   useEffect(() => {
     // Die Startseite bleibt für Homescreen-Verknüpfungen unter der Basis-URL.
@@ -86,10 +92,10 @@ function useLocation() {
   }, [loc.season, loc.collection, loc.isHome]);
 
   useEffect(() => {
-    const onPop = () => setLoc(readLocation());
+    const onPop = () => setLoc(readLocation(seasons));
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  }, [seasons]);
 
   const go = useCallback(
     (season: Season, collection: Collection, tourId: string | null, variant: 'A' | 'B' = 'A') => {
@@ -119,8 +125,62 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
 }
 
 export default function App() {
+  const [seasons, setSeasons] = useState<Season[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!supabase) {
+      setError('Die Verbindung zur Roadbook-Datenbank ist noch nicht eingerichtet.');
+      return () => {
+        active = false;
+      };
+    }
+
+    fetchRoadbook()
+      .then((data) => {
+        if (active) setSeasons(data);
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setError(cause instanceof Error ? cause.message : 'Die Tourendaten konnten nicht geladen werden.');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (error) {
+    return (
+      <main className="backend-state" role="alert">
+        <h1>Roadbook nicht erreichbar</h1>
+        <p>{error}</p>
+        <p>Bitte prüfe die Supabase-Konfiguration und die Datenbankverbindung.</p>
+      </main>
+    );
+  }
+  if (!seasons) {
+    return <main className="backend-state" aria-live="polite">Roadbook wird geladen …</main>;
+  }
+  if (seasons.length === 0) {
+    return <main className="backend-state">Es sind noch keine Saisons angelegt.</main>;
+  }
+  if (!seasons.some((season) => season.collections.length > 0)) {
+    return <main className="backend-state">Es sind noch keine Kollektionen angelegt.</main>;
+  }
+
+  return <Roadbook seasons={seasons} />;
+}
+
+function Roadbook({ seasons }: { seasons: Season[] }) {
   const today = todayIso(new Date());
-  const [{ season, collection, tourId, variant }, go] = useLocation();
+  const availableSeasons = useMemo(
+    () => seasons.filter((entry) => entry.collections.length > 0),
+    [seasons],
+  );
+  const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
 
   useEffect(() => {
     document.documentElement.dataset.collection = collection.slug;
@@ -137,7 +197,7 @@ export default function App() {
       ? { ...selected.alternative, id: selected.id }
       : selected;
   const displayedVariant = variant === 'B' && selected?.alternative ? 'B' : 'A';
-  const displayedRoute = displayedTour?.gpx ? routes[displayedTour.gpx] : undefined;
+  const displayedRoute = displayedTour?.routeStats;
   const durationMin =
     displayedTour?.durationMin ??
     (displayedRoute
@@ -155,7 +215,7 @@ export default function App() {
         : CHEMNITZ_WEATHER_LOCATION
       : undefined;
 
-  const nextSeason = next(seasons, season);
+  const nextSeason = next(availableSeasons, season);
   const nextCollection = next(season.collections, collection);
 
   const switchSeason = () => {
@@ -171,7 +231,7 @@ export default function App() {
           type="button"
           className="nav__button nav__button--outline"
           onClick={switchSeason}
-          disabled={seasons.length < 2}
+          disabled={availableSeasons.length < 2}
           aria-label={`Saison wechseln (aktuell ${season.label})`}
         >
           {season.label}
