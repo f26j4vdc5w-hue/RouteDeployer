@@ -9,6 +9,24 @@ body {
   overscroll-behavior-y: none;
 }
 
+.backend-state {
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 48px 24px;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  color: var(--ink);
+}
+.backend-state h1,
+.backend-state p {
+  margin: 0;
+}
+.backend-state p {
+  color: var(--muted);
+}
+
 body {
   margin: 0;
   background: var(--bg);

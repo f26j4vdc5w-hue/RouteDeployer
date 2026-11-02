@@ -1,3 +1,5 @@
+import type { RouteStats } from './route';
+
 export interface TourRoute {
   title: string;
   teaser: string;
@@ -10,15 +12,20 @@ export interface TourRoute {
   stations: string[];
   /** Hebt die Route in der Timeline mit einem Stern hervor. */
   highlight?: boolean;
-  /** Relativer GPX-Pfad unter public/routes. */
+  /** Öffentliche GPX-URL. */
   gpx?: string;
+  /** Schlüssel der GPX-Datei im Backend-Speicher. */
+  gpxKey?: string;
+  routeStats?: RouteStats;
   /** Optional: überschreibt die geschätzte Dauer. */
   durationMin?: number;
 }
 
 export interface Tour extends TourRoute {
-  /** Datum im Format YYYY-MM-DD, zugleich eindeutige ID und URL-Parameter. */
+  /** Datum im Format YYYY-MM-DD, eindeutig innerhalb einer Kollektion und URL-Parameter. */
   id: string;
+  seasonSlug?: string;
+  collectionSlug?: string;
   /** Optionale zweite Route für denselben Termin. */
   alternative?: TourRoute;
 }
