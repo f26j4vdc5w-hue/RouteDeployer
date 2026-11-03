@@ -11,9 +11,19 @@ import './styles/global.css';
 
 const AdminApp = lazy(() => import('./features/admin/AdminApp'));
 
+const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
+
 function Root() {
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
+  const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
+  if (currentPath === privacyPath) {
+    return (
+      <Suspense fallback={null}>
+        <PrivacyPolicy />
+      </Suspense>
+    );
+  }
   return currentPath === adminPath ? (
     <Suspense fallback={<main className="backend-state" aria-live="polite">Admin-Bereich wird geladen …</main>}>
       <AdminApp />

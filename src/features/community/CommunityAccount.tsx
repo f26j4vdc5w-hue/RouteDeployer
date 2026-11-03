@@ -320,6 +320,10 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   </svg>
                   Mit Google {mode === 'signup' ? 'registrieren' : 'anmelden'}
                 </button>
+                <p className="community__hint">
+                  Mehr dazu in der{' '}
+                  <a href={`${import.meta.env.BASE_URL}datenschutz/`}>Datenschutzerklärung</a>.
+                </p>
                 <p className="community__hint">oder mit E-Mail</p>
                 {mode === 'signup' && (
                   <p className="community__hint">
