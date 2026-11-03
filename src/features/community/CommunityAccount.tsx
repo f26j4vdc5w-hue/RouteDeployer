@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { LogOut, UserRound, X } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
+import { formatGermanDateInput, isoToGerman, parseGermanDate } from '../../shared/format/germanInput';
 import type { CommunityMember } from './useCommunityAuth';
 import './community.css';
 
@@ -16,35 +17,10 @@ interface Props {
 
 type Mode = 'signin' | 'signup';
 
-const isoToGerman = (iso: string | null) => {
-  const match = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
-};
-
-/** Setzt die Punkte beim Tippen automatisch (TT.MM.JJJJ). */
-function formatBirthDateInput(value: string): string {
-  const digits = value.replace(/\D/g, '').slice(0, 8);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
-}
-
 /** Wandelt TT.MM.JJJJ in ISO um; null bei ungültigem oder zukünftigem Datum. */
 function germanToIso(value: string): string | null {
-  const match = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (!match) return null;
-  const [day, month, year] = match.slice(1).map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day ||
-    year < 1900 ||
-    date.getTime() > Date.now()
-  ) {
-    return null;
-  }
-  return date.toISOString().slice(0, 10);
+  const iso = parseGermanDate(value);
+  return iso && new Date(`${iso}T00:00:00Z`).getTime() <= Date.now() ? iso : null;
 }
 
 export function CommunityAccount({ email, member, isAdmin, loading, error, onRefresh }: Props) {
@@ -258,7 +234,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                         placeholder="TT.MM.JJJJ"
                         maxLength={10}
                         value={birthDate}
-                        onChange={(event) => setBirthDate(formatBirthDateInput(event.target.value))}
+                        onChange={(event) => setBirthDate(formatGermanDateInput(event.target.value))}
                       />
                     </label>
                   </fieldset>

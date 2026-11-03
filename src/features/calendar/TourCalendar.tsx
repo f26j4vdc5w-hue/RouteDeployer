@@ -95,9 +95,10 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
   const entriesByDate = useMemo(() => {
     const grouped = new Map<string, CalendarEntry[]>();
     for (const entry of entries) {
-      const dateEntries = grouped.get(entry.tour.id) ?? [];
+      const dateKey = entry.tour.id.slice(0, 10);
+      const dateEntries = grouped.get(dateKey) ?? [];
       dateEntries.push(entry);
-      grouped.set(entry.tour.id, dateEntries);
+      grouped.set(dateKey, dateEntries);
     }
     return grouped;
   }, [entries]);
@@ -223,7 +224,7 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
                     const date = isoDate(month, day);
                     const dateEntries = entriesByDate.get(date) ?? [];
                     const isToday = date === today;
-                    const isSelected = date === selectedId;
+                    const isSelected = date === selectedId.slice(0, 10);
                     return (
                       <div
                         className={`tour-calendar__day${isToday ? ' tour-calendar__day--today' : ''}${isSelected ? ' tour-calendar__day--selected' : ''}`}

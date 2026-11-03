@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Star } from 'lucide-react';
+import { CalendarDays, Check, Plus, Star } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { Tour } from '../../domain/tour';
 import { formatShort } from '../../shared/format/date';
@@ -12,6 +12,7 @@ interface Props {
   startLabel: string;
   endLabel: string;
   onOpenCalendar?: () => void;
+  onAddEvent?: () => void;
 }
 
 export function TourTimeline({
@@ -23,6 +24,7 @@ export function TourTimeline({
   startLabel,
   endLabel,
   onOpenCalendar,
+  onAddEvent,
 }: Props) {
   const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
@@ -117,6 +119,17 @@ export function TourTimeline({
             );
           })}
         </ol>
+        {onAddEvent && (
+          <button
+            type="button"
+            className="timeline__add"
+            onClick={onAddEvent}
+            aria-label="Event anlegen"
+            title="Event anlegen"
+          >
+            <Plus size={20} aria-hidden="true" />
+          </button>
+        )}
         <span className="timeline__label">{endLabel}</span>
       </nav>
     </div>

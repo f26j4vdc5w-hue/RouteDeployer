@@ -1,0 +1,121 @@
+.details__flag {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--accent-strong);
+  vertical-align: -3px;
+}
+
+.timeline__add {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 8px auto;
+  padding: 0;
+  border: 1px dashed var(--accent-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.timeline__add:focus-visible,
+.events__organizer button:focus-visible,
+.events__consent button:focus-visible,
+.events__copy:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.events__organizer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.events__organizer button,
+.events__copy,
+.events__consent button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.events__consent button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.events__consent {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.events__consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.events__consent input {
+  margin-top: 3px;
+}
+
+.events__consent button {
+  justify-self: start;
+}
+
+.events__participants ul {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.events__participant {
+  display: grid;
+  gap: 2px;
+}
+
+.events__participant span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.events__copy {
+  margin-top: 10px;
+}
+
+.community__form .events__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.community__form .events__check input {
+  width: auto;
+  min-height: 0;
+}
+
+.community__submit.events__delete {
+  background: transparent;
+  color: #b3261e;
+  border: 1px solid #b3261e;
+}
