@@ -67,7 +67,7 @@ export function useTourAttendance({
     };
   }, [collectionSlug, isPast, refreshVersion, seasonSlug, tourId, userId]);
 
-  const toggleAttendance = useCallback(async () => {
+  const toggleAttendance = useCallback(async (sharePersonalData = false) => {
     if (!userId || isPast || busy || loading) return;
     setBusy(true);
     setError(null);
@@ -88,6 +88,7 @@ export function useTourAttendance({
             tour_id: tourId,
             user_id: userId,
             display_name: '',
+            ...(sharePersonalData ? { share_personal_data: true } : {}),
           });
       if (result.error) throw result.error;
       setRefreshVersion((version) => version + 1);

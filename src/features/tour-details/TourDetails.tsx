@@ -7,6 +7,7 @@ import {
   ChevronUp,
   MapPin,
   Mountain,
+  Pencil,
   Plus,
   Route as RouteIcon,
   Timer,
@@ -22,6 +23,9 @@ import { GpxDownload } from '../gpx-download/GpxDownload';
 import { RouteMap } from '../route-map/RouteMap';
 import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
+import { EventParticipantData } from '../events/EventParticipantData';
+import { FinishFlag } from '../events/FinishFlag';
+import '../events/events.css';
 
 interface Props {
   tour: Tour;
@@ -40,6 +44,7 @@ interface Props {
   };
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
+  onEditEvent?: () => void;
 }
 
 function getAscentUntilDistance(route: RouteStats, distanceKm: number) {
@@ -84,7 +89,13 @@ export function TourDetails({
   weatherLocation,
   variant,
   onVariantChange,
+  onEditEvent,
 }: Props) {
+  const isEvent = collectionSlug === 'events';
+  const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [participantsOpen, setParticipantsOpen] = useState(false);
   const teaserContainerRef = useRef<HTMLDivElement>(null);
   const teaserRef = useRef<HTMLParagraphElement>(null);
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
@@ -103,7 +114,14 @@ export function TourDetails({
     <button
       type="button"
       className={`attendance__toggle${attendance.isAttending ? ' attendance__toggle--active' : ''}`}
-      onClick={attendance.toggleAttendance}
+      onClick={() => {
+        if (isEvent && !attendance.isAttending) {
+          setConsentChecked(false);
+          setConsentOpen((open) => !open);
+        } else {
+          void attendance.toggleAttendance();
+        }
+      }}
       disabled={attendance.busy || attendance.loading}
       aria-label={attendance.isAttending ? 'Zusage zurücknehmen' : 'Für diese Tour zusagen'}
       aria-pressed={attendance.isAttending}
@@ -207,7 +225,10 @@ export function TourDetails({
             </button>
           )}
           <div className="details__title-stack">
-            <h1 className="details__title">{tour.title}</h1>
+            <h1 className="details__title">
+              {isEvent && <FinishFlag className="details__flag" size={28} />}
+              {tour.title}
+            </h1>
             {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
           </div>
         </div>
@@ -260,6 +281,54 @@ export function TourDetails({
         </div>
       )}
 
+      {isOrganizer && (
+        <div className="events__organizer">
+          <button type="button" onClick={onEditEvent}>
+            <Pencil size={14} aria-hidden="true" /> Event bearbeiten
+          </button>
+          <button
+            type="button"
+            onClick={() => setParticipantsOpen((open) => !open)}
+            aria-expanded={participantsOpen}
+          >
+            <UsersRound size={14} aria-hidden="true" /> Teilnehmerdaten
+          </button>
+        </div>
+      )}
+      {isOrganizer && participantsOpen && (
+        <EventParticipantData
+          seasonSlug={seasonSlug}
+          collectionSlug={collectionSlug}
+          tourId={tour.id}
+        />
+      )}
+
+      {isEvent && consentOpen && !attendance.isAttending && (
+        <div className="events__consent" role="group" aria-label="Einwilligung">
+          <label>
+            <input
+              type="checkbox"
+              checked={consentChecked}
+              onChange={(event) => setConsentChecked(event.target.checked)}
+            />
+            <span>
+              Ich willige ein, dass der Organisator dieses Events Zugriff auf meine persönlichen
+              Daten (vollständiger Name, Adresse, Geburtsdatum) erhält.
+            </span>
+          </label>
+          <button
+            type="button"
+            disabled={!consentChecked || attendance.busy}
+            onClick={() => {
+              setConsentOpen(false);
+              void attendance.toggleAttendance(true);
+            }}
+          >
+            Zusagen
+          </button>
+        </div>
+      )}
+
       {attendance.canAttend && attendeeListOpen && (
         <div className="attendance__list" id="tour-attendees">
           <h2>Wer ist dabei?</h2>
@@ -282,7 +351,7 @@ export function TourDetails({
 
       {weatherLocation && (
         <WeatherForecast
-          date={tour.id}
+          date={tour.id.slice(0, 10)}
           meetingTime={tour.meetingTime}
           place={weatherLocation.place}
           latitude={weatherLocation.latitude}

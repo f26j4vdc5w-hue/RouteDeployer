@@ -34,6 +34,7 @@ interface TourRow {
   gpx_key: string | null;
   route_stats: RouteStats | null;
   alternative: StoredTourRoute | null;
+  organizer_id: string | null;
 }
 
 interface StoredTourRoute {
@@ -82,7 +83,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
     client
       .from('tours')
       .select(
-        'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative',
+        'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id',
       )
       .order('id'),
   ]);
@@ -122,6 +123,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
             gpxKey: row.gpx_key ?? undefined,
             routeStats: row.route_stats ?? undefined,
             alternative: row.alternative ? toTourRoute(row.alternative) : undefined,
+            organizerId: row.organizer_id ?? undefined,
           })),
       })),
   }));

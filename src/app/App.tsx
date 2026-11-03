@@ -7,6 +7,7 @@ import { TourCalendar } from '../features/calendar/TourCalendar';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
+import { EventEditor } from '../features/events/EventEditor';
 import { useCommunityAuth } from '../features/community/useCommunityAuth';
 import { todayIso } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
@@ -130,6 +131,7 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
 export default function App() {
   const [seasons, setSeasons] = useState<Season[] | null>(null);
   const [dataVersion, setDataVersion] = useState(0);
+  const [reloadVersion, setReloadVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const community = useCommunityAuth();
   const isAdmin = community.session?.user.app_metadata.role === 'admin';
@@ -170,7 +172,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [authReady, loggedIn]);
+  }, [authReady, loggedIn, reloadVersion]);
 
   if (error) {
     return (
@@ -195,6 +197,7 @@ export default function App() {
     <RoadbookGate
       seasons={seasons}
       dataVersion={dataVersion}
+      onReload={() => setReloadVersion((version) => version + 1)}
       community={community}
       loggedIn={loggedIn}
     />
@@ -208,11 +211,13 @@ function RoadbookGate({
   dataVersion,
   community,
   loggedIn,
+  onReload,
 }: {
   seasons: Season[];
   dataVersion: number;
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
+  onReload: () => void;
 }) {
   const visibleSeasons = useMemo(
     () =>
@@ -238,6 +243,7 @@ function RoadbookGate({
       seasons={visibleSeasons}
       community={community}
       loggedIn={loggedIn}
+      onReload={onReload}
     />
   );
 }
@@ -246,10 +252,12 @@ function Roadbook({
   seasons,
   community,
   loggedIn,
+  onReload,
 }: {
   seasons: Season[];
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
+  onReload: () => void;
 }) {
   const today = todayIso(new Date());
   const availableSeasons = useMemo(
@@ -258,6 +266,9 @@ function Roadbook({
   );
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [editor, setEditor] = useState<
+    { mode: 'create' } | { mode: 'edit'; tour: Tour } | null
+  >(null);
   const memberId =
     community.member?.status === 'approved' && community.member.email_confirmed_at
       ? community.session?.user.id ?? null
@@ -268,7 +279,13 @@ function Roadbook({
   }, [collection.color]);
 
   const sorted = useMemo(
-    () => [...collection.tours].sort((a, b) => a.id.localeCompare(b.id)),
+    () =>
+      [...collection.tours].sort(
+        (a, b) =>
+          a.id.slice(0, 10).localeCompare(b.id.slice(0, 10)) ||
+          (a.meetingTime ?? '').localeCompare(b.meetingTime ?? '') ||
+          a.id.localeCompare(b.id),
+      ),
     [collection],
   );
   const selected =
@@ -355,6 +372,11 @@ function Roadbook({
             startLabel={collection.startLabel}
             endLabel={collection.endLabel}
             onOpenCalendar={loggedIn ? () => setCalendarOpen(true) : undefined}
+            onAddEvent={
+              memberId && collection.slug === 'events'
+                ? () => setEditor({ mode: 'create' })
+                : undefined
+            }
           />
           <TourDetails
             tour={displayedTour ?? selected}
@@ -373,10 +395,42 @@ function Roadbook({
                 ? (nextVariant) => go(season, collection, selected.id, nextVariant)
                 : undefined
             }
+            onEditEvent={() => setEditor({ mode: 'edit', tour: selected })}
           />
         </main>
       ) : (
-        <main className="empty">Noch keine Touren eingetragen.</main>
+        <main className="empty">
+          Noch keine Touren eingetragen.
+          {memberId && collection.slug === 'events' && (
+            <button
+              type="button"
+              className="timeline__add"
+              onClick={() => setEditor({ mode: 'create' })}
+              aria-label="Event anlegen"
+            >
+              +
+            </button>
+          )}
+        </main>
+      )}
+      {editor && memberId && (
+        <EventEditor
+          seasonSlug={season.slug}
+          collectionSlug={collection.slug}
+          memberId={memberId}
+          tour={editor.mode === 'edit' ? editor.tour : undefined}
+          onClose={() => setEditor(null)}
+          onSaved={(id) => {
+            setEditor(null);
+            go(season, collection, id);
+            onReload();
+          }}
+          onDeleted={() => {
+            setEditor(null);
+            go(season, collection, null);
+            onReload();
+          }}
+        />
       )}
     </div>
   );
