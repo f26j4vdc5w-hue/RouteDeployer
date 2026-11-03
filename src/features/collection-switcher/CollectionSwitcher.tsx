@@ -19,19 +19,20 @@ const pointAt = (deg: number) => ({
   y: CENTER + RADIUS * Math.sin(toRad(deg)),
 });
 
+// Der Ring dreht gegen den Uhrzeigersinn, die Pfeile laufen in dieselbe Richtung.
 function arrowPath(fromDeg: number, toDeg: number): string {
-  const startDeg = fromDeg + ARROW_GAP_DEG;
-  const endDeg = toDeg - ARROW_GAP_DEG;
+  const startDeg = fromDeg - ARROW_GAP_DEG;
+  const endDeg = toDeg + ARROW_GAP_DEG;
   const start = pointAt(startDeg);
   const end = pointAt(endDeg);
-  const tangent = { x: -Math.sin(toRad(endDeg)), y: Math.cos(toRad(endDeg)) };
+  const tangent = { x: Math.sin(toRad(endDeg)), y: -Math.cos(toRad(endDeg)) };
   const radial = { x: Math.cos(toRad(endDeg)), y: Math.sin(toRad(endDeg)) };
   const base = { x: end.x - tangent.x * 3.5, y: end.y - tangent.y * 3.5 };
   const left = { x: base.x + radial.x * 2.4, y: base.y + radial.y * 2.4 };
   const right = { x: base.x - radial.x * 2.4, y: base.y - radial.y * 2.4 };
   return [
     `M ${start.x} ${start.y}`,
-    `A ${RADIUS} ${RADIUS} 0 ${endDeg - startDeg > 180 ? 1 : 0} 1 ${end.x} ${end.y}`,
+    `A ${RADIUS} ${RADIUS} 0 ${startDeg - endDeg > 180 ? 1 : 0} 0 ${end.x} ${end.y}`,
     `M ${left.x} ${left.y} L ${end.x} ${end.y} L ${right.x} ${right.y}`,
   ].join(' ');
 }
@@ -70,7 +71,7 @@ export function CollectionSwitcher({ collections, current, onNext }: Props) {
               <path
                 key={`arrow-${collection.slug}`}
                 className="collection-switcher__arrow"
-                d={arrowPath(i * step, (i + 1) * step)}
+                d={arrowPath((i + 1) * step, i * step)}
               />
             ))}
           {collections.map((collection, i) => {
