@@ -227,10 +227,10 @@ select {
   align-items: center;
 }
 .timeline-rail__calendar {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   flex: 0 0 auto;
-  margin: 4px 0 8px;
+  margin: 0 0 12px;
   display: grid;
   place-items: center;
   border: 0;
@@ -439,8 +439,8 @@ select {
 .attendance__people {
   position: relative;
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   margin-left: auto;
   padding: 0;
   display: grid;
@@ -453,7 +453,7 @@ select {
 }
 .attendance__people span {
   position: absolute;
-  right: -5px;
+  right: calc(100% - 8px);
   top: -5px;
   min-width: 18px;
   height: 18px;
@@ -479,7 +479,7 @@ select {
   opacity: 0.65;
 }
 .attendance__list {
-  margin: 12px 0 0 auto;
+  margin: 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -496,9 +496,20 @@ select {
   font-size: 12px;
 }
 .attendance__list ul {
-  padding-left: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 4px;
+}
+.attendance__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.attendance__list li svg {
+  flex: 0 0 auto;
+  color: var(--accent-strong);
 }
 .attendance__error {
   margin: 0;
@@ -855,11 +866,12 @@ select {
   color: var(--muted);
 }
 .attendance__toggle {
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
+  box-sizing: border-box;
   border: 1px solid var(--accent-strong);
   border-radius: var(--radius-sm);
   background: transparent;

@@ -42,8 +42,7 @@ einer leeren oder veralteten Tourenansicht.
    aus. Das legt Tabellen, den öffentlichen GPX-Bucket und Row-Level-Security-
    Regeln an. Öffentliche Schreibzugriffe sind nicht erlaubt. Führe für neue
    Projekte anschließend alle weiteren Migrationen in aufsteigender Reihenfolge
-   aus. Bei bestehenden Projekten führe nur Migrationen aus, die dort noch
-   nicht angewendet wurden.
+   aus (siehe [Datenbankmigrationen](#datenbankmigrationen)).
 3. Kopiere die Projekt-URL und den Publishable-/Anon-Key in `.env.local`:
 
    ```dotenv
@@ -67,13 +66,12 @@ einer leeren oder veralteten Tourenansicht.
 5. Lege in Supabase unter **Authentication → Users** einen Benutzer an. Setze
    bei diesem Benutzer unter **App Metadata** die Rolle auf
    `{"role":"admin"}`.
-6. Führe für ein bestehendes Projekt nach den bisherigen Migrationen zusätzlich
-   [`supabase/migrations/202611020003_community_members_and_rsvps.sql`](supabase/migrations/202611020003_community_members_and_rsvps.sql)
-   im SQL Editor aus. Die Migration legt Mitgliederprofile, Admin-Freigaben
-   und Tour-Zusagen mit Row-Level Security an. Führe anschließend auch
-   [`supabase/migrations/202611020004_community_member_profile.sql`](supabase/migrations/202611020004_community_member_profile.sql)
-   aus, damit Mitglieder Anzeigename, Adresse und Geburtsdatum in ihrem Profil
-   bearbeiten können.
+6. Die Community-Migrationen
+   [`202611020003`](supabase/migrations/202611020003_community_members_and_rsvps.sql)
+   (Mitgliederprofile, Admin-Freigaben, Tour-Zusagen mit Row-Level Security) und
+   [`202611020004`](supabase/migrations/202611020004_community_member_profile.sql)
+   (Anzeigename, Adresse und Geburtsdatum im Profil) gehören zu den
+   Migrationen aus Schritt 2.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    `https://f26j4vdc5w-hue.github.io/RouteDeployer/` sowie
@@ -83,6 +81,23 @@ einer leeren oder veralteten Tourenansicht.
    ablehnen. Nur freigegebene Mitglieder können Zusagen sehen oder verwalten.
 9. Melde dich auf der Website unter `/admin/` an. Bei GitHub-Pages-Projektseiten
    lautet der Pfad beispielsweise `/RouteDeployer/admin/`.
+
+## Datenbankmigrationen
+
+Das Repository ist über **Settings → Integrations → GitHub** mit dem Supabase-
+Projekt verbunden (Working Directory `.`, Production-Branch `main`). Wird eine
+neue Datei in [`supabase/migrations/`](supabase/migrations) nach `main`
+gemergt, wendet Supabase sie automatisch auf die Produktionsdatenbank an.
+
+- Neue Migrationen brauchen eine höhere Versionsnummer im bestehenden Schema,
+  z. B. `202611030001_beschreibung.sql`. Bereits angewendete Migrationen werden
+  nie nachträglich geändert.
+- Die Migrationen `202611020001` bis `202611020004` wurden manuell eingespielt und
+  in der Migrationshistorie als angewendet eingetragen.
+- Preview-Datenbanken pro Pull Request (Branching) benötigen den
+  kostenpflichtigen Pro-Plan und sind nicht aktiviert.
+
+## Betrieb und Limits
 
 Die kostenlose Supabase-Stufe kann Projekte nach Inaktivität pausieren. Für
 einen dauerhaft erreichbaren Produktionsbetrieb beachte die [aktuellen Tarife
