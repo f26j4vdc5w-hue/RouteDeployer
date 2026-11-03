@@ -16,12 +16,44 @@ interface Props {
 
 type Mode = 'signin' | 'signup';
 
+const isoToGerman = (iso: string | null) => {
+  const match = iso?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
+};
+
+/** Setzt die Punkte beim Tippen automatisch (TT.MM.JJJJ). */
+function formatBirthDateInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
+}
+
+/** Wandelt TT.MM.JJJJ in ISO um; null bei ungültigem oder zukünftigem Datum. */
+function germanToIso(value: string): string | null {
+  const match = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!match) return null;
+  const [day, month, year] = match.slice(1).map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day ||
+    year < 1900 ||
+    date.getTime() > Date.now()
+  ) {
+    return null;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
 export function CommunityAccount({ email, member, isAdmin, loading, error, onRefresh }: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('signin');
   const [displayName, setDisplayName] = useState('');
   const [profileName, setProfileName] = useState('');
   const [address, setAddress] = useState('');
+  const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +64,8 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
   useEffect(() => {
     setProfileName(member?.display_name ?? '');
     setAddress(member?.address ?? '');
-    setBirthDate(member?.birth_date ?? '');
+    setFullName(member?.full_name ?? '');
+    setBirthDate(isoToGerman(member?.birth_date ?? null));
   }, [member]);
 
   useEffect(() => {
@@ -116,12 +149,19 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
       return;
     }
 
+    const birthDateIso = birthDate.trim() ? germanToIso(birthDate) : null;
+    if (birthDate.trim() && !birthDateIso) {
+      setFormError('Bitte gib ein gültiges Geburtsdatum im Format TT.MM.JJJJ ein.');
+      return;
+    }
+
     setBusy(true);
     try {
       const { error: updateError } = await requireSupabase().rpc('update_community_member_profile', {
         p_display_name: trimmedName,
+        p_full_name: fullName.trim() || null,
         p_address: address.trim() || null,
-        p_birth_date: birthDate || null,
+        p_birth_date: birthDateIso,
       });
       if (updateError) throw updateError;
       onRefresh();
@@ -183,25 +223,45 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                       required
                     />
                   </label>
-                  <label>
-                    Adresse
-                    <textarea
-                      autoComplete="street-address"
-                      maxLength={250}
-                      rows={2}
-                      value={address}
-                      onChange={(event) => setAddress(event.target.value)}
-                    />
-                  </label>
-                  <label>
-                    Geburtsdatum
-                    <input
-                      type="date"
-                      autoComplete="bday"
-                      value={birthDate}
-                      onChange={(event) => setBirthDate(event.target.value)}
-                    />
-                  </label>
+                  <fieldset className="community__section">
+                    <legend>Persönliche Angaben (optional)</legend>
+                    <p className="community__hint">
+                      Diese Daten können künftig für die Buchung von Unterkünften, Flügen und
+                      Startplätzen genutzt werden. Eine genaue Richtlinie, wer wann und wie Zugriff
+                      darauf erhält, steht noch nicht fest. Aktuell sind die Angaben nur für dich
+                      selbst sichtbar.
+                    </p>
+                    <label>
+                      Vollständiger Name
+                      <input
+                        autoComplete="name"
+                        maxLength={120}
+                        value={fullName}
+                        onChange={(event) => setFullName(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Adresse
+                      <textarea
+                        autoComplete="street-address"
+                        maxLength={250}
+                        rows={2}
+                        value={address}
+                        onChange={(event) => setAddress(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Geburtsdatum
+                      <input
+                        inputMode="numeric"
+                        autoComplete="bday"
+                        placeholder="TT.MM.JJJJ"
+                        maxLength={10}
+                        value={birthDate}
+                        onChange={(event) => setBirthDate(formatBirthDateInput(event.target.value))}
+                      />
+                    </label>
+                  </fieldset>
                   {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
                   {notice && <p className="community__message" role="status">{notice}</p>}
                   <button className="community__submit" type="submit" disabled={busy || !member}>

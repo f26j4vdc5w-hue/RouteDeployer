@@ -6,6 +6,7 @@ export interface CommunityMember {
   user_id: string;
   email: string;
   display_name: string;
+  full_name: string | null;
   address: string | null;
   birth_date: string | null;
   status: 'pending' | 'approved' | 'rejected';
@@ -66,16 +67,30 @@ export function useCommunityAuth() {
       try {
         const { data, error: memberError } = await supabase
           .from('community_members')
-          .select('user_id, email, display_name, address, birth_date, status, email_confirmed_at')
+          .select('user_id, email, display_name, status, email_confirmed_at')
           .eq('user_id', userId)
           .maybeSingle();
         if (!active) return;
         if (memberError) {
           setError(memberError.message);
           setMember(null);
-        } else {
+        } else if (!data) {
           setError(null);
-          setMember(data as CommunityMember | null);
+          setMember(null);
+        } else {
+          // Persönliche Angaben sind nicht direkt selektierbar, nur über diese Funktion.
+          const { data: details } = await supabase.rpc('get_my_personal_details').maybeSingle();
+          if (!active) return;
+          const personal = details as
+            | { full_name: string | null; address: string | null; birth_date: string | null }
+            | null;
+          setError(null);
+          setMember({
+            ...(data as Omit<CommunityMember, 'full_name' | 'address' | 'birth_date'>),
+            full_name: personal?.full_name ?? null,
+            address: personal?.address ?? null,
+            birth_date: personal?.birth_date ?? null,
+          });
         }
       } catch (cause) {
         if (active) {
