@@ -1,5 +1,7 @@
 .collection-switcher {
   justify-self: start;
+  /* Ringmitte (23px) auf die Timeline-Mitte (38px vom Rand): 15px - Nav-Padding */
+  margin-left: -9px;
   display: inline-flex;
   align-items: center;
   max-width: 100%;
@@ -73,6 +75,12 @@
   .collection-switcher__rotor,
   .collection-switcher__label {
     transition: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .collection-switcher {
+    margin-left: 3px;
   }
 }
 
