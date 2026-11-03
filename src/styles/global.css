@@ -102,9 +102,11 @@ select {
   text-overflow: ellipsis;
 }
 .nav__profile {
+  grid-column: 3;
   justify-self: end;
 }
 .nav__title {
+  grid-column: 2;
   margin: 0;
   color: var(--accent);
   font-size: 27px;

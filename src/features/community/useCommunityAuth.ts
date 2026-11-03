@@ -19,6 +19,7 @@ export function useCommunityAuth() {
   const [member, setMember] = useState<CommunityMember | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshVersion, setRefreshVersion] = useState(0);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -83,6 +84,7 @@ export function useCommunityAuth() {
         }
       } finally {
         if (active) setMemberLoading(false);
+        if (active) setResolvedUserId(userId);
       }
     })();
 
@@ -96,6 +98,7 @@ export function useCommunityAuth() {
   return {
     session,
     member,
+    authReady: !authLoading && (!userId || resolvedUserId === userId),
     loading: authLoading || memberLoading,
     error,
     refresh,
