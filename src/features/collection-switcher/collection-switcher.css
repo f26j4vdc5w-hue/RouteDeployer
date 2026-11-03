@@ -1,0 +1,99 @@
+.collection-switcher {
+  justify-self: start;
+  /* Ringmitte (23px) auf die Timeline-Mitte (38px vom Rand): 15px - Nav-Padding */
+  margin-left: -9px;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.collection-switcher:disabled {
+  cursor: default;
+}
+
+.collection-switcher__ring {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  width: 46px;
+  height: 46px;
+}
+
+.collection-switcher__rotor {
+  transition: transform 0.5s cubic-bezier(0.5, 0, 0.2, 1);
+}
+
+.collection-switcher__arc {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
+}
+
+/* Blasse Variante der Kollektionsfarbe, ähnlich dem Kalender-Hintergrund, aber noch erkennbar. */
+.collection-switcher__dot {
+  fill: color-mix(in srgb, var(--dot-color), #ffffff 55%);
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .collection-switcher__dot {
+    fill: color-mix(in srgb, var(--dot-color), #211e27 50%);
+  }
+}
+
+/* Das Label startet im Mittelpunkt des Rings (Halbkreis-Kappe links) und ragt rechts heraus. */
+.collection-switcher__label {
+  --label-height: 22px;
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  height: var(--label-height);
+  margin-left: calc(-23px - var(--label-height) / 2);
+  padding: 0 calc(var(--label-height) / 2 + 2px) 0 calc(var(--label-height) / 2 + 3px);
+  display: inline-flex;
+  align-items: center;
+  border-radius: calc(var(--label-height) / 2);
+  background: var(--tint);
+  color: var(--accent-strong);
+  box-shadow: 0 0 0 2px var(--bg);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.5s ease, color 0.5s ease;
+}
+
+.collection-switcher:disabled .collection-switcher__rotor {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-switcher__rotor,
+  .collection-switcher__label {
+    transition: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .collection-switcher {
+    margin-left: 3px;
+  }
+}
+
+@media (max-width: 420px) {
+  .collection-switcher__label {
+    padding-right: 8px;
+    max-width: 82px;
+  }
+}
