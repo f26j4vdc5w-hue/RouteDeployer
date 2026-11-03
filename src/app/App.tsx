@@ -130,6 +130,12 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
 export default function App() {
   const [seasons, setSeasons] = useState<Season[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const community = useCommunityAuth();
+  const isAdmin = community.session?.user.app_metadata.role === 'admin';
+  const loggedIn =
+    isAdmin ||
+    (community.member?.status === 'approved' && Boolean(community.member.email_confirmed_at));
+  const authReady = community.authReady;
 
   useEffect(() => {
     let active = true;
@@ -139,10 +145,19 @@ export default function App() {
         active = false;
       };
     }
+    if (!authReady) {
+      return () => {
+        active = false;
+      };
+    }
 
+    // Die Datenbank liefert je nach Freigabe andere Kollektionen aus, daher bei Statuswechsel neu laden.
     fetchRoadbook()
       .then((data) => {
-        if (active) setSeasons(data);
+        if (active) {
+          setSeasons(data);
+          setError(null);
+        }
       })
       .catch((cause: unknown) => {
         if (active) {
@@ -153,7 +168,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authReady, loggedIn]);
 
   if (error) {
     return (
@@ -164,7 +179,7 @@ export default function App() {
       </main>
     );
   }
-  if (!seasons) {
+  if (!seasons || !authReady) {
     return <main className="backend-state" aria-live="polite">Roadbook wird geladen …</main>;
   }
   if (seasons.length === 0) {
@@ -174,10 +189,50 @@ export default function App() {
     return <main className="backend-state">Es sind noch keine Kollektionen angelegt.</main>;
   }
 
-  return <Roadbook seasons={seasons} />;
+  return <RoadbookGate seasons={seasons} community={community} loggedIn={loggedIn} />;
 }
 
-function Roadbook({ seasons }: { seasons: Season[] }) {
+const PUBLIC_COLLECTION = 'after-work';
+
+function RoadbookGate({
+  seasons,
+  community,
+  loggedIn,
+}: {
+  seasons: Season[];
+  community: ReturnType<typeof useCommunityAuth>;
+  loggedIn: boolean;
+}) {
+  const visibleSeasons = useMemo(
+    () =>
+      loggedIn
+        ? seasons
+        : seasons.map((season) => ({
+            ...season,
+            collections: season.collections.filter(
+              (collection) => collection.slug === PUBLIC_COLLECTION,
+            ),
+          })),
+    [loggedIn, seasons],
+  );
+
+  if (!visibleSeasons.some((season) => season.collections.length > 0)) {
+    return <main className="backend-state">Es sind noch keine Touren veröffentlicht.</main>;
+  }
+
+  // key: Ort neu auflösen, wenn sich der Login-Status ändert (Kollektion ggf. nicht mehr erlaubt)
+  return <Roadbook key={String(loggedIn)} seasons={visibleSeasons} community={community} loggedIn={loggedIn} />;
+}
+
+function Roadbook({
+  seasons,
+  community,
+  loggedIn,
+}: {
+  seasons: Season[];
+  community: ReturnType<typeof useCommunityAuth>;
+  loggedIn: boolean;
+}) {
   const today = todayIso(new Date());
   const availableSeasons = useMemo(
     () => seasons.filter((entry) => entry.collections.length > 0),
@@ -185,7 +240,6 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
   );
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const community = useCommunityAuth();
   const memberId =
     community.member?.status === 'approved' && community.member.email_confirmed_at
       ? community.session?.user.id ?? null
@@ -232,15 +286,17 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
   return (
     <div className="page">
       <header className="nav">
-        <button
-          type="button"
-          className="nav__button nav__button--filled nav__collection-button"
-          onClick={() => go(season, nextCollection, null)}
-          disabled={season.collections.length < 2}
-          aria-label={`Kollektion wechseln (aktuell ${collection.label})`}
-        >
-          {collection.label}
-        </button>
+        {loggedIn && (
+          <button
+            type="button"
+            className="nav__button nav__button--filled nav__collection-button"
+            onClick={() => go(season, nextCollection, null)}
+            disabled={season.collections.length < 2}
+            aria-label={`Kollektion wechseln (aktuell ${collection.label})`}
+          >
+            {collection.label}
+          </button>
+        )}
         <h2 className="nav__title">
           <a href={BASE} aria-label="Zur Startseite">
             KLLKTV
@@ -257,7 +313,7 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
           />
         </div>
       </header>
-      {calendarOpen && (
+      {loggedIn && calendarOpen && (
         <TourCalendar
           seasons={availableSeasons}
           selectedId={selected?.id ?? today}
@@ -280,7 +336,7 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
             }
             startLabel={collection.startLabel}
             endLabel={collection.endLabel}
-            onOpenCalendar={() => setCalendarOpen(true)}
+            onOpenCalendar={loggedIn ? () => setCalendarOpen(true) : undefined}
           />
           <TourDetails
             tour={displayedTour ?? selected}

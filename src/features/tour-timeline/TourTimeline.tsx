@@ -11,7 +11,7 @@ interface Props {
   onToggleAlternative: (id: string) => void;
   startLabel: string;
   endLabel: string;
-  onOpenCalendar: () => void;
+  onOpenCalendar?: () => void;
 }
 
 export function TourTimeline({
@@ -44,15 +44,17 @@ export function TourTimeline({
 
   return (
     <div className="timeline-rail">
-      <button
-        type="button"
-        className="timeline-rail__calendar"
-        onClick={onOpenCalendar}
-        aria-label="Kalender öffnen"
-        aria-haspopup="dialog"
-      >
-        <CalendarDays size={21} aria-hidden="true" />
-      </button>
+      {onOpenCalendar && (
+        <button
+          type="button"
+          className="timeline-rail__calendar"
+          onClick={onOpenCalendar}
+          aria-label="Kalender öffnen"
+          aria-haspopup="dialog"
+        >
+          <CalendarDays size={21} aria-hidden="true" />
+        </button>
+      )}
       <nav ref={timelineRef} className="timeline" aria-label="Dienstage">
         <span className="timeline__label">{startLabel}</span>
         <ol className="timeline__list">
