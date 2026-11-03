@@ -4,6 +4,7 @@ import type { Tour } from '../domain/tour';
 import { fetchRoadbook } from '../data/backend';
 import { supabase } from '../lib/supabase';
 import { TourCalendar } from '../features/calendar/TourCalendar';
+import { CollectionSwitcher } from '../features/collection-switcher/CollectionSwitcher';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
@@ -322,15 +323,11 @@ function Roadbook({
     <div className="page">
       <header className="nav">
         {loggedIn && (
-          <button
-            type="button"
-            className="nav__button nav__button--filled nav__collection-button"
-            onClick={() => go(season, nextCollection, null)}
-            disabled={season.collections.length < 2}
-            aria-label={`Kollektion wechseln (aktuell ${collection.label})`}
-          >
-            {collection.label}
-          </button>
+          <CollectionSwitcher
+            collections={season.collections}
+            current={collection}
+            onNext={() => go(season, nextCollection, null)}
+          />
         )}
         <h2 className="nav__title">
           <a href={BASE} aria-label="Zur Startseite">

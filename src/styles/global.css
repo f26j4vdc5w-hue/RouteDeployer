@@ -95,12 +95,6 @@ select {
   background: var(--accent-strong);
   color: var(--on-accent);
 }
-.nav__collection-button {
-  justify-self: start;
-  max-width: 118px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .nav__profile {
   grid-column: 3;
   justify-self: end;
@@ -892,10 +886,6 @@ select {
   }
   .nav__title {
     font-size: 23px;
-  }
-  .nav__collection-button {
-    max-width: 96px;
-    padding: 0 8px;
   }
 }
 
