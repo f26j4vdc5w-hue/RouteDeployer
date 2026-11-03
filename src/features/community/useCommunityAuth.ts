@@ -6,6 +6,8 @@ export interface CommunityMember {
   user_id: string;
   email: string;
   display_name: string;
+  address: string | null;
+  birth_date: string | null;
   status: 'pending' | 'approved' | 'rejected';
   email_confirmed_at: string | null;
 }
@@ -63,7 +65,7 @@ export function useCommunityAuth() {
       try {
         const { data, error: memberError } = await supabase
           .from('community_members')
-          .select('user_id, email, display_name, status, email_confirmed_at')
+          .select('user_id, email, display_name, address, birth_date, status, email_confirmed_at')
           .eq('user_id', userId)
           .maybeSingle();
         if (!active) return;

@@ -8,6 +8,7 @@ import './community.css';
 interface Props {
   email: string | null;
   member: CommunityMember | null;
+  isAdmin: boolean;
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
@@ -15,15 +16,24 @@ interface Props {
 
 type Mode = 'signin' | 'signup';
 
-export function CommunityAccount({ email, member, loading, error, onRefresh }: Props) {
+export function CommunityAccount({ email, member, isAdmin, loading, error, onRefresh }: Props) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('signin');
   const [displayName, setDisplayName] = useState('');
+  const [profileName, setProfileName] = useState('');
+  const [address, setAddress] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setProfileName(member?.display_name ?? '');
+    setAddress(member?.address ?? '');
+    setBirthDate(member?.birth_date ?? '');
+  }, [member]);
 
   useEffect(() => {
     if (!open) return;
@@ -96,6 +106,33 @@ export function CommunityAccount({ email, member, loading, error, onRefresh }: P
     }
   }
 
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+    setNotice(null);
+    const trimmedName = profileName.trim();
+    if (!member || !trimmedName || trimmedName.length > 60) {
+      setFormError('Der Anzeigename muss zwischen 1 und 60 Zeichen lang sein.');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const { error: updateError } = await requireSupabase().rpc('update_community_member_profile', {
+        p_display_name: trimmedName,
+        p_address: address.trim() || null,
+        p_birth_date: birthDate || null,
+      });
+      if (updateError) throw updateError;
+      onRefresh();
+      setNotice('Dein Profil wurde gespeichert.');
+    } catch (cause) {
+      setFormError(cause instanceof Error ? cause.message : 'Dein Profil konnte nicht gespeichert werden.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <>
       <button
@@ -135,6 +172,42 @@ export function CommunityAccount({ email, member, loading, error, onRefresh }: P
                 {error && <p className="community__message community__message--error" role="alert">{error}</p>}
                 <p className="community__name">{member?.display_name ?? email}</p>
                 <p className="community__email">{email}</p>
+                <form className="community__form" onSubmit={saveProfile}>
+                  <label>
+                    Anzeigename
+                    <input
+                      autoComplete="nickname"
+                      maxLength={60}
+                      value={profileName}
+                      onChange={(event) => setProfileName(event.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Adresse
+                    <textarea
+                      autoComplete="street-address"
+                      maxLength={250}
+                      rows={2}
+                      value={address}
+                      onChange={(event) => setAddress(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Geburtsdatum
+                    <input
+                      type="date"
+                      autoComplete="bday"
+                      value={birthDate}
+                      onChange={(event) => setBirthDate(event.target.value)}
+                    />
+                  </label>
+                  {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
+                  {notice && <p className="community__message" role="status">{notice}</p>}
+                  <button className="community__submit" type="submit" disabled={busy || !member}>
+                    {busy ? 'Wird gespeichert …' : 'Profil speichern'}
+                  </button>
+                </form>
                 {!error && member?.status === 'approved' && member.email_confirmed_at ? (
                   <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
                 ) : !error && member?.status === 'rejected' ? (
@@ -154,6 +227,11 @@ export function CommunityAccount({ email, member, loading, error, onRefresh }: P
                   <button className="community__refresh" type="button" onClick={onRefresh}>
                     Mitgliedsstatus aktualisieren
                   </button>
+                )}
+                {isAdmin && (
+                  <a className="community__admin-link" href={`${import.meta.env.BASE_URL}admin/`}>
+                    Zum Admin-Bereich
+                  </a>
                 )}
                 <button className="community__submit" type="button" onClick={signOut} disabled={busy}>
                   <LogOut size={16} aria-hidden="true" />
