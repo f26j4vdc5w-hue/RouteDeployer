@@ -129,6 +129,7 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
 
 export default function App() {
   const [seasons, setSeasons] = useState<Season[] | null>(null);
+  const [dataVersion, setDataVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const community = useCommunityAuth();
   const isAdmin = community.session?.user.app_metadata.role === 'admin';
@@ -156,6 +157,7 @@ export default function App() {
       .then((data) => {
         if (active) {
           setSeasons(data);
+          setDataVersion((version) => version + 1);
           setError(null);
         }
       })
@@ -189,17 +191,26 @@ export default function App() {
     return <main className="backend-state">Es sind noch keine Kollektionen angelegt.</main>;
   }
 
-  return <RoadbookGate seasons={seasons} community={community} loggedIn={loggedIn} />;
+  return (
+    <RoadbookGate
+      seasons={seasons}
+      dataVersion={dataVersion}
+      community={community}
+      loggedIn={loggedIn}
+    />
+  );
 }
 
 const PUBLIC_COLLECTION = 'after-work';
 
 function RoadbookGate({
   seasons,
+  dataVersion,
   community,
   loggedIn,
 }: {
   seasons: Season[];
+  dataVersion: number;
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
 }) {
@@ -220,8 +231,15 @@ function RoadbookGate({
     return <main className="backend-state">Es sind noch keine Touren veröffentlicht.</main>;
   }
 
-  // key: Ort neu auflösen, wenn sich der Login-Status ändert (Kollektion ggf. nicht mehr erlaubt)
-  return <Roadbook key={String(loggedIn)} seasons={visibleSeasons} community={community} loggedIn={loggedIn} />;
+  // key: Ort aus der URL neu auflösen, wenn neue Daten geladen wurden (z. B. nach Login/Freigabe)
+  return (
+    <Roadbook
+      key={`${loggedIn}-${dataVersion}`}
+      seasons={visibleSeasons}
+      community={community}
+      loggedIn={loggedIn}
+    />
+  );
 }
 
 function Roadbook({
