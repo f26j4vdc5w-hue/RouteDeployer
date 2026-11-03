@@ -38,9 +38,17 @@
   stroke-linejoin: miter;
 }
 
+/* Gleiche Abmischung wie --accent-strong, nur für die jeweilige Kollektionsfarbe. */
 .collection-switcher__dot {
+  fill: color-mix(in srgb, var(--dot-color), #17131d 25%);
   stroke: var(--bg);
   stroke-width: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .collection-switcher__dot {
+    fill: color-mix(in srgb, var(--dot-color), #ffffff 28%);
+  }
 }
 
 /* Das Label startet im Mittelpunkt des Rings (Halbkreis-Kappe links) und ragt rechts heraus. */

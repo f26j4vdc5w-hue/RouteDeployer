@@ -82,7 +82,7 @@ export function CollectionSwitcher({ collections, current, onNext }: Props) {
                 cx={x}
                 cy={y}
                 r={DOT_RADIUS}
-                fill={collection.color}
+                style={{ ['--dot-color' as string]: collection.color }}
               />
             );
           })}
