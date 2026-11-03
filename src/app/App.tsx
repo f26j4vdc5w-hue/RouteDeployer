@@ -130,6 +130,12 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
 export default function App() {
   const [seasons, setSeasons] = useState<Season[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const community = useCommunityAuth();
+  const isAdmin = community.session?.user.app_metadata.role === 'admin';
+  const loggedIn =
+    isAdmin ||
+    (community.member?.status === 'approved' && Boolean(community.member.email_confirmed_at));
+  const authReady = community.authReady;
 
   useEffect(() => {
     let active = true;
@@ -139,10 +145,19 @@ export default function App() {
         active = false;
       };
     }
+    if (!authReady) {
+      return () => {
+        active = false;
+      };
+    }
 
+    // Die Datenbank liefert je nach Freigabe andere Kollektionen aus, daher bei Statuswechsel neu laden.
     fetchRoadbook()
       .then((data) => {
-        if (active) setSeasons(data);
+        if (active) {
+          setSeasons(data);
+          setError(null);
+        }
       })
       .catch((cause: unknown) => {
         if (active) {
@@ -153,7 +168,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authReady, loggedIn]);
 
   if (error) {
     return (
@@ -164,7 +179,7 @@ export default function App() {
       </main>
     );
   }
-  if (!seasons) {
+  if (!seasons || !authReady) {
     return <main className="backend-state" aria-live="polite">Roadbook wird geladen …</main>;
   }
   if (seasons.length === 0) {
@@ -174,17 +189,20 @@ export default function App() {
     return <main className="backend-state">Es sind noch keine Kollektionen angelegt.</main>;
   }
 
-  return <RoadbookGate seasons={seasons} />;
+  return <RoadbookGate seasons={seasons} community={community} loggedIn={loggedIn} />;
 }
 
 const PUBLIC_COLLECTION = 'after-work';
 
-function RoadbookGate({ seasons }: { seasons: Season[] }) {
-  const community = useCommunityAuth();
-  const isAdmin = community.session?.user.app_metadata.role === 'admin';
-  const loggedIn =
-    isAdmin ||
-    (community.member?.status === 'approved' && Boolean(community.member.email_confirmed_at));
+function RoadbookGate({
+  seasons,
+  community,
+  loggedIn,
+}: {
+  seasons: Season[];
+  community: ReturnType<typeof useCommunityAuth>;
+  loggedIn: boolean;
+}) {
   const visibleSeasons = useMemo(
     () =>
       loggedIn
@@ -198,9 +216,6 @@ function RoadbookGate({ seasons }: { seasons: Season[] }) {
     [loggedIn, seasons],
   );
 
-  if (!community.authReady) {
-    return <main className="backend-state" aria-live="polite">Roadbook wird geladen …</main>;
-  }
   if (!visibleSeasons.some((season) => season.collections.length > 0)) {
     return <main className="backend-state">Es sind noch keine Touren veröffentlicht.</main>;
   }
