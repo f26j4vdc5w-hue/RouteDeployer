@@ -30,11 +30,10 @@
 
 .collection-switcher__arrow {
   fill: none;
-  stroke: var(--muted);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.7;
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-linecap: butt;
+  stroke-linejoin: miter;
 }
 
 .collection-switcher__dot {
