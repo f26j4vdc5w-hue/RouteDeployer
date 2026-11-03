@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
+  Bike,
   CalendarCheck,
   CalendarDays,
   ChevronDown,
@@ -9,7 +10,7 @@ import {
   Plus,
   Route as RouteIcon,
   Timer,
-  UserRound,
+  UsersRound,
   Check,
 } from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
@@ -209,37 +210,7 @@ export function TourDetails({
             <h1 className="details__title">{tour.title}</h1>
             {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
           </div>
-          {attendance.canAttend && (
-            <button
-              type="button"
-              className="attendance__people"
-              onClick={() => setAttendeeListOpen((open) => !open)}
-              aria-label={`${attendance.attendees.length} Zusagen anzeigen`}
-              aria-expanded={attendeeListOpen}
-              aria-controls="tour-attendees"
-              disabled={attendance.loading}
-            >
-              <UserRound size={20} aria-hidden="true" />
-              <span>{attendance.attendees.length}</span>
-            </button>
-          )}
         </div>
-        {attendance.canAttend && attendeeListOpen && (
-          <div className="attendance__list" id="tour-attendees">
-            <h2>Wer ist dabei?</h2>
-            {attendance.loading ? (
-              <p role="status">Zusagen werden geladen …</p>
-            ) : attendance.attendees.length > 0 ? (
-              <ul>
-                {attendance.attendees.map((attendee) => (
-                  <li key={attendee.user_id}>{attendee.display_name}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>Noch keine Zusagen.</p>
-            )}
-          </div>
-        )}
         <div className="details__teaser-row" ref={teaserContainerRef}>
           <p
             className={`details__teaser${!teaserExpanded ? ' details__teaser--collapsed' : ''}`}
@@ -264,10 +235,48 @@ export function TourDetails({
         </div>
       </header>
 
-      {(tour.meetingTime || tour.meetingPlace) && (
+      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend) && (
         <div className="meeting">
-          <MapPin size={16} />
-          {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
+          {(tour.meetingTime || tour.meetingPlace) && (
+            <>
+              <MapPin size={16} />
+              {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
+            </>
+          )}
+          {attendance.canAttend && (
+            <button
+              type="button"
+              className="attendance__people"
+              onClick={() => setAttendeeListOpen((open) => !open)}
+              aria-label={`${attendance.attendees.length} Zusagen anzeigen`}
+              aria-expanded={attendeeListOpen}
+              aria-controls="tour-attendees"
+              disabled={attendance.loading}
+            >
+              <UsersRound size={16} aria-hidden="true" />
+              <span>{attendance.attendees.length}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {attendance.canAttend && attendeeListOpen && (
+        <div className="attendance__list" id="tour-attendees">
+          <h2>Wer ist dabei?</h2>
+          {attendance.loading ? (
+            <p role="status">Zusagen werden geladen …</p>
+          ) : attendance.attendees.length > 0 ? (
+            <ul>
+              {attendance.attendees.map((attendee) => (
+                <li key={attendee.user_id}>
+                  <Bike size={14} aria-hidden="true" />
+                  {attendee.display_name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Noch keine Zusagen.</p>
+          )}
         </div>
       )}
 
