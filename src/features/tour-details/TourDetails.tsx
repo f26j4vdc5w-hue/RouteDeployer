@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronUp,
+  ExternalLink,
   MapPin,
   Mountain,
   Pencil,
@@ -231,6 +232,18 @@ export function TourDetails({
             </h1>
             {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
           </div>
+          {isEvent && tour.eventUrl && (
+            <a
+              className="details__event-link"
+              href={tour.eventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Link zu ${tour.title} in neuem Tab öffnen`}
+              title="Link in neuem Tab öffnen"
+            >
+              <ExternalLink size={18} aria-hidden="true" />
+            </a>
+          )}
         </div>
         <div className="details__teaser-row" ref={teaserContainerRef}>
           <p

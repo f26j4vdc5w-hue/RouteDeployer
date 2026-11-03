@@ -35,6 +35,7 @@ interface TourRow {
   route_stats: RouteStats | null;
   alternative: StoredTourRoute | null;
   organizer_id: string | null;
+  event_url?: string | null;
 }
 
 interface StoredTourRoute {
@@ -54,6 +55,10 @@ function routeUrl(key: string | null | undefined) {
   return key
     ? requireSupabase().storage.from('routes').getPublicUrl(key, { download: true }).data.publicUrl
     : undefined;
+}
+
+function isMissingEventUrlColumn(error: { code?: string; message: string }) {
+  return error.code === '42703' && error.message.includes('event_url');
 }
 
 function toTourRoute(row: StoredTourRoute): TourRoute {
@@ -80,12 +85,27 @@ export async function fetchRoadbook(): Promise<Season[]> {
       .from('collections')
       .select('season_slug, slug, label, color, start_label, end_label, sort_order')
       .order('sort_order'),
-    client
-      .from('tours')
-      .select(
-        'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id',
-      )
-      .order('id'),
+    (async () => {
+      const withEventUrl = await client
+        .from('tours')
+        .select(
+          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id, event_url',
+        )
+        .order('id');
+      if (!withEventUrl.error || !isMissingEventUrlColumn(withEventUrl.error)) {
+        return withEventUrl;
+      }
+
+      console.warn(
+        'Die Supabase-Migration 202611060001_event_url.sql fehlt; Event-Links sind vorübergehend nicht verfügbar.',
+      );
+      return client
+        .from('tours')
+        .select(
+          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id',
+        )
+        .order('id');
+    })(),
   ]);
   if (seasonResult.error) throw seasonResult.error;
   if (collectionResult.error) throw collectionResult.error;
@@ -124,6 +144,8 @@ export async function fetchRoadbook(): Promise<Season[]> {
             routeStats: row.route_stats ?? undefined,
             alternative: row.alternative ? toTourRoute(row.alternative) : undefined,
             organizerId: row.organizer_id ?? undefined,
+            eventUrl:
+              row.collection_slug === 'events' ? row.event_url ?? undefined : undefined,
           })),
       })),
   }));
