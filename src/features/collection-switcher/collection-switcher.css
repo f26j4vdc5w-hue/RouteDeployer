@@ -30,7 +30,7 @@
   transition: transform 0.5s cubic-bezier(0.5, 0, 0.2, 1);
 }
 
-.collection-switcher__arrow {
+.collection-switcher__arc {
   fill: none;
   stroke: var(--border);
   stroke-width: 1;
