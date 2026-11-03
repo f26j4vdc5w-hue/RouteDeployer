@@ -59,11 +59,10 @@
   min-width: 0;
   height: var(--label-height);
   margin-left: calc(-23px - var(--label-height) / 2);
-  padding: 0 10px 0 calc(var(--label-height) / 2 + 3px);
+  padding: 0 calc(var(--label-height) / 2 + 2px) 0 calc(var(--label-height) / 2 + 3px);
   display: inline-flex;
   align-items: center;
-  border-radius: calc(var(--label-height) / 2) var(--radius-sm) var(--radius-sm)
-    calc(var(--label-height) / 2);
+  border-radius: calc(var(--label-height) / 2);
   background: var(--tint);
   color: var(--accent-strong);
   box-shadow: 0 0 0 2px var(--bg);
