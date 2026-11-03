@@ -214,29 +214,29 @@
   font-weight: 700;
 }
 
-.community__apple {
+.community__google {
   min-height: 44px;
   padding: 9px 14px;
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  border: 1px solid #000;
+  gap: 10px;
+  border: 1px solid #dadce0;
   border-radius: var(--radius-sm);
-  background: #000;
-  color: #fff;
+  background: #fff;
+  color: #3c4043;
   cursor: pointer;
   font: inherit;
   font-weight: 600;
 }
 
-.community__apple:disabled {
+.community__google:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.community__apple:focus-visible {
+.community__google:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }

@@ -1,5 +1,5 @@
--- OAuth-Anbieter (z. B. Apple) liefern oft nur eine anonyme Relay-Mail; der Name aus den
--- Metadaten ist als Anzeigename-Vorschlag besser.
+-- OAuth-Anbieter (z. B. Google) liefern den Namen in den Metadaten; er ist als
+-- Anzeigename-Vorschlag besser als der Anfang der E-Mail-Adresse.
 create or replace function public.sync_community_member_from_auth()
 returns trigger
 language plpgsql
@@ -21,10 +21,7 @@ begin
       nullif(left(btrim(new.raw_user_meta_data ->> 'display_name'), 60), ''),
       nullif(left(btrim(new.raw_user_meta_data ->> 'full_name'), 60), ''),
       nullif(left(btrim(new.raw_user_meta_data ->> 'name'), 60), ''),
-      case
-        when new.email like '%@privaterelay.appleid.com' then null
-        else nullif(left(split_part(coalesce(new.email, ''), '@', 1), 60), '')
-      end,
+      nullif(left(split_part(coalesce(new.email, ''), '@', 1), 60), ''),
       'Community-Mitglied'
     ),
     case
