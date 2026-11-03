@@ -56,7 +56,6 @@ export function CollectionSwitcher({ collections, current, onNext }: Props) {
     <button
       type="button"
       className="collection-switcher"
-      style={{ ['--switcher-color' as string]: current.color }}
       onClick={onNext}
       disabled={count < 2}
       aria-label={`Kollektion wechseln (aktuell ${current.label})`}
