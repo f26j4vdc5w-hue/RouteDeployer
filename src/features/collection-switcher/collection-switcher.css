@@ -38,16 +38,16 @@
   stroke-linejoin: miter;
 }
 
-/* Gleiche Abmischung wie --accent-strong, nur für die jeweilige Kollektionsfarbe. */
+/* Blasse Variante der Kollektionsfarbe, ähnlich dem Kalender-Hintergrund, aber noch erkennbar. */
 .collection-switcher__dot {
-  fill: color-mix(in srgb, var(--dot-color), #17131d 25%);
+  fill: color-mix(in srgb, var(--dot-color), #ffffff 55%);
   stroke: var(--bg);
   stroke-width: 1.5;
 }
 
 @media (prefers-color-scheme: dark) {
   .collection-switcher__dot {
-    fill: color-mix(in srgb, var(--dot-color), #ffffff 28%);
+    fill: color-mix(in srgb, var(--dot-color), #211e27 50%);
   }
 }
 
