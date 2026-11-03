@@ -5,7 +5,7 @@ import { defineConfig, type Plugin } from 'vite';
 
 // Pfade wie /s27/after-work/ sind echte Unterordner auf dem statischen Host:
 // index.html wird dorthin kopiert, damit Direktaufrufe und Reloads funktionieren.
-const COLLECTION_PATHS = ['s26/camp', 's26/after-work', 's27/after-work', 'admin'];
+const COLLECTION_PATHS = ['s26/camp', 's26/after-work', 's27/after-work', 'admin', 'datenschutz'];
 
 function collectionPages(): Plugin {
   let outDir = 'dist';

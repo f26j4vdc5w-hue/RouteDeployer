@@ -1,0 +1,30 @@
+.legal {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  line-height: 1.6;
+}
+
+.legal h1 {
+  margin: 16px 0 4px;
+}
+
+.legal h2 {
+  margin: 28px 0 8px;
+  font-size: 1.1rem;
+}
+
+.legal__meta {
+  color: var(--muted);
+  margin: 0;
+}
+
+.legal a {
+  color: var(--accent-strong);
+}
+
+.legal__back {
+  display: inline-block;
+  font-weight: 600;
+  text-decoration: none;
+}
