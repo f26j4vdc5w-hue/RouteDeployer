@@ -37,11 +37,15 @@ export function CollectionSwitcher({ collections, current, onNext }: Props) {
   const step = 360 / count;
 
   // Punkte liegen gegen den Uhrzeigersinn, der Ring dreht im Uhrzeigersinn weiter und nie zurück.
-  const state = useRef({ index, rotation: index * step });
-  const forward = (index - state.current.index + count) % count;
-  if (forward !== 0) {
-    state.current = { index, rotation: state.current.rotation + forward * step };
+  // Die Rotation ergibt sich immer aus Index und voller Umdrehungen, damit sie auch bei Sprüngen
+  // oder einer anderen Kollektionsanzahl exakt auf den Punkt der aktiven Kollektion zeigt.
+  const state = useRef({ index, turns: 0 });
+  if (index < state.current.index) {
+    state.current = { index, turns: state.current.turns + 1 };
+  } else {
+    state.current = { index, turns: state.current.turns };
   }
+  const rotation = state.current.turns * 360 + index * step;
 
   return (
     <button
@@ -54,7 +58,7 @@ export function CollectionSwitcher({ collections, current, onNext }: Props) {
       <svg className="collection-switcher__ring" viewBox="0 0 40 40" aria-hidden="true">
         <g
           className="collection-switcher__rotor"
-          style={{ transform: `rotate(${state.current.rotation}deg)`, transformOrigin: '20px 20px' }}
+          style={{ transform: `rotate(${rotation}deg)`, transformOrigin: '20px 20px' }}
         >
           {count > 1 &&
             collections.map((collection, i) => (
