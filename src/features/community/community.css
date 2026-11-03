@@ -15,6 +15,7 @@
 .community__close:focus-visible,
 .community__switch button:focus-visible,
 .community__form input:focus-visible,
+.community__form textarea:focus-visible,
 .community__submit:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
@@ -148,15 +149,23 @@
   font-weight: 600;
 }
 
-.community__form input {
+.community__form input,
+.community__form textarea {
   width: 100%;
-  min-height: 42px;
   padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--ink);
   font: inherit;
+}
+
+.community__form input {
+  min-height: 42px;
+}
+
+.community__form textarea {
+  resize: vertical;
 }
 
 .community__submit {
@@ -188,6 +197,23 @@
 }
 
 .community__refresh:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 3px;
+}
+
+.community__admin-link {
+  justify-self: start;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--tint);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.community__admin-link:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 3px;
 }

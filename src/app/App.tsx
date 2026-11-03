@@ -250,6 +250,7 @@ function Roadbook({ seasons }: { seasons: Season[] }) {
           <CommunityAccount
             email={community.session?.user.email ?? null}
             member={community.member}
+            isAdmin={community.session?.user.app_metadata.role === 'admin'}
             loading={community.loading}
             error={community.error}
             onRefresh={community.refresh}

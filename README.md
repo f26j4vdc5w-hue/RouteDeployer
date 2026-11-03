@@ -70,7 +70,10 @@ einer leeren oder veralteten Tourenansicht.
 6. Führe für ein bestehendes Projekt nach den bisherigen Migrationen zusätzlich
    [`supabase/migrations/202611020003_community_members_and_rsvps.sql`](supabase/migrations/202611020003_community_members_and_rsvps.sql)
    im SQL Editor aus. Die Migration legt Mitgliederprofile, Admin-Freigaben
-   und Tour-Zusagen mit Row-Level Security an.
+   und Tour-Zusagen mit Row-Level Security an. Führe anschließend auch
+   [`supabase/migrations/202611020004_community_member_profile.sql`](supabase/migrations/202611020004_community_member_profile.sql)
+   aus, damit Mitglieder Anzeigename, Adresse und Geburtsdatum in ihrem Profil
+   bearbeiten können.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    `https://f26j4vdc5w-hue.github.io/RouteDeployer/` sowie
