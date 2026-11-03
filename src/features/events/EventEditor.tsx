@@ -28,6 +28,16 @@ interface Props {
 const randomSuffix = () => crypto.randomUUID().replace(/-/g, '').slice(0, 6);
 
 function errorText(cause: unknown) {
+  if (
+    cause &&
+    typeof cause === 'object' &&
+    'code' in cause &&
+    cause.code === '42703' &&
+    'message' in cause &&
+    String(cause.message).includes('event_url')
+  ) {
+    return 'Event-Links sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611060001_event_url.sql anwenden.';
+  }
   if (cause instanceof Error) return cause.message;
   if (cause && typeof cause === 'object' && 'message' in cause) return String(cause.message);
   return 'Das Event konnte nicht gespeichert werden.';
@@ -47,6 +57,7 @@ export function EventEditor({
   const [date, setDate] = useState(tour ? isoToGerman(tour.id.slice(0, 10)) : '');
   const [time, setTime] = useState(tour?.meetingTime ?? '');
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
+  const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [duration, setDuration] = useState(tour?.durationMin ? String(tour.durationMin) : '');
   const [file, setFile] = useState<File | null>(null);
@@ -64,6 +75,17 @@ export function EventEditor({
       return setError('Das Datum darf nicht in der Vergangenheit liegen.');
     }
     if (time && !isValidTime(time)) return setError('Bitte eine Uhrzeit im Format HH:MM eingeben.');
+    const trimmedEventUrl = eventUrl.trim();
+    if (collectionSlug === 'events' && trimmedEventUrl) {
+      try {
+        const parsedUrl = new URL(trimmedEventUrl);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+          return setError('Der Link muss mit http:// oder https:// beginnen.');
+        }
+      } catch {
+        return setError('Bitte einen gültigen Link eingeben.');
+      }
+    }
     const durationMin = duration.trim() ? Number(duration) : null;
     if (durationMin !== null && (!Number.isFinite(durationMin) || durationMin <= 0)) {
       return setError('Die Dauer muss eine positive Zahl (Minuten) sein.');
@@ -102,6 +124,7 @@ export function EventEditor({
         duration_min: durationMin,
         gpx_key: gpxKey,
         route_stats: routeStats,
+        ...(collectionSlug === 'events' ? { event_url: trimmedEventUrl || null } : {}),
       };
 
       if (tour) {
@@ -204,6 +227,18 @@ export function EventEditor({
               Treffpunkt
               <input maxLength={120} value={place} onChange={(e) => setPlace(e.target.value)} />
             </label>
+            {collectionSlug === 'events' && (
+              <label>
+                Link (optional)
+                <input
+                  type="url"
+                  maxLength={2048}
+                  placeholder="https://beispiel.de"
+                  value={eventUrl}
+                  onChange={(e) => setEventUrl(e.target.value)}
+                />
+              </label>
+            )}
             <label>
               Orte (mit Komma getrennt)
               <input value={stations} onChange={(e) => setStations(e.target.value)} />

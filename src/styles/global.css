@@ -432,6 +432,20 @@ select {
 .details__title-stack {
   min-width: 0;
 }
+.details__event-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--accent-strong);
+}
+.details__event-link:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
 .attendance__people {
   position: relative;
   flex: 0 0 auto;

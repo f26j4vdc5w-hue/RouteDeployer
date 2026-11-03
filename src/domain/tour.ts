@@ -28,6 +28,8 @@ export interface Tour extends TourRoute {
   collectionSlug?: string;
   /** Nutzer-ID des Organisators; nur bei Events gesetzt. */
   organizerId?: string;
+  /** Externer Link; nur bei Events gesetzt. */
+  eventUrl?: string;
   /** Optionale zweite Route für denselben Termin. */
   alternative?: TourRoute;
 }
