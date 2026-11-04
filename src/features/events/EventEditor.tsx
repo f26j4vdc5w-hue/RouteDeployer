@@ -69,6 +69,7 @@ export function EventEditor({
   const [time, setTime] = useState(tour?.meetingTime ?? '');
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
   const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
+  const [chatUrl, setChatUrl] = useState(tour?.chatUrl ?? '');
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
     tour?.requiredPersonalFields ?? ['full_name'],
@@ -101,6 +102,14 @@ export function EventEditor({
       }
     }
     const durationMin = duration.trim() ? Number(duration) : null;
+    const trimmedChatUrl = chatUrl.trim();
+    if (
+      collectionSlug === 'events' &&
+      trimmedChatUrl &&
+      !/^https:\/\/(chat\.whatsapp\.com|wa\.me|whatsapp\.com\/channel)\/[A-Za-z0-9_./?=&%-]+$/i.test(trimmedChatUrl)
+    ) {
+      return setError('Bitte einen WhatsApp-Link angeben (z. B. https://chat.whatsapp.com/…).');
+    }
     if (durationMin !== null && (!Number.isFinite(durationMin) || durationMin <= 0)) {
       return setError('Die Dauer muss eine positive Zahl (Minuten) sein.');
     }
@@ -138,7 +147,9 @@ export function EventEditor({
         duration_min: durationMin,
         gpx_key: gpxKey,
         route_stats: routeStats,
-        ...(collectionSlug === 'events' ? { event_url: trimmedEventUrl || null } : {}),
+        ...(collectionSlug === 'events'
+          ? { event_url: trimmedEventUrl || null, chat_url: trimmedChatUrl || null }
+          : {}),
       };
       const requiredPersonalFields = PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
         requiredFields.includes(key),
@@ -254,6 +265,18 @@ export function EventEditor({
                   placeholder="https://beispiel.de"
                   value={eventUrl}
                   onChange={(e) => setEventUrl(e.target.value)}
+                />
+              </label>
+            )}
+            {collectionSlug === 'events' && (
+              <label>
+                WhatsApp-Chat-Link (optional)
+                <input
+                  type="url"
+                  maxLength={2048}
+                  placeholder="https://chat.whatsapp.com/…"
+                  value={chatUrl}
+                  onChange={(e) => setChatUrl(e.target.value)}
                 />
               </label>
             )}
