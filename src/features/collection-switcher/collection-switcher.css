@@ -18,11 +18,12 @@
 }
 
 /* Hintergrund als Pseudo-Element, damit sich das Layout und die Ausrichtung nicht verschieben. */
+/* Linke Kante bündig mit dem Kalender-Button (13px vom Seitenrand, Switcher startet bei 15px). */
 .collection-switcher::before {
   content: '';
   position: absolute;
   z-index: 0;
-  inset: -4px -8px -4px -6px;
+  inset: -4px -8px -4px -2px;
   border-radius: var(--radius-md);
   background: var(--switcher-bg);
 }
@@ -109,5 +110,8 @@
 @media (max-width: 380px) {
   .collection-switcher {
     margin-left: 3px;
+  }
+  .collection-switcher::before {
+    left: -14px;
   }
 }
