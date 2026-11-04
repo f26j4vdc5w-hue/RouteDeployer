@@ -36,6 +36,7 @@ interface TourRow {
   alternative: StoredTourRoute | null;
   organizer_id: string | null;
   event_url?: string | null;
+  required_personal_fields?: ('full_name' | 'email' | 'address' | 'birth_date')[] | null;
 }
 
 interface StoredTourRoute {
@@ -58,7 +59,10 @@ function routeUrl(key: string | null | undefined) {
 }
 
 function isMissingEventUrlColumn(error: { code?: string; message: string }) {
-  return error.code === '42703' && error.message.includes('event_url');
+  return (
+    error.code === '42703' &&
+    (error.message.includes('event_url') || error.message.includes('required_personal_fields'))
+  );
 }
 
 function toTourRoute(row: StoredTourRoute): TourRoute {
@@ -89,7 +93,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
       const withEventUrl = await client
         .from('tours')
         .select(
-          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id, event_url',
+          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id, event_url, required_personal_fields',
         )
         .order('id');
       if (!withEventUrl.error || !isMissingEventUrlColumn(withEventUrl.error)) {
@@ -146,6 +150,10 @@ export async function fetchRoadbook(): Promise<Season[]> {
             organizerId: row.organizer_id ?? undefined,
             eventUrl:
               row.collection_slug === 'events' ? row.event_url ?? undefined : undefined,
+            requiredPersonalFields:
+              row.collection_slug === 'events'
+                ? row.required_personal_fields ?? ['full_name', 'address', 'birth_date']
+                : undefined,
           })),
       })),
   }));
