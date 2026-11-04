@@ -7,6 +7,7 @@ import {
   ChevronUp,
   ExternalLink,
   MapPin,
+  MessageCircle,
   Mountain,
   Pencil,
   Plus,
@@ -137,6 +138,25 @@ export function TourDetails({
       {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
     </button>
   ) : null;
+  const chatUrl = isEvent && memberId ? tour.chatUrl : undefined;
+  const attendanceActions =
+    attendanceButton || chatUrl ? (
+      <>
+        {chatUrl && (
+          <a
+            className="attendance__toggle attendance__chat"
+            href={chatUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp-Chat öffnen"
+            title="WhatsApp-Chat öffnen"
+          >
+            <MessageCircle size={19} />
+          </a>
+        )}
+        {attendanceButton}
+      </>
+    ) : null;
 
   useEffect(() => {
     setActiveDistanceKm(null);
@@ -441,11 +461,11 @@ export function TourDetails({
           )}
 
           {route ? (
-            <GpxDownload file={tour.gpx} action={attendanceButton} />
+            <GpxDownload file={tour.gpx} action={attendanceActions} />
           ) : (
             <div className="download__actions">
               <p className="download__file">GPX folgt in Kürze.</p>
-              {attendanceButton}
+              {attendanceActions}
             </div>
           )}
           {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
@@ -455,7 +475,7 @@ export function TourDetails({
           <p className="route-pending" role="status">
             Details zu dieser Tour werden noch bekanntgegeben.
           </p>
-          <div className="download__actions">{attendanceButton}</div>
+          <div className="download__actions">{attendanceActions}</div>
           {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
         </>
       )}

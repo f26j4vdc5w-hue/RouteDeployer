@@ -892,6 +892,9 @@ select {
   background: var(--accent-strong);
   color: var(--on-accent);
 }
+a.attendance__chat {
+  text-decoration: none;
+}
 
 @media (max-width: 380px) {
   .nav {

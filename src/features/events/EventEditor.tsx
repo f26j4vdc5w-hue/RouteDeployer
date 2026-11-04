@@ -69,6 +69,7 @@ export function EventEditor({
   const [time, setTime] = useState(tour?.meetingTime ?? '');
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
   const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
+  const [chatUrl, setChatUrl] = useState(tour?.chatUrl ?? '');
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
     tour?.requiredPersonalFields ?? ['full_name'],
@@ -101,6 +102,14 @@ export function EventEditor({
       }
     }
     const durationMin = duration.trim() ? Number(duration) : null;
+    const trimmedChatUrl = chatUrl.trim();
+    if (
+      collectionSlug === 'events' &&
+      trimmedChatUrl &&
+      !/^https:\/\/(chat\.whatsapp\.com|wa\.me|whatsapp\.com\/channel)\/[A-Za-z0-9_./?=&%-]+$/i.test(trimmedChatUrl)
+    ) {
+      return setError('Bitte einen WhatsApp-Link angeben (z. B. https://chat.whatsapp.com/…).');
+    }
     if (durationMin !== null && (!Number.isFinite(durationMin) || durationMin <= 0)) {
       return setError('Die Dauer muss eine positive Zahl (Minuten) sein.');
     }
@@ -139,14 +148,12 @@ export function EventEditor({
         gpx_key: gpxKey,
         route_stats: routeStats,
         ...(collectionSlug === 'events'
-          ? {
-              event_url: trimmedEventUrl || null,
-              required_personal_fields: PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
-                requiredFields.includes(key),
-              ),
-            }
+          ? { event_url: trimmedEventUrl || null, chat_url: trimmedChatUrl || null }
           : {}),
       };
+      const requiredPersonalFields = PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
+        requiredFields.includes(key),
+      );
 
       if (tour) {
         const { error: updateError } = await client
@@ -163,6 +170,7 @@ export function EventEditor({
           collection_slug: collectionSlug,
           organizer_id: memberId,
           highlight: false,
+          ...(collectionSlug === 'events' ? { required_personal_fields: requiredPersonalFields } : {}),
         });
         if (insertError) throw insertError;
       }
@@ -261,12 +269,25 @@ export function EventEditor({
               </label>
             )}
             {collectionSlug === 'events' && (
+              <label>
+                WhatsApp-Chat-Link (optional)
+                <input
+                  type="url"
+                  maxLength={2048}
+                  placeholder="https://chat.whatsapp.com/…"
+                  value={chatUrl}
+                  onChange={(e) => setChatUrl(e.target.value)}
+                />
+              </label>
+            )}
+            {collectionSlug === 'events' && (
               <fieldset className="events__fields">
                 <legend>Pflichtangaben der Teilnehmer</legend>
                 {PERSONAL_FIELDS.map(({ key, label }) => (
                   <label key={key} className="events__check">
                     <input
                       type="checkbox"
+                      disabled={Boolean(tour)}
                       checked={requiredFields.includes(key)}
                       onChange={(e) =>
                         setRequiredFields((current) =>
@@ -277,7 +298,10 @@ export function EventEditor({
                     {label}
                   </label>
                 ))}
-                <small>Nur diese Daten sind für dich unter „Teilnehmerdaten“ sichtbar.</small>
+                <small>
+                  Nur diese Daten sind für dich unter „Teilnehmerdaten“ sichtbar.
+                  {tour ? ' Die Auswahl ist nachträglich nicht änderbar.' : ' Die Auswahl lässt sich nach dem Anlegen nicht mehr ändern.'}
+                </small>
               </fieldset>
             )}
             <label>

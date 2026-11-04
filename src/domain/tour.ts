@@ -30,6 +30,8 @@ export interface Tour extends TourRoute {
   organizerId?: string;
   /** Externer Link; nur bei Events gesetzt. */
   eventUrl?: string;
+  /** WhatsApp-Chat-Link; nur bei Events gesetzt. */
+  chatUrl?: string;
   /** Pflichtangaben der Teilnehmer; nur bei Events gesetzt. */
   requiredPersonalFields?: ('full_name' | 'email' | 'address' | 'birth_date')[];
   /** Optionale zweite Route für denselben Termin. */

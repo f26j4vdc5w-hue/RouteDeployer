@@ -14,6 +14,24 @@ update public.tours
 set required_personal_fields = array['full_name', 'address', 'birth_date']
 where collection_slug = 'events';
 
+-- Die Pflichtangaben sind nur bei der Erstellung wählbar und danach unveränderlich.
+create function public.lock_required_personal_fields()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.required_personal_fields is distinct from old.required_personal_fields then
+    raise exception 'Die erforderlichen persönlichen Daten eines Events sind nachträglich nicht änderbar';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger lock_required_personal_fields_before_update
+  before update on public.tours
+  for each row execute function public.lock_required_personal_fields();
+
 create function public.is_plausible_personal_value(p_field text, p_value text)
 returns boolean
 language sql
