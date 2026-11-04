@@ -31,30 +31,17 @@
   transition: width 0.5s ease-out;
 }
 
-/* Das Rad sitzt mit den Reifen auf dem Balken; die Vorderachse markiert den Fortschritt. */
+/* Das Icon sitzt auf dem Balken; sein vorderes Ende markiert den Fortschritt. */
 .loading__bike {
   position: absolute;
   bottom: 2px;
   color: var(--accent-strong);
-  transform: translateX(-85%);
+  transform: translateX(-100%);
   transition: left 0.5s ease-out;
   line-height: 0;
 }
 
-.loading__wheel {
-  animation: loading-spin 0.8s linear infinite;
-}
-
-@keyframes loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .loading__wheel {
-    animation: none;
-  }
   .loading__bar,
   .loading__bike {
     transition: none;
