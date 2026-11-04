@@ -895,6 +895,16 @@ select {
 a.attendance__chat {
   text-decoration: none;
 }
+.meeting__actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.meeting__actions .attendance__people {
+  margin-left: 0;
+}
 
 @media (max-width: 380px) {
   .nav {

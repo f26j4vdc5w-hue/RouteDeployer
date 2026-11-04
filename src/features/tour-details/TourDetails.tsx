@@ -27,6 +27,7 @@ import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
+import { useEventChatUrl } from '../events/useEventChatUrl';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import '../events/events.css';
@@ -138,25 +139,13 @@ export function TourDetails({
       {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
     </button>
   ) : null;
-  const chatUrl = isEvent && memberId ? tour.chatUrl : undefined;
-  const attendanceActions =
-    attendanceButton || chatUrl ? (
-      <>
-        {chatUrl && (
-          <a
-            className="attendance__toggle attendance__chat"
-            href={chatUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="WhatsApp-Chat öffnen"
-            title="WhatsApp-Chat öffnen"
-          >
-            <MessageCircle size={19} />
-          </a>
-        )}
-        {attendanceButton}
-      </>
-    ) : null;
+  const { chatUrl } = useEventChatUrl(
+    seasonSlug,
+    collectionSlug,
+    tour.id,
+    isEvent && (attendance.isAttending || isOrganizer),
+    tour,
+  );
 
   useEffect(() => {
     setActiveDistanceKm(null);
@@ -295,7 +284,7 @@ export function TourDetails({
         </div>
       </header>
 
-      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend) && (
+      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl) && (
         <div className="meeting">
           {(tour.meetingTime || tour.meetingPlace) && (
             <>
@@ -303,19 +292,35 @@ export function TourDetails({
               {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
             </>
           )}
-          {attendance.canAttend && (
-            <button
-              type="button"
-              className="attendance__people"
-              onClick={() => setAttendeeListOpen((open) => !open)}
-              aria-label={`${attendance.attendees.length} Zusagen anzeigen`}
-              aria-expanded={attendeeListOpen}
-              aria-controls="tour-attendees"
-              disabled={attendance.loading}
-            >
-              <UsersRound size={16} aria-hidden="true" />
-              <span>{attendance.attendees.length}</span>
-            </button>
+          {(attendance.canAttend || chatUrl) && (
+            <div className="meeting__actions">
+              {chatUrl && (
+                <a
+                  className="attendance__people attendance__chat"
+                  href={chatUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp-Chat öffnen"
+                  title="WhatsApp-Chat öffnen"
+                >
+                  <MessageCircle size={16} aria-hidden="true" />
+                </a>
+              )}
+              {attendance.canAttend && (
+                <button
+                  type="button"
+                  className="attendance__people"
+                  onClick={() => setAttendeeListOpen((open) => !open)}
+                  aria-label={`${attendance.attendees.length} Zusagen anzeigen`}
+                  aria-expanded={attendeeListOpen}
+                  aria-controls="tour-attendees"
+                  disabled={attendance.loading}
+                >
+                  <UsersRound size={16} aria-hidden="true" />
+                  <span>{attendance.attendees.length}</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -461,11 +466,11 @@ export function TourDetails({
           )}
 
           {route ? (
-            <GpxDownload file={tour.gpx} action={attendanceActions} />
+            <GpxDownload file={tour.gpx} action={attendanceButton} />
           ) : (
             <div className="download__actions">
               <p className="download__file">GPX folgt in Kürze.</p>
-              {attendanceActions}
+              {attendanceButton}
             </div>
           )}
           {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
@@ -475,7 +480,7 @@ export function TourDetails({
           <p className="route-pending" role="status">
             Details zu dieser Tour werden noch bekanntgegeben.
           </p>
-          <div className="download__actions">{attendanceActions}</div>
+          <div className="download__actions">{attendanceButton}</div>
           {attendance.error && <p className="attendance__error" role="alert">{attendance.error}</p>}
         </>
       )}
