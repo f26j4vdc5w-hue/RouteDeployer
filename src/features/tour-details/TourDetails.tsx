@@ -27,6 +27,7 @@ import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
+import { useEventChatUrl } from '../events/useEventChatUrl';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import '../events/events.css';
@@ -138,7 +139,13 @@ export function TourDetails({
       {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
     </button>
   ) : null;
-  const chatUrl = isEvent && (attendance.isAttending || isOrganizer) ? tour.chatUrl : undefined;
+  const { chatUrl } = useEventChatUrl(
+    seasonSlug,
+    collectionSlug,
+    tour.id,
+    isEvent && (attendance.isAttending || isOrganizer),
+    tour,
+  );
 
   useEffect(() => {
     setActiveDistanceKm(null);

@@ -13,6 +13,7 @@ import {
 } from '../../shared/format/germanInput';
 import { todayIso } from '../../shared/format/date';
 import { PERSONAL_FIELDS, type PersonalField } from '../../shared/personalData';
+import { useEventChatUrl } from './useEventChatUrl';
 import { analyzeGpx } from '../admin/analyzeGpx';
 import '../community/community.css';
 
@@ -69,7 +70,16 @@ export function EventEditor({
   const [time, setTime] = useState(tour?.meetingTime ?? '');
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
   const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
-  const [chatUrl, setChatUrl] = useState(tour?.chatUrl ?? '');
+  const [chatUrl, setChatUrl] = useState('');
+  const [chatEdited, setChatEdited] = useState(false);
+  const existingChat = useEventChatUrl(
+    seasonSlug,
+    collectionSlug,
+    tour?.id ?? '',
+    Boolean(tour) && collectionSlug === 'events',
+  );
+  const chatReady = !tour || collectionSlug !== 'events' || existingChat.loaded;
+  const chatValue = chatEdited ? chatUrl : existingChat.chatUrl ?? '';
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
     tour?.requiredPersonalFields ?? ['full_name'],
@@ -102,7 +112,7 @@ export function EventEditor({
       }
     }
     const durationMin = duration.trim() ? Number(duration) : null;
-    const trimmedChatUrl = chatUrl.trim();
+    const trimmedChatUrl = chatValue.trim();
     if (
       collectionSlug === 'events' &&
       trimmedChatUrl &&
@@ -275,8 +285,12 @@ export function EventEditor({
                   type="url"
                   maxLength={2048}
                   placeholder="https://chat.whatsapp.com/…"
-                  value={chatUrl}
-                  onChange={(e) => setChatUrl(e.target.value)}
+                  value={chatValue}
+                  disabled={!chatReady}
+                  onChange={(e) => {
+                    setChatEdited(true);
+                    setChatUrl(e.target.value);
+                  }}
                 />
               </label>
             )}
@@ -338,7 +352,7 @@ export function EventEditor({
               </label>
             )}
             {error && <p className="community__message community__message--error" role="alert">{error}</p>}
-            <button className="community__submit" type="submit" disabled={busy}>
+            <button className="community__submit" type="submit" disabled={busy || !chatReady}>
               {busy ? 'Wird gespeichert …' : tour ? 'Speichern' : 'Event anlegen'}
             </button>
             {tour && (
