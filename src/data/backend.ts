@@ -81,15 +81,24 @@ function toTourRoute(row: StoredTourRoute): TourRoute {
   };
 }
 
-export async function fetchRoadbook(): Promise<Season[]> {
+export async function fetchRoadbook(onProgress?: (fraction: number) => void): Promise<Season[]> {
   const client = requireSupabase();
+  let done = 0;
+  const step = <T,>(request: PromiseLike<T>) =>
+    Promise.resolve(request).then((result) => {
+      done += 1;
+      onProgress?.(done / 3);
+      return result;
+    });
   const [seasonResult, collectionResult, tourResult] = await Promise.all([
-    client.from('seasons').select('slug, label, sort_order').order('sort_order'),
-    client
-      .from('collections')
-      .select('season_slug, slug, label, color, start_label, end_label, sort_order')
-      .order('sort_order'),
-    (async () => {
+    step(client.from('seasons').select('slug, label, sort_order').order('sort_order')),
+    step(
+      client
+        .from('collections')
+        .select('season_slug, slug, label, color, start_label, end_label, sort_order')
+        .order('sort_order'),
+    ),
+    step((async () => {
       const withEventUrl = await client
         .from('tours')
         .select(
@@ -109,7 +118,7 @@ export async function fetchRoadbook(): Promise<Season[]> {
           'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id',
         )
         .order('id');
-    })(),
+    })()),
   ]);
   if (seasonResult.error) throw seasonResult.error;
   if (collectionResult.error) throw collectionResult.error;
