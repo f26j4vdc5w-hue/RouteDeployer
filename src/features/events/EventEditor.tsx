@@ -12,6 +12,7 @@ import {
   parseGermanDate,
 } from '../../shared/format/germanInput';
 import { todayIso } from '../../shared/format/date';
+import { PERSONAL_FIELDS, type PersonalField } from '../../shared/personalData';
 import { analyzeGpx } from '../admin/analyzeGpx';
 import '../community/community.css';
 
@@ -38,6 +39,16 @@ function errorText(cause: unknown) {
   ) {
     return 'Event-Links sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611060001_event_url.sql anwenden.';
   }
+  if (
+    cause &&
+    typeof cause === 'object' &&
+    'code' in cause &&
+    cause.code === '42703' &&
+    'message' in cause &&
+    String(cause.message).includes('required_personal_fields')
+  ) {
+    return 'Pflichtangaben sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611070001_event_required_personal_data.sql anwenden.';
+  }
   if (cause instanceof Error) return cause.message;
   if (cause && typeof cause === 'object' && 'message' in cause) return String(cause.message);
   return 'Das Event konnte nicht gespeichert werden.';
@@ -59,6 +70,9 @@ export function EventEditor({
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
   const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
+  const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
+    tour?.requiredPersonalFields ?? ['full_name'],
+  );
   const [duration, setDuration] = useState(tour?.durationMin ? String(tour.durationMin) : '');
   const [file, setFile] = useState<File | null>(null);
   const [removeGpx, setRemoveGpx] = useState(false);
@@ -124,7 +138,14 @@ export function EventEditor({
         duration_min: durationMin,
         gpx_key: gpxKey,
         route_stats: routeStats,
-        ...(collectionSlug === 'events' ? { event_url: trimmedEventUrl || null } : {}),
+        ...(collectionSlug === 'events'
+          ? {
+              event_url: trimmedEventUrl || null,
+              required_personal_fields: PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
+                requiredFields.includes(key),
+              ),
+            }
+          : {}),
       };
 
       if (tour) {
@@ -238,6 +259,26 @@ export function EventEditor({
                   onChange={(e) => setEventUrl(e.target.value)}
                 />
               </label>
+            )}
+            {collectionSlug === 'events' && (
+              <fieldset className="events__fields">
+                <legend>Pflichtangaben der Teilnehmer</legend>
+                {PERSONAL_FIELDS.map(({ key, label }) => (
+                  <label key={key} className="events__check">
+                    <input
+                      type="checkbox"
+                      checked={requiredFields.includes(key)}
+                      onChange={(e) =>
+                        setRequiredFields((current) =>
+                          e.target.checked ? [...current, key] : current.filter((f) => f !== key),
+                        )
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+                <small>Nur diese Daten sind für dich unter „Teilnehmerdaten“ sichtbar.</small>
+              </fieldset>
             )}
             <label>
               Orte (mit Komma getrennt)

@@ -26,6 +26,8 @@ import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
+import type { CommunityMember } from '../community/useCommunityAuth';
+import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import '../events/events.css';
 
 interface Props {
@@ -33,6 +35,7 @@ interface Props {
   seasonSlug: string;
   collectionSlug: string;
   memberId: string | null;
+  member?: CommunityMember | null;
   position: number;
   count: number;
   isPast: boolean;
@@ -82,6 +85,7 @@ export function TourDetails({
   seasonSlug,
   collectionSlug,
   memberId,
+  member,
   position,
   count,
   isPast,
@@ -94,6 +98,8 @@ export function TourDetails({
 }: Props) {
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
+  const requiredFields = tour.requiredPersonalFields ?? [];
+  const missingFields = member ? missingPersonalFields(requiredFields, member) : requiredFields;
   const [consentOpen, setConsentOpen] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
@@ -313,32 +319,45 @@ export function TourDetails({
           seasonSlug={seasonSlug}
           collectionSlug={collectionSlug}
           tourId={tour.id}
+          requiredFields={requiredFields}
         />
       )}
 
       {isEvent && consentOpen && !attendance.isAttending && (
         <div className="events__consent" role="group" aria-label="Einwilligung">
-          <label>
-            <input
-              type="checkbox"
-              checked={consentChecked}
-              onChange={(event) => setConsentChecked(event.target.checked)}
-            />
-            <span>
-              Ich willige ein, dass der Organisator dieses Events Zugriff auf meine persönlichen
-              Daten (vollständiger Name, Adresse, Geburtsdatum) erhält.
-            </span>
-          </label>
-          <button
-            type="button"
-            disabled={!consentChecked || attendance.busy}
-            onClick={() => {
-              setConsentOpen(false);
-              void attendance.toggleAttendance(true);
-            }}
-          >
-            Zusagen
-          </button>
+          {missingFields.length > 0 ? (
+            <p className="attendance__error" role="alert">
+              Für die Zusage fehlen plausible Angaben in deinem Profil:{' '}
+              {missingFields.map(personalFieldLabel).join(', ')}. Bitte ergänze sie im Community-Profil.
+            </p>
+          ) : (
+            <>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(event) => setConsentChecked(event.target.checked)}
+                />
+                <span>
+                  {requiredFields.length > 0
+                    ? `Für die Teilnahme sind folgende Angaben erforderlich: ${requiredFields
+                        .map(personalFieldLabel)
+                        .join(', ')}. Ich willige ein, dass der Organisator dieses Events diese Daten erhält und nutzt.`
+                    : 'Für dieses Event werden keine persönlichen Daten erhoben. Ich bin damit einverstanden.'}
+                </span>
+              </label>
+              <button
+                type="button"
+                disabled={!consentChecked || attendance.busy}
+                onClick={() => {
+                  setConsentOpen(false);
+                  void attendance.toggleAttendance(true);
+                }}
+              >
+                Zusagen
+              </button>
+            </>
+          )}
         </div>
       )}
 

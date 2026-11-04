@@ -2,11 +2,13 @@ import { Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { requireSupabase } from '../../lib/supabase';
 import { isoToGerman } from '../../shared/format/germanInput';
+import type { PersonalField } from '../../shared/personalData';
 
 interface Participant {
   user_id: string;
   display_name: string;
   full_name: string | null;
+  email: string | null;
   address: string | null;
   birth_date: string | null;
 }
@@ -15,19 +17,25 @@ interface Props {
   seasonSlug: string;
   collectionSlug: string;
   tourId: string;
+  requiredFields: PersonalField[];
 }
 
-function describe(participant: Participant) {
+function describe(participant: Participant, requiredFields: PersonalField[]) {
   return [
     participant.full_name || participant.display_name,
-    participant.address ? `Adresse: ${participant.address.replace(/\s*\n\s*/g, ', ')}` : null,
-    participant.birth_date ? `Geburtsdatum: ${isoToGerman(participant.birth_date)}` : null,
+    requiredFields.includes('email') && participant.email ? `E-Mail: ${participant.email}` : null,
+    requiredFields.includes('address') && participant.address
+      ? `Adresse: ${participant.address.replace(/\s*\n\s*/g, ', ')}`
+      : null,
+    requiredFields.includes('birth_date') && participant.birth_date
+      ? `Geburtsdatum: ${isoToGerman(participant.birth_date)}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n');
 }
 
-export function EventParticipantData({ seasonSlug, collectionSlug, tourId }: Props) {
+export function EventParticipantData({ seasonSlug, collectionSlug, tourId, requiredFields }: Props) {
   const [participants, setParticipants] = useState<Participant[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -54,7 +62,7 @@ export function EventParticipantData({ seasonSlug, collectionSlug, tourId }: Pro
   async function copyAll() {
     if (!participants) return;
     try {
-      await navigator.clipboard.writeText(participants.map(describe).join('\n\n'));
+      await navigator.clipboard.writeText(participants.map((p) => describe(p, requiredFields)).join('\n\n'));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -77,8 +85,17 @@ export function EventParticipantData({ seasonSlug, collectionSlug, tourId }: Pro
             {participants.map((participant) => (
               <li key={participant.user_id} className="events__participant">
                 <b>{participant.full_name || participant.display_name}</b>
-                <span>{participant.address ? participant.address.replace(/\s*\n\s*/g, ', ') : 'Keine Adresse'}</span>
-                <span>{participant.birth_date ? isoToGerman(participant.birth_date) : 'Kein Geburtsdatum'}</span>
+                {requiredFields.includes('email') && (
+                  <span>{participant.email || 'Keine E-Mail-Adresse'}</span>
+                )}
+                {requiredFields.includes('address') && (
+                  <span>
+                    {participant.address ? participant.address.replace(/\s*\n\s*/g, ', ') : 'Keine Adresse'}
+                  </span>
+                )}
+                {requiredFields.includes('birth_date') && (
+                  <span>{participant.birth_date ? isoToGerman(participant.birth_date) : 'Kein Geburtsdatum'}</span>
+                )}
               </li>
             ))}
           </ul>
