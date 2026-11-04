@@ -1,4 +1,7 @@
 .collection-switcher {
+  --switcher-bg: color-mix(in srgb, var(--ink), var(--bg) 94%);
+  position: relative;
+  isolation: isolate;
   justify-self: start;
   /* Ringmitte (23px) auf die Timeline-Mitte (38px vom Rand): 15px - Nav-Padding */
   margin-left: -9px;
@@ -12,6 +15,16 @@
   font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Hintergrund als Pseudo-Element, damit sich das Layout und die Ausrichtung nicht verschieben. */
+.collection-switcher::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: -4px -8px -4px -6px;
+  border-radius: var(--radius-md);
+  background: var(--switcher-bg);
 }
 
 .collection-switcher:disabled {
@@ -41,7 +54,7 @@
 /* Blasse Variante der Kollektionsfarbe, ähnlich dem Kalender-Hintergrund, aber noch erkennbar. */
 .collection-switcher__dot {
   fill: color-mix(in srgb, var(--dot-color), #ffffff 55%);
-  stroke: var(--bg);
+  stroke: var(--switcher-bg);
   stroke-width: 1.5;
 }
 
@@ -67,7 +80,7 @@
   border-radius: calc(var(--label-height) / 2);
   background: var(--tint);
   color: var(--accent-strong);
-  box-shadow: 0 0 0 2px var(--bg);
+  box-shadow: 0 0 0 2px var(--switcher-bg);
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
