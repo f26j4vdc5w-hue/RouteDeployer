@@ -138,7 +138,7 @@ export function TourDetails({
       {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
     </button>
   ) : null;
-  const chatUrl = isEvent && memberId ? tour.chatUrl : undefined;
+  const chatUrl = isEvent && attendance.isAttending ? tour.chatUrl : undefined;
 
   useEffect(() => {
     setActiveDistanceKm(null);
