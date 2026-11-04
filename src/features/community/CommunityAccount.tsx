@@ -4,6 +4,7 @@ import { LogOut, UserRound, X } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
 import { formatGermanDateInput, isoToGerman, parseGermanDate } from '../../shared/format/germanInput';
 import type { CommunityMember } from './useCommunityAuth';
+import { usePendingMemberCount } from './usePendingMemberCount';
 import './community.css';
 
 interface Props {
@@ -25,6 +26,7 @@ function germanToIso(value: string): string | null {
 
 export function CommunityAccount({ email, member, isAdmin, loading, error, onRefresh }: Props) {
   const [open, setOpen] = useState(false);
+  const pendingCount = usePendingMemberCount(isAdmin, open);
   const [mode, setMode] = useState<Mode>('signin');
   const [displayName, setDisplayName] = useState('');
   const [profileName, setProfileName] = useState('');
@@ -168,12 +170,21 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
       <button
         className="nav__account-button"
         type="button"
-        aria-label={email ? 'Konto und Mitgliedsstatus anzeigen' : 'Anmelden oder registrieren'}
+        aria-label={
+          pendingCount > 0
+            ? `Konto anzeigen, ${pendingCount} offene Freigaben`
+            : email
+              ? 'Konto und Mitgliedsstatus anzeigen'
+              : 'Anmelden oder registrieren'
+        }
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >
         <UserRound size={19} aria-hidden="true" />
+        {pendingCount > 0 && (
+          <span className="nav__account-badge" aria-hidden="true">{pendingCount > 99 ? '99+' : pendingCount}</span>
+        )}
       </button>
       {open && createPortal(
         <div className="community__overlay" role="dialog" aria-modal="true" aria-labelledby="community-title">
