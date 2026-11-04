@@ -1,0 +1,49 @@
+.loading {
+  max-width: 480px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 48px 32px;
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  color: var(--ink);
+}
+
+.loading p {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.loading__track {
+  position: relative;
+  height: 4px;
+  margin-top: 40px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.loading__bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent-strong);
+  transition: width 0.5s ease-out;
+}
+
+/* Das Icon sitzt auf dem Balken; sein vorderes Ende markiert den Fortschritt. */
+.loading__bike {
+  position: absolute;
+  bottom: 2px;
+  color: var(--accent-strong);
+  transform: translateX(-100%);
+  transition: left 0.5s ease-out;
+  line-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading__bar,
+  .loading__bike {
+    transition: none;
+  }
+}

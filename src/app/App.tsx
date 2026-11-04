@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
 import { fetchRoadbook } from '../data/backend';
+import { LoadingScreen } from './LoadingScreen';
 import { supabase } from '../lib/supabase';
 import { TourCalendar } from '../features/calendar/TourCalendar';
 import { CollectionSwitcher } from '../features/collection-switcher/CollectionSwitcher';
@@ -134,6 +135,7 @@ export default function App() {
   const [dataVersion, setDataVersion] = useState(0);
   const [reloadVersion, setReloadVersion] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [loadProgress, setLoadProgress] = useState(0);
   const community = useCommunityAuth();
   const isAdmin = community.session?.user.app_metadata.role === 'admin';
   const loggedIn =
@@ -156,7 +158,10 @@ export default function App() {
     }
 
     // Die Datenbank liefert je nach Freigabe andere Kollektionen aus, daher bei Statuswechsel neu laden.
-    fetchRoadbook()
+    setLoadProgress(0);
+    fetchRoadbook((fraction) => {
+      if (active) setLoadProgress(fraction);
+    })
       .then((data) => {
         if (active) {
           setSeasons(data);
@@ -185,7 +190,7 @@ export default function App() {
     );
   }
   if (!seasons || !authReady) {
-    return <main className="backend-state" aria-live="polite">Roadbook wird geladen …</main>;
+    return <LoadingScreen progress={authReady ? 0.15 + 0.85 * loadProgress : 0.05} />;
   }
   if (seasons.length === 0) {
     return <main className="backend-state">Es sind noch keine Saisons angelegt.</main>;
