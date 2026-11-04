@@ -138,15 +138,11 @@ export function EventEditor({
         duration_min: durationMin,
         gpx_key: gpxKey,
         route_stats: routeStats,
-        ...(collectionSlug === 'events'
-          ? {
-              event_url: trimmedEventUrl || null,
-              required_personal_fields: PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
-                requiredFields.includes(key),
-              ),
-            }
-          : {}),
+        ...(collectionSlug === 'events' ? { event_url: trimmedEventUrl || null } : {}),
       };
+      const requiredPersonalFields = PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
+        requiredFields.includes(key),
+      );
 
       if (tour) {
         const { error: updateError } = await client
@@ -163,6 +159,7 @@ export function EventEditor({
           collection_slug: collectionSlug,
           organizer_id: memberId,
           highlight: false,
+          ...(collectionSlug === 'events' ? { required_personal_fields: requiredPersonalFields } : {}),
         });
         if (insertError) throw insertError;
       }
@@ -267,6 +264,7 @@ export function EventEditor({
                   <label key={key} className="events__check">
                     <input
                       type="checkbox"
+                      disabled={Boolean(tour)}
                       checked={requiredFields.includes(key)}
                       onChange={(e) =>
                         setRequiredFields((current) =>
@@ -277,7 +275,10 @@ export function EventEditor({
                     {label}
                   </label>
                 ))}
-                <small>Nur diese Daten sind für dich unter „Teilnehmerdaten“ sichtbar.</small>
+                <small>
+                  Nur diese Daten sind für dich unter „Teilnehmerdaten“ sichtbar.
+                  {tour ? ' Die Auswahl ist nachträglich nicht änderbar.' : ' Die Auswahl lässt sich nach dem Anlegen nicht mehr ändern.'}
+                </small>
               </fieldset>
             )}
             <label>
