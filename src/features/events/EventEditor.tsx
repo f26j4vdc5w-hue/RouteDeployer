@@ -78,7 +78,6 @@ export function EventEditor({
     tour?.id ?? '',
     Boolean(tour) && collectionSlug === 'events',
   );
-  const chatReady = !tour || collectionSlug !== 'events' || existingChat.loaded;
   const chatValue = chatEdited ? chatUrl : existingChat.chatUrl ?? '';
   const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
@@ -158,7 +157,10 @@ export function EventEditor({
         gpx_key: gpxKey,
         route_stats: routeStats,
         ...(collectionSlug === 'events'
-          ? { event_url: trimmedEventUrl || null, chat_url: trimmedChatUrl || null }
+          ? {
+              event_url: trimmedEventUrl || null,
+              ...(!tour || chatEdited ? { chat_url: trimmedChatUrl || null } : {}),
+            }
           : {}),
       };
       const requiredPersonalFields = PERSONAL_FIELDS.map((entry) => entry.key).filter((key) =>
@@ -286,7 +288,6 @@ export function EventEditor({
                   maxLength={2048}
                   placeholder="https://chat.whatsapp.com/…"
                   value={chatValue}
-                  disabled={!chatReady}
                   onChange={(e) => {
                     setChatEdited(true);
                     setChatUrl(e.target.value);
@@ -352,7 +353,7 @@ export function EventEditor({
               </label>
             )}
             {error && <p className="community__message community__message--error" role="alert">{error}</p>}
-            <button className="community__submit" type="submit" disabled={busy || !chatReady}>
+            <button className="community__submit" type="submit" disabled={busy}>
               {busy ? 'Wird gespeichert …' : tour ? 'Speichern' : 'Event anlegen'}
             </button>
             {tour && (
