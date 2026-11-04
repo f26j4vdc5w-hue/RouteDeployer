@@ -89,14 +89,30 @@
   list-style: none;
 }
 
+.events__participants {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.events__participants li {
+  min-width: 0;
+}
+
 .events__participant {
   display: grid;
   gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.events__participant b {
+  overflow-wrap: anywhere;
 }
 
 .events__participant span {
   color: var(--muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .events__copy {
