@@ -34,6 +34,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
   const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [formEmail, setFormEmail] = useState('');
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -82,6 +83,8 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
           },
         });
         if (signupError) throw signupError;
+        const submittedEmail = formEmail.trim();
+        setConfirmationEmail(data.session ? null : submittedEmail);
         setNotice(
           data.session
             ? 'Dein Konto wurde angelegt. Nach der E-Mail-Bestätigung muss ein Admin deine Mitgliedschaft freigeben.'
@@ -92,11 +95,40 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
           email: formEmail.trim(),
           password,
         });
-        if (signinError) throw signinError;
+        if (signinError) {
+          if (signinError.code === 'email_not_confirmed') {
+            setConfirmationEmail(formEmail.trim());
+            setFormError('Deine E-Mail-Adresse ist noch nicht bestätigt. Du kannst die Bestätigungsmail erneut anfordern.');
+            return;
+          }
+          throw signinError;
+        }
         setNotice('Anmeldung erfolgreich.');
       }
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : 'Die Anfrage ist fehlgeschlagen.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!confirmationEmail) return;
+    setFormError(null);
+    setNotice(null);
+    setBusy(true);
+    try {
+      const { error: resendError } = await requireSupabase().auth.resend({
+        type: 'signup',
+        email: confirmationEmail,
+        options: {
+          emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString(),
+        },
+      });
+      if (resendError) throw resendError;
+      setNotice(`Eine neue Bestätigungsmail wurde an ${confirmationEmail} angefordert.`);
+    } catch (cause) {
+      setFormError(cause instanceof Error ? cause.message : 'Die Bestätigungsmail konnte nicht erneut angefordert werden.');
     } finally {
       setBusy(false);
     }
@@ -338,8 +370,9 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                 <p className="community__hint">oder mit E-Mail</p>
                 {mode === 'signup' && (
                   <p className="community__hint">
-                    Nach der E-Mail-Bestätigung (bei Google entfällt sie) muss ein Admin deine
-                    Mitgliedschaft freigeben.
+                    Der Bestätigungslink in der E-Mail ist eine Stunde gültig. Falls er abläuft,
+                    kannst du eine neue Bestätigungsmail anfordern. Bei Google entfällt die
+                    E-Mail-Bestätigung. Danach muss ein Admin deine Mitgliedschaft freigeben.
                   </p>
                 )}
                 <form className="community__form" onSubmit={submit}>
@@ -382,6 +415,18 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                     {busy ? 'Einen Moment …' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}
                   </button>
                 </form>
+                {confirmationEmail && (
+                  <div className="community__form">
+                    <button
+                      className="community__refresh"
+                      type="button"
+                      onClick={resendConfirmation}
+                      disabled={busy}
+                    >
+                      {busy ? 'Wird angefordert …' : 'Bestätigungsmail erneut senden'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </section>
