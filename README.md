@@ -82,6 +82,15 @@ einer leeren oder veralteten Tourenansicht.
 9. Melde dich auf der Website unter `/admin/` an. Bei GitHub-Pages-Projektseiten
    lautet der Pfad beispielsweise `/RouteDeployer/admin/`.
 
+### Passkeys
+
+Passkey-Anmeldung muss für das Supabase-Projekt aktiviert und für den Host der
+Website konfiguriert sein. Sie benötigt HTTPS (lokal ist `localhost` möglich)
+und einen unterstützten Browser. Angemeldete Nutzer können im Community-Konto
+einen Passkey einrichten und sich danach über „Mit Passkey anmelden“ anmelden.
+E-Mail/Passwort und Google bleiben verfügbar; die Community-Freigabe durch einen
+Admin ist weiterhin erforderlich.
+
 ## Datenbankmigrationen
 
 Das Repository ist über **Settings → Integrations → GitHub** mit dem Supabase-
