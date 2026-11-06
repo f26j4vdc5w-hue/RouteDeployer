@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { LogOut, UserRound, X } from 'lucide-react';
+import { KeyRound, LogOut, UserRound, X } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
 import { formatGermanDateInput, isoToGerman, parseGermanDate } from '../../shared/format/germanInput';
 import type { CommunityMember } from './useCommunityAuth';
@@ -39,6 +39,10 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
+  const passkeySupported = window.isSecureContext && typeof window.PublicKeyCredential !== 'undefined';
 
   useEffect(() => {
     setProfileName(member?.display_name ?? '');
@@ -46,6 +50,11 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
     setFullName(member?.full_name ?? '');
     setBirthDate(isoToGerman(member?.birth_date ?? null));
   }, [member]);
+
+  useEffect(() => {
+    setPasskeyError(null);
+    setPasskeyNotice(null);
+  }, [email]);
 
   useEffect(() => {
     if (!open) return;
@@ -131,6 +140,39 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
       setFormError(cause instanceof Error ? cause.message : 'Die Bestätigungsmail konnte nicht erneut angefordert werden.');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function signInWithPasskey() {
+    setFormError(null);
+    setNotice(null);
+    setPasskeyBusy(true);
+    try {
+      const { data, error: passkeySignInError } = await requireSupabase().auth.signInWithPasskey();
+      if (passkeySignInError) throw passkeySignInError;
+      if (!data?.session) throw new Error('Die Passkey-Anmeldung hat keine Sitzung erstellt.');
+      setConfirmationEmail(null);
+      setNotice('Anmeldung erfolgreich.');
+    } catch (cause) {
+      setFormError(cause instanceof Error ? cause.message : 'Die Passkey-Anmeldung ist fehlgeschlagen.');
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }
+
+  async function registerPasskey() {
+    setPasskeyError(null);
+    setPasskeyNotice(null);
+    setPasskeyBusy(true);
+    try {
+      const { data, error: registerError } = await requireSupabase().auth.registerPasskey();
+      if (registerError) throw registerError;
+      if (!data) throw new Error('Der Passkey konnte nicht eingerichtet werden.');
+      setPasskeyNotice('Dein Passkey wurde eingerichtet. Du kannst dich damit künftig anmelden.');
+    } catch (cause) {
+      setPasskeyError(cause instanceof Error ? cause.message : 'Der Passkey konnte nicht eingerichtet werden.');
+    } finally {
+      setPasskeyBusy(false);
     }
   }
 
@@ -297,10 +339,26 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   </fieldset>
                   {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
                   {notice && <p className="community__message" role="status">{notice}</p>}
-                  <button className="community__submit" type="submit" disabled={busy || !member}>
+                  <button className="community__submit" type="submit" disabled={busy || passkeyBusy || !member}>
                     {busy ? 'Wird gespeichert …' : 'Profil speichern'}
                   </button>
                 </form>
+                <section className="community__section" aria-labelledby="passkey-title">
+                  <h3 id="passkey-title" className="community__section-title">Passkey</h3>
+                  <p className="community__hint">
+                    Richte einen Passkey ein, um dich künftig ohne Passwort anzumelden.
+                    Deine Mitgliedschaft muss weiterhin freigegeben sein.
+                  </p>
+                  {!passkeySupported && (
+                    <p className="community__hint">Passkeys benötigen einen unterstützten Browser und eine sichere Verbindung.</p>
+                  )}
+                  {passkeyError && <p className="community__message community__message--error" role="alert">{passkeyError}</p>}
+                  {passkeyNotice && <p className="community__message" role="status">{passkeyNotice}</p>}
+                  <button className="community__submit" type="button" onClick={registerPasskey} disabled={busy || passkeyBusy || !passkeySupported}>
+                    <KeyRound size={16} aria-hidden="true" />
+                    {passkeyBusy ? 'Wird eingerichtet …' : 'Passkey einrichten'}
+                  </button>
+                </section>
                 {!error && member?.status === 'approved' && member.email_confirmed_at ? (
                   <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
                 ) : !error && member?.status === 'rejected' ? (
@@ -326,7 +384,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                     Zum Admin-Bereich
                   </a>
                 )}
-                <button className="community__submit" type="button" onClick={signOut} disabled={busy}>
+                <button className="community__submit" type="button" onClick={signOut} disabled={busy || passkeyBusy}>
                   <LogOut size={16} aria-hidden="true" />
                   {busy ? 'Wird abgemeldet …' : 'Abmelden'}
                 </button>
@@ -338,6 +396,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                     type="button"
                     className={mode === 'signin' ? 'is-active' : ''}
                     onClick={() => changeMode('signin')}
+                    disabled={passkeyBusy}
                   >
                     Anmelden
                   </button>
@@ -345,6 +404,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                     type="button"
                     className={mode === 'signup' ? 'is-active' : ''}
                     onClick={() => changeMode('signup')}
+                    disabled={passkeyBusy}
                   >
                     Registrieren
                   </button>
@@ -353,7 +413,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   type="button"
                   className="community__google"
                   onClick={signInWithGoogle}
-                  disabled={busy}
+                  disabled={busy || passkeyBusy}
                 >
                   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
                     <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.4 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
@@ -363,6 +423,17 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   </svg>
                   Mit Google {mode === 'signup' ? 'registrieren' : 'anmelden'}
                 </button>
+                {mode === 'signin' && (
+                  <>
+                    <button className="community__passkey" type="button" onClick={signInWithPasskey} disabled={busy || passkeyBusy || !passkeySupported}>
+                      <KeyRound size={18} aria-hidden="true" />
+                      {passkeyBusy ? 'Anmeldung läuft …' : 'Mit Passkey anmelden'}
+                    </button>
+                    {!passkeySupported && (
+                      <p className="community__hint">Passkeys benötigen einen unterstützten Browser und eine sichere Verbindung.</p>
+                    )}
+                  </>
+                )}
                 <p className="community__hint">
                   Mehr dazu in der{' '}
                   <a href={`${import.meta.env.BASE_URL}datenschutz/`}>Datenschutzerklärung</a>.
@@ -411,7 +482,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   </label>
                   {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
                   {notice && <p className="community__message" role="status">{notice}</p>}
-                  <button className="community__submit" type="submit" disabled={busy}>
+                  <button className="community__submit" type="submit" disabled={busy || passkeyBusy}>
                     {busy ? 'Einen Moment …' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}
                   </button>
                 </form>
@@ -421,7 +492,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                       className="community__refresh"
                       type="button"
                       onClick={resendConfirmation}
-                      disabled={busy}
+                      disabled={busy || passkeyBusy}
                     >
                       {busy ? 'Wird angefordert …' : 'Bestätigungsmail erneut senden'}
                     </button>
