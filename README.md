@@ -74,8 +74,9 @@ einer leeren oder veralteten Tourenansicht.
    Migrationen aus Schritt 2.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
-   `https://f26j4vdc5w-hue.github.io/RouteDeployer/` sowie
-   `http://localhost:5173/` in den erlaubten Redirect-URLs.
+   die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`
+   in den erlaubten Redirect-URLs. Hinweise zum Domainwechsel stehen unter
+   [Eigene Domain](#eigene-domain).
 8. Registrierte Nutzer müssen ihre E-Mail bestätigen. Danach kann ein Admin
    ihren Antrag im Admin-Bereich unter **Community-Freigaben** freigeben oder
    ablehnen. Nur freigegebene Mitglieder können Zusagen sehen oder verwalten.
@@ -141,3 +142,39 @@ veröffentlicht `dist`.
    Pages → Run workflow**).
 
 `pages: write` und `id-token: write` sind im Workflow bereits gesetzt.
+
+### Eigene Domain
+
+Der Build verwendet ohne weitere Einstellung den GitHub-Pages-Projektpfad
+`/<Repositoryname>/`. Für eine eigene Domain wird die Actions-Variable
+`PAGES_BASE_PATH` auf `/` gesetzt. Vor der Umschaltung:
+
+1. In Supabase unter **Authentication → URL Configuration** die Redirect-URLs
+   `https://kllktv.cc/` und `https://kllktv.cc/admin/` ergänzen. Bestehende
+   Redirect-URLs für die alte Website und die lokale Entwicklung zunächst
+   beibehalten. Die Site URL beim Umzug auf `https://kllktv.cc/` setzen.
+2. Die Domain für das GitHub-Konto verifizieren und unter **Settings → Pages →
+   Custom domain** `kllktv.cc` eintragen. Das Repository verwendet GitHub Actions;
+   eine `CNAME`-Datei im Repository ist dafür nicht erforderlich.
+3. Beim DNS-Anbieter die A-Einträge für `kllktv.cc` durch die vier aktuellen
+   [GitHub-Pages-IP-Adressen](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site#configuring-an-apex-domain)
+   ersetzen. Bestehende AAAA-Einträge ebenfalls prüfen; sie dürfen nicht auf
+   einen anderen Host zeigen. Für `www.kllktv.cc` optional einen CNAME auf
+   `f26j4vdc5w-hue.github.io` setzen. DNS-Einträge für den Mailversand nicht
+   verändern.
+4. Unter **Settings → Secrets and variables → Actions → Variables** die
+   Repository-Variable `PAGES_BASE_PATH` mit dem Wert `/` anlegen und den
+   Workflow **Deploy to GitHub Pages** auf `main` erneut ausführen. DNS-Prüfung
+   und HTTPS-Zertifikat in den Pages-Einstellungen abwarten und anschließend
+   **Enforce HTTPS** aktivieren.
+5. In Supabase unter **Authentication → Passkeys** den Relying Party ID auf
+   `kllktv.cc` und die erlaubte Origin auf `https://kllktv.cc` setzen. Passkeys
+   sind an ihren bisherigen Relying Party ID gebunden: Nach dessen Änderung
+   funktionieren bestehende Passkeys nicht mehr. Nutzer müssen sich zunächst
+   anders anmelden und einen neuen Passkey registrieren.
+6. Startseite, direkte Unterseiten, Admin-Bereich, Registrierung, Bestätigung,
+   Passwort-Reset, Google-Anmeldung und Passkeys auf der neuen Domain testen.
+   Alte Links und noch nicht verwendete Bestätigungslinks ebenfalls prüfen.
+
+DNS-Änderungen und die Ausstellung des HTTPS-Zertifikats können Zeit benötigen.
+Die Website kann während der Umschaltung vorübergehend nicht erreichbar sein.
