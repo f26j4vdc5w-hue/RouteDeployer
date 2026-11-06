@@ -370,8 +370,9 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                 <p className="community__hint">oder mit E-Mail</p>
                 {mode === 'signup' && (
                   <p className="community__hint">
-                    Nach der E-Mail-Bestätigung (bei Google entfällt sie) muss ein Admin deine
-                    Mitgliedschaft freigeben.
+                    Der Bestätigungslink in der E-Mail ist eine Stunde gültig. Falls er abläuft,
+                    kannst du eine neue Bestätigungsmail anfordern. Bei Google entfällt die
+                    E-Mail-Bestätigung. Danach muss ein Admin deine Mitgliedschaft freigeben.
                   </p>
                 )}
                 <form className="community__form" onSubmit={submit}>
