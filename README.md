@@ -79,6 +79,8 @@ einer leeren oder veralteten Tourenansicht.
    ergänzt Kleidergröße und Telefonnummer im Profil und bei Event-Pflichtangaben.
    Die Migration [`202611100001`](supabase/migrations/202611100001_event_end_date.sql)
    ergänzt ein optionales Enddatum für mehrtägige Events.
+   Die Migration [`202611110001`](supabase/migrations/202611110001_event_additional_routes.sql)
+   ermöglicht zusätzliche GPX-Routen pro Event. Die Zusage gilt für das gesamte Event.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`
