@@ -1,4 +1,4 @@
-import { Copy, UsersRound, X } from 'lucide-react';
+import { Copy, IdCard, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { requireSupabase } from '../../lib/supabase';
@@ -116,7 +116,7 @@ export function EventParticipantData({ seasonSlug, collectionSlug, tourId, requi
       <section className="events__participants" ref={panelRef}>
         <header className="events__participants-header">
           <div className="events__participants-heading">
-            <UsersRound size={20} aria-hidden="true" />
+            <IdCard size={20} aria-hidden="true" />
             <h2 id="event-participants-title">Teilnehmerdaten</h2>
           </div>
           <button ref={closeRef} className="events__participants-close" type="button" onClick={onClose} aria-label="Teilnehmerdaten schließen">

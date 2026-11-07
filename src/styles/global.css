@@ -438,20 +438,6 @@ select {
 .details__title-stack {
   min-width: 0;
 }
-.details__event-link {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  color: var(--accent-strong);
-}
-.details__event-link:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 2px;
-}
 .attendance__people {
   position: relative;
   flex: 0 0 auto;
@@ -622,11 +608,12 @@ select {
 .meeting__location svg {
   flex: 0 0 auto;
 }
-.meeting--with-routes {
-  flex-wrap: wrap;
+.meeting--event {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
-.meeting--with-routes .meeting__location {
-  flex: 1 1 140px;
+.meeting--event .meeting__location {
   min-width: 0;
 }
 
@@ -917,14 +904,23 @@ a.attendance__chat {
   text-decoration: none;
 }
 .meeting__actions {
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 18px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 18px;
 }
 .meeting__actions .attendance__people {
   margin-left: 0;
+}
+
+@media (max-width: 480px) {
+  .meeting__actions {
+    column-gap: 10px;
+  }
 }
 
 @media (max-width: 380px) {

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Tour } from '../../domain/tour';
-import { eventRouteAt, eventRouteCount, swipedRouteIndex } from './eventRoutes';
+import { eventRouteAt, eventRouteCount, routeDragOffset, swipedRouteIndex } from './eventRoutes';
 
 const routeStats = {
   distanceKm: 20, ascentM: 300, isLoop: false,
@@ -42,4 +42,13 @@ test('only horizontal swipes within route bounds change selection', () => {
   assert.equal(swipedRouteIndex(0, 3, -49, 0), null);
   assert.equal(swipedRouteIndex(0, 3, -80, 70), null);
   assert.equal(swipedRouteIndex(0, 1, -80, 0), null);
+});
+
+test('drag follows the finger without moving beyond available routes or card width', () => {
+  assert.equal(routeDragOffset(1, 3, -75, 280), -75);
+  assert.equal(routeDragOffset(1, 3, 80, 280), 80);
+  assert.equal(routeDragOffset(0, 3, 80, 280), 0);
+  assert.equal(routeDragOffset(2, 3, -80, 280), 0);
+  assert.equal(routeDragOffset(0, 1, -80, 280), 0);
+  assert.equal(routeDragOffset(1, 3, -400, 280), -280);
 });

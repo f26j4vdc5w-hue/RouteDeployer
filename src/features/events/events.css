@@ -23,30 +23,43 @@
 .events__route-navigation button:focus-visible,
 .events__route-add:focus-visible,
 .events__route-remove:focus-visible,
-.events__organizer button:focus-visible,
 .events__consent button:focus-visible,
 .events__copy:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
 
+.attendance__people.events__organizer-action {
+  background: var(--accent-strong);
+  color: var(--on-accent);
+}
+
+.events__route-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .events__route-swipe {
   position: relative;
   overflow: hidden;
+  border-radius: var(--radius-md);
   touch-action: pan-y;
 }
 
 .events__route-enter,
-.events__route-exit {
+.events__route-exit,
+.events__route-return {
   animation: event-route-slide 260ms ease both;
 }
 
-.events__route-enter--next { --route-slide-from: 100%; --route-slide-to: 0%; }
-.events__route-enter--previous { --route-slide-from: -100%; --route-slide-to: 0%; }
-.events__route-exit--next { --route-slide-from: 0%; --route-slide-to: -100%; }
-.events__route-exit--previous { --route-slide-from: 0%; --route-slide-to: 100%; }
+.events__route-enter--next { --route-slide-from: calc(100% + 12px); --route-slide-to: 0%; }
+.events__route-enter--previous { --route-slide-from: calc(-100% - 12px); --route-slide-to: 0%; }
+.events__route-exit--next { --route-slide-from: 0%; --route-slide-to: calc(-100% - 12px); }
+.events__route-exit--previous { --route-slide-from: 0%; --route-slide-to: calc(100% + 12px); }
 
-.events__route-exit {
+.events__route-exit,
+.events__route-neighbor {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -59,7 +72,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .events__route-enter,
-  .events__route-exit {
+  .events__route-exit,
+  .events__route-return {
     animation-duration: 1ms;
   }
 }
@@ -93,6 +107,13 @@
   cursor: default;
 }
 
+.events__route-number {
+  display: inline-block;
+  min-width: 1ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .community__form .events__route-fields {
   min-width: 0;
   display: grid;
@@ -118,14 +139,6 @@
   cursor: pointer;
 }
 
-.events__organizer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0;
-}
-
-.events__organizer button,
 .events__copy,
 .events__consent button {
   display: inline-flex;
