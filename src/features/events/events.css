@@ -82,26 +82,103 @@
   justify-self: start;
 }
 
+.events__participants-overlay {
+  position: fixed;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  justify-items: center;
+  background: rgb(18 16 22 / 58%);
+}
+
+.events__participants-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.events__participants {
+  position: relative;
+  width: min(100%, 720px);
+  height: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.events__participants-header {
+  padding: 18px 20px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.events__participants-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent-strong);
+}
+
+.events__participants-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 19px;
+}
+
+.events__participants-close {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.events__participants-close:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.events__participants-content {
+  min-height: 0;
+  padding: 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.events__participants-content > p:not(.attendance__error) {
+  margin: 0;
+  color: var(--muted);
+}
+
 .events__participants ul {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.events__participants {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.events__participants li {
-  min-width: 0;
-}
-
 .events__participant {
   display: grid;
-  gap: 2px;
+  gap: 6px;
   min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   overflow-wrap: anywhere;
 }
 
@@ -111,12 +188,26 @@
 
 .events__participant span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   overflow-wrap: anywhere;
 }
 
 .events__copy {
-  margin-top: 10px;
+  margin-top: 16px;
+}
+
+@media (min-width: 600px) {
+  .events__participants-overlay {
+    align-items: center;
+    padding: 20px;
+  }
+
+  .events__participants {
+    height: min(860px, 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 18px 60px rgb(0 0 0 / 25%);
+  }
 }
 
 .community__form .events__check {

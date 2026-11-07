@@ -1,10 +1,12 @@
-export type PersonalField = 'full_name' | 'email' | 'address' | 'birth_date';
+export type PersonalField = 'full_name' | 'email' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number';
 
 export const PERSONAL_FIELDS: { key: PersonalField; label: string }[] = [
   { key: 'full_name', label: 'Vollständiger Name' },
   { key: 'email', label: 'E-Mail-Adresse' },
   { key: 'address', label: 'Adresse' },
   { key: 'birth_date', label: 'Geburtsdatum' },
+  { key: 'clothing_size', label: 'Kleidergröße' },
+  { key: 'phone_number', label: 'Telefonnummer' },
 ];
 
 export const personalFieldLabel = (field: PersonalField) =>
@@ -15,6 +17,8 @@ interface PersonalValues {
   email: string | null;
   address: string | null;
   birth_date: string | null;
+  clothing_size: string | null;
+  phone_number: string | null;
 }
 
 // Spiegelt die Prüfung in der Datenbank (is_plausible_personal_value).
@@ -31,6 +35,10 @@ export function isPlausible(field: PersonalField, values: PersonalValues) {
       return value.length <= 254 && /^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/.test(value);
     case 'address':
       return value.length >= 8 && value.length <= 250 && /\p{L}/u.test(value) && /\d/.test(value);
+    case 'clothing_size':
+      return [...value].length >= 1 && [...value].length <= 40;
+    case 'phone_number':
+      return value.length <= 40 && /^[+0-9\s()./-]+$/.test(value) && (value.match(/[0-9]/g)?.length ?? 0) >= 5;
     case 'birth_date': {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
       const today = new Date();

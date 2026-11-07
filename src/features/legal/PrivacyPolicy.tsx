@@ -53,8 +53,9 @@ export default function PrivacyPolicy() {
 
       <h2>5. Persönliche Angaben (optional)</h2>
       <p>
-        Im Profil kannst du freiwillig vollständigen Namen, Adresse und Geburtsdatum hinterlegen.
-        Sie sind ausschließlich für dich selbst sichtbar. Sie können künftig für die Buchung von
+        Im Profil kannst du freiwillig vollständigen Namen, Adresse, Geburtsdatum, Kleidergröße
+        und Telefonnummer hinterlegen.
+        Sie sind zunächst nur für dich selbst sichtbar. Sie können künftig für die Buchung von
         Unterkünften, Flügen und Startplätzen genutzt werden. Eine Weitergabe an andere Personen
         findet nur wie unten beschrieben statt. Du kannst die Angaben jederzeit ändern oder
         löschen.
@@ -63,8 +64,9 @@ export default function PrivacyPolicy() {
       <h2>6. Events und Organisatoren</h2>
       <p>
         Wenn du einem Event beitrittst, willigst du ausdrücklich ein, dass der Organisator des
-        Events deine persönlichen Angaben (vollständiger Name, Adresse, Geburtsdatum, soweit
-        hinterlegt) einsehen darf. Die Einwilligung gilt nur für dieses Event und endet, wenn du
+        Events die bei der Eventerstellung ausgewählten Pflichtangaben einsehen und nutzen darf.
+        Dazu können vollständiger Name, E-Mail-Adresse, Adresse, Geburtsdatum, Kleidergröße und
+        Telefonnummer gehören. Die Einwilligung gilt nur für dieses Event und endet, wenn du
         deine Zusage zurücknimmst. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a
         DSGVO).
       </p>

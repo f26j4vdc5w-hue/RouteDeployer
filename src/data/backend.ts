@@ -2,6 +2,7 @@ import type { Collection, Season } from '../domain/catalog';
 import type { RouteStats } from '../domain/route';
 import type { Tour, TourRoute } from '../domain/tour';
 import { requireSupabase } from '../lib/supabase';
+import type { PersonalField } from '../shared/personalData';
 
 interface SeasonRow {
   slug: string;
@@ -36,7 +37,7 @@ interface TourRow {
   alternative: StoredTourRoute | null;
   organizer_id: string | null;
   event_url?: string | null;
-  required_personal_fields?: ('full_name' | 'email' | 'address' | 'birth_date')[] | null;
+  required_personal_fields?: PersonalField[] | null;
 }
 
 interface StoredTourRoute {
