@@ -95,6 +95,13 @@ export function TourDetails({
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
   const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
+  const [routeTransition, setRouteTransition] = useState<{
+    eventKey: string;
+    targetIndex: number;
+    direction: 'next' | 'previous';
+    previousRoute: RouteStats | undefined;
+    previousDistanceKm: number | null;
+  } | null>(null);
   const [ascentRequested, setAscentRequested] = useState(false);
   const [ascentData, setAscentData] = useState<{
     route: RouteStats;
@@ -137,6 +144,26 @@ export function TourDetails({
     isEvent && (attendance.isAttending || isOrganizer),
     tour,
   );
+  const eventKey = `${seasonSlug}/${collectionSlug}/${tour.id}`;
+  const activeTransition = routeTransition?.eventKey === eventKey && routeTransition.targetIndex === eventRouteIndex
+    ? routeTransition
+    : null;
+
+  function changeEventRoute(index: number) {
+    if (!onEventRouteChange || index === eventRouteIndex || index < 0 || index >= eventRouteCount) return;
+    setRouteTransition({
+      eventKey,
+      targetIndex: index,
+      direction: index > eventRouteIndex ? 'next' : 'previous',
+      previousRoute: route,
+      previousDistanceKm: activeDistanceKm,
+    });
+    onEventRouteChange(index);
+  }
+
+  useEffect(() => {
+    setRouteTransition(null);
+  }, [eventKey]);
 
   useEffect(() => {
     setActiveDistanceKm(null);
@@ -310,16 +337,29 @@ export function TourDetails({
         </div>
       </header>
 
-      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl) && (
-        <div className="meeting">
+      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1) && (
+        <div className={`meeting${eventRouteCount > 1 ? ' meeting--with-routes' : ''}`}>
           {(tour.meetingTime || tour.meetingPlace) && (
-            <>
+            <span className="meeting__location">
               <MapPin size={16} />
               {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
-            </>
+            </span>
           )}
-          {(attendance.canAttend || chatUrl) && (
+          {(attendance.canAttend || chatUrl || eventRouteCount > 1) && (
             <div className="meeting__actions">
+              {eventRouteCount > 1 && (
+                <div className="events__route-navigation" role="group" aria-label="Eventrouten">
+                  <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}
+                    onClick={() => changeEventRoute(eventRouteIndex - 1)}>
+                    <ChevronLeft size={16} aria-hidden="true" />
+                  </button>
+                  <span aria-live="polite">{eventRouteIndex + 1} von {eventRouteCount}</span>
+                  <button type="button" aria-label="Nächste Route" disabled={eventRouteIndex === eventRouteCount - 1}
+                    onClick={() => changeEventRoute(eventRouteIndex + 1)}>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
               {chatUrl && (
                 <a
                   className="attendance__people attendance__chat"
@@ -459,26 +499,27 @@ export function TourDetails({
               const dx = touch.clientX - start.x;
               const dy = touch.clientY - start.y;
               const next = swipedRouteIndex(eventRouteIndex, eventRouteCount, dx, dy);
-              if (next !== null) onEventRouteChange?.(next);
+              if (next !== null) changeEventRoute(next);
             }}
             onTouchCancel={() => { touchStartRef.current = null; }}
           >
-            <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
-          </div>
-          {eventRouteCount > 1 && (
-            <div className="events__route-navigation" role="group" aria-label="Eventrouten">
-              <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}
-                onClick={() => onEventRouteChange?.(eventRouteIndex - 1)}>
-                <ChevronLeft size={18} aria-hidden="true" />
-              </button>
-              <span aria-live="polite">{eventRouteIndex + 1} von {eventRouteCount}</span>
-              <button type="button" aria-label="Nächste Route" disabled={eventRouteIndex === eventRouteCount - 1}
-                onClick={() => onEventRouteChange?.(eventRouteIndex + 1)}>
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
+            <div
+              key={`${eventKey}-${eventRouteIndex}`}
+              className={activeTransition ? `events__route-enter events__route-enter--${activeTransition.direction}` : undefined}
+            >
+              <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
             </div>
-          )}
-
+            {activeTransition && (
+              <div
+                key={`${eventKey}-${eventRouteIndex}-out`}
+                className={`events__route-exit events__route-exit--${activeTransition.direction}`}
+                aria-hidden="true"
+                onAnimationEnd={() => setRouteTransition(null)}
+              >
+                <RouteMap route={activeTransition.previousRoute} activeDistanceKm={activeTransition.previousDistanceKm} />
+              </div>
+            )}
+          </div>
           <div className={`stats${isPartialStats ? ' stats--partial' : ''}`}>
             {stats.map((s) => (
               <div className="stats__item" key={s.label}>

@@ -614,6 +614,21 @@ select {
   gap: 8px;
   font-size: 12px;
 }
+.meeting__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.meeting__location svg {
+  flex: 0 0 auto;
+}
+.meeting--with-routes {
+  flex-wrap: wrap;
+}
+.meeting--with-routes .meeting__location {
+  flex: 1 1 140px;
+  min-width: 0;
+}
 
 /* Wettervorhersage */
 .weather {

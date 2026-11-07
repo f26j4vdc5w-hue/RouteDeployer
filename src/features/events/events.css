@@ -31,26 +31,54 @@
 }
 
 .events__route-swipe {
+  position: relative;
+  overflow: hidden;
   touch-action: pan-y;
 }
 
+.events__route-enter,
+.events__route-exit {
+  animation: event-route-slide 260ms ease both;
+}
+
+.events__route-enter--next { --route-slide-from: 100%; --route-slide-to: 0%; }
+.events__route-enter--previous { --route-slide-from: -100%; --route-slide-to: 0%; }
+.events__route-exit--next { --route-slide-from: 0%; --route-slide-to: -100%; }
+.events__route-exit--previous { --route-slide-from: 0%; --route-slide-to: 100%; }
+
+.events__route-exit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+@keyframes event-route-slide {
+  from { transform: translateX(var(--route-slide-from)); }
+  to { transform: translateX(var(--route-slide-to)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .events__route-enter,
+  .events__route-exit {
+    animation-duration: 1ms;
+  }
+}
+
 .events__route-navigation {
-  width: fit-content;
-  margin: 10px auto;
-  padding: 2px 6px;
   display: flex;
   align-items: center;
-  gap: 8px;
   border-radius: 999px;
   background: var(--tint);
   color: var(--accent-strong);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .events__route-navigation button {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   display: grid;
   place-items: center;
   border: 0;
