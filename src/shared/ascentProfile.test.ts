@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { test } from 'node:test';
-import routes from '../data/routes.generated.json';
 import { createAscentProfile, getAscentUntilDistance } from './ascentProfile';
 import { haversineKm, type GpxPoint } from './gpx';
 
@@ -14,12 +14,37 @@ function pointsFromFixture(file: string): GpxPoint[] {
   }));
 }
 
+function gpxFiles(directory: string): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+    return entry.isDirectory() ? gpxFiles(path) : entry.name.endsWith('.gpx') ? [path] : [];
+  });
+}
+
+function originalAscent(points: GpxPoint[]) {
+  const firstElevation = points.find((point) => point.ele !== null)?.ele;
+  assert.ok(firstElevation != null, 'GPX route must contain elevation data');
+  let reference: number = firstElevation;
+  let ascent = 0;
+  for (const point of points.slice(1)) {
+    if (point.ele === null) continue;
+    if (point.ele - reference >= 3) {
+      ascent += point.ele - reference;
+      reference = point.ele;
+    } else if (reference - point.ele >= 3) {
+      reference = point.ele;
+    }
+  }
+  return Math.round(ascent);
+}
+
 test('full GPX points produce correct intermediate ascent and no end jump', () => {
   const key = '2026/camp/01-puig-de-la-llorenca-alt-de-bernia.gpx';
-  const route = routes[key];
   const points = pointsFromFixture(`public/routes/${key}`);
   const profile = createAscentProfile(points);
-  assert.equal(profile.ascentM, route.ascentM);
+  const totalAscent = 1897;
+  const displayedRouteDistance = 124.2;
+  assert.equal(profile.ascentM, totalAscent);
 
   const index = Math.floor(points.length * 0.8);
   let distance = 0;
@@ -36,18 +61,25 @@ test('full GPX points produce correct intermediate ascent and no end jump', () =
       reference = elevation;
     }
   }
-  const displayedDistance = (distance / profile.distanceKm) * route.distanceKm;
-  assert.equal(getAscentUntilDistance(profile, displayedDistance, route.distanceKm), Math.round(ascent));
-  assert.ok(route.ascentM - getAscentUntilDistance(profile, route.distanceKm * 0.99999, route.distanceKm) <= 3);
-  assert.equal(getAscentUntilDistance(profile, route.distanceKm, route.distanceKm), route.ascentM);
+  const displayedDistance = (distance / profile.distanceKm) * displayedRouteDistance;
+  assert.equal(getAscentUntilDistance(profile, displayedDistance, displayedRouteDistance), Math.round(ascent));
+  assert.ok(totalAscent - getAscentUntilDistance(profile, displayedRouteDistance * 0.99999, displayedRouteDistance) <= 3);
+  assert.equal(getAscentUntilDistance(profile, displayedRouteDistance, displayedRouteDistance), totalAscent);
 });
 
-test('all generated routes retain their original total ascent', () => {
-  for (const [key, route] of Object.entries(routes)) {
-    if (route.ascentM === null) continue;
-    const profile = createAscentProfile(pointsFromFixture(`public/routes/${key}`));
-    assert.equal(profile.ascentM, route.ascentM, key);
-    assert.equal(getAscentUntilDistance(profile, route.distanceKm, route.distanceKm), route.ascentM, key);
+test('all GPX routes retain their original total ascent', () => {
+  const files = gpxFiles('public/routes');
+  assert.ok(files.length > 0);
+  for (const file of files) {
+    const points = pointsFromFixture(file);
+    if (!points.some((point) => point.ele !== null)) continue;
+    const profile = createAscentProfile(points);
+    const expected = originalAscent(points);
+    assert.equal(profile.ascentM, expected, file);
+    const displayedDistance = Number(profile.distanceKm.toFixed(1));
+    if (displayedDistance > 0) {
+      assert.equal(getAscentUntilDistance(profile, displayedDistance, displayedDistance), expected, file);
+    }
   }
 });
 
