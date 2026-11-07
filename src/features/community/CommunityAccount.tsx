@@ -33,6 +33,8 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
   const [address, setAddress] = useState('');
   const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [clothingSize, setClothingSize] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [password, setPassword] = useState('');
@@ -49,6 +51,8 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
     setAddress(member?.address ?? '');
     setFullName(member?.full_name ?? '');
     setBirthDate(isoToGerman(member?.birth_date ?? null));
+    setClothingSize(member?.clothing_size ?? '');
+    setPhoneNumber(member?.phone_number ?? '');
   }, [member]);
 
   useEffect(() => {
@@ -228,8 +232,10 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
         p_full_name: fullName.trim() || null,
         p_address: address.trim() || null,
         p_birth_date: birthDateIso,
+        p_clothing_size: clothingSize.trim() || null,
+        p_phone_number: phoneNumber.trim() || null,
       });
-      if (updateError) throw updateError;
+      if (updateError) throw new Error(updateError.message);
       onRefresh();
       setNotice('Dein Profil wurde gespeichert.');
     } catch (cause) {
@@ -301,10 +307,8 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                   <fieldset className="community__section">
                     <legend>Persönliche Angaben (optional)</legend>
                     <p className="community__hint">
-                      Diese Daten können künftig für die Buchung von Unterkünften, Flügen und
-                      Startplätzen genutzt werden. Eine genaue Richtlinie, wer wann und wie Zugriff
-                      darauf erhält, steht noch nicht fest. Aktuell sind die Angaben nur für dich
-                      selbst sichtbar.
+                      Bei Events erhält der Organisator nur die dort angeforderten Angaben,
+                      wenn du deiner Teilnahme und der Weitergabe zustimmst.
                     </p>
                     <label>
                       Vollständiger Name
@@ -335,6 +339,28 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
                         value={birthDate}
                         onChange={(event) => setBirthDate(formatGermanDateInput(event.target.value))}
                       />
+                    </label>
+                    <label>
+                      Kleidergröße
+                      <input
+                        maxLength={40}
+                        placeholder="z. B. M oder 38"
+                        value={clothingSize}
+                        onChange={(event) => setClothingSize(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Telefonnummer
+                      <input
+                        type="tel"
+                        autoComplete="tel"
+                        maxLength={40}
+                        value={phoneNumber}
+                        onChange={(event) => setPhoneNumber(event.target.value)}
+                      />
+                      <span className="community__hint">
+                        Für Eventzusagen mindestens fünf Ziffern; +, Leerzeichen, Klammern, Punkte, / und - sind erlaubt.
+                      </span>
                     </label>
                   </fieldset>
                   {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}

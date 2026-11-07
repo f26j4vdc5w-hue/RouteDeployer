@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
   Bike,
   CalendarCheck,
@@ -105,6 +105,7 @@ export function TourDetails({
   const [consentOpen, setConsentOpen] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
+  const closeParticipants = useCallback(() => setParticipantsOpen(false), []);
   const teaserContainerRef = useRef<HTMLDivElement>(null);
   const teaserRef = useRef<HTMLParagraphElement>(null);
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
@@ -332,8 +333,8 @@ export function TourDetails({
           </button>
           <button
             type="button"
-            onClick={() => setParticipantsOpen((open) => !open)}
-            aria-expanded={participantsOpen}
+            onClick={() => setParticipantsOpen(true)}
+            aria-haspopup="dialog"
           >
             <UsersRound size={14} aria-hidden="true" /> Teilnehmerdaten
           </button>
@@ -345,6 +346,7 @@ export function TourDetails({
           collectionSlug={collectionSlug}
           tourId={tour.id}
           requiredFields={requiredFields}
+          onClose={closeParticipants}
         />
       )}
 

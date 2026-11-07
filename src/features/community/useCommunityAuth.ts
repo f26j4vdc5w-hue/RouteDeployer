@@ -9,6 +9,8 @@ export interface CommunityMember {
   full_name: string | null;
   address: string | null;
   birth_date: string | null;
+  clothing_size: string | null;
+  phone_number: string | null;
   status: 'pending' | 'approved' | 'rejected';
   email_confirmed_at: string | null;
 }
@@ -79,17 +81,20 @@ export function useCommunityAuth() {
           setMember(null);
         } else {
           // Persönliche Angaben sind nicht direkt selektierbar, nur über diese Funktion.
-          const { data: details } = await supabase.rpc('get_my_personal_details').maybeSingle();
+          const { data: details, error: detailsError } = await supabase.rpc('get_my_personal_details').maybeSingle();
           if (!active) return;
+          if (detailsError) throw new Error(detailsError.message);
           const personal = details as
-            | { full_name: string | null; address: string | null; birth_date: string | null }
+            | Pick<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number'>
             | null;
           setError(null);
           setMember({
-            ...(data as Omit<CommunityMember, 'full_name' | 'address' | 'birth_date'>),
+            ...(data as Omit<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number'>),
             full_name: personal?.full_name ?? null,
             address: personal?.address ?? null,
             birth_date: personal?.birth_date ?? null,
+            clothing_size: personal?.clothing_size ?? null,
+            phone_number: personal?.phone_number ?? null,
           });
         }
       } catch (cause) {
