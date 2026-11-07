@@ -137,7 +137,7 @@ export function TourDetails({
       {attendance.isAttending ? <Check size={19} /> : <Plus size={19} />}
     </button>
   ) : null;
-  const { chatUrl } = useEventChatUrl(
+  const { chatUrl, error: chatError, retry: retryChat } = useEventChatUrl(
     seasonSlug,
     collectionSlug,
     tour.id,
@@ -344,6 +344,12 @@ export function TourDetails({
               <MapPin size={16} />
               {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
             </span>
+          )}
+          {chatError && (
+            <p className="attendance__error" role="alert">
+              {chatError}{' '}
+              <button type="button" onClick={retryChat}>Erneut laden</button>
+            </p>
           )}
           {(attendance.canAttend || chatUrl || eventRouteCount > 1) && (
             <div className="meeting__actions">

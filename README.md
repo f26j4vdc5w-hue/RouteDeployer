@@ -81,6 +81,9 @@ einer leeren oder veralteten Tourenansicht.
    ergänzt ein optionales Enddatum für mehrtägige Events.
    Die Migration [`202611110001`](supabase/migrations/202611110001_event_additional_routes.sql)
    ermöglicht zusätzliche GPX-Routen pro Event. Die Zusage gilt für das gesamte Event.
+   Die Migration [`202611120001`](supabase/migrations/202611120001_restore_event_chat_url_function.sql)
+   stellt den geschützten Abruf von WhatsApp-Chat-Links wieder her, falls die
+   Datenbankfunktion fehlt.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`
