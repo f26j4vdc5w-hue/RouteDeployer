@@ -247,13 +247,16 @@ export function EventEditor({
       );
 
       if (tour) {
-        const { error: updateError } = await client
+        const { data: updatedTour, error: updateError } = await client
           .from('tours')
           .update(values)
           .eq('id', tour.id)
           .eq('season_slug', seasonSlug)
-          .eq('collection_slug', collectionSlug);
+          .eq('collection_slug', collectionSlug)
+          .select('id')
+          .maybeSingle();
         if (updateError) throw updateError;
+        if (!updatedTour) throw new Error('Das Event wurde nicht gespeichert. Bitte prüfe deine Berechtigung und versuche es erneut.');
       } else {
         const { error: insertError } = await client.from('tours').insert({
           ...values,
@@ -395,6 +398,12 @@ export function EventEditor({
                   }}
                 />
               </label>
+            )}
+            {collectionSlug === 'events' && existingChat.error && (
+              <p className="community__message community__message--error" role="alert">
+                {existingChat.error}{' '}
+                <button type="button" onClick={existingChat.retry}>Erneut laden</button>
+              </p>
             )}
             {collectionSlug === 'events' && (
               <fieldset className="events__fields">
