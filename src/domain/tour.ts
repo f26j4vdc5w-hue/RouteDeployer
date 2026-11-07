@@ -31,6 +31,8 @@ export interface Tour extends TourRoute {
   organizerId?: string;
   /** Externer Link; nur bei Events gesetzt. */
   eventUrl?: string;
+  /** Optionales Enddatum eines Events im Format YYYY-MM-DD. */
+  endDate?: string;
   /** Pflichtangaben der Teilnehmer; nur bei Events gesetzt. */
   requiredPersonalFields?: PersonalField[];
   /** Optionale zweite Route für denselben Termin. */

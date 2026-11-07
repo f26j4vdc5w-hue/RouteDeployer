@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { Tour } from '../../domain/tour';
-import { todayIso } from '../../shared/format/date';
+import { todayIso, tourEndDate, tourIncludesDate } from '../../shared/format/date';
+import { weeklyRangeMarkers } from './calendarMarkers';
 import './calendar.css';
 
 interface CalendarEntry {
@@ -21,6 +22,8 @@ interface Month {
 interface Props {
   seasons: Season[];
   selectedId: string;
+  selectedSeasonSlug: string;
+  selectedCollectionSlug: string;
   onSelect: (season: Season, collection: Collection, tourId: string) => void;
   onClose: () => void;
 }
@@ -47,7 +50,10 @@ function monthKey(date: string) {
 }
 
 function createMonths(entries: CalendarEntry[], today: string): Month[] {
-  const years = [...entries.map(({ tour }) => Number(tour.id.slice(0, 4))), Number(today.slice(0, 4))];
+  const years = [
+    ...entries.flatMap(({ tour }) => [Number(tour.id.slice(0, 4)), Number(tourEndDate(tour).slice(0, 4))]),
+    Number(today.slice(0, 4)),
+  ];
   const firstYear = Math.min(...years);
   const lastYear = Math.max(...years);
   const months: Month[] = [];
@@ -80,7 +86,7 @@ function isoDate(month: Month, day: number) {
   return `${month.key}-${String(day).padStart(2, '0')}`;
 }
 
-export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) {
+export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selectedCollectionSlug, onSelect, onClose }: Props) {
   const today = todayIso();
   const entries = useMemo(
     () =>
@@ -92,16 +98,9 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
     [seasons],
   );
   const months = useMemo(() => createMonths(entries, today), [entries, today]);
-  const entriesByDate = useMemo(() => {
-    const grouped = new Map<string, CalendarEntry[]>();
-    for (const entry of entries) {
-      const dateKey = entry.tour.id.slice(0, 10);
-      const dateEntries = grouped.get(dateKey) ?? [];
-      dateEntries.push(entry);
-      grouped.set(dateKey, dateEntries);
-    }
-    return grouped;
-  }, [entries]);
+  const selectedTour = entries.find(({ season, collection, tour }) =>
+    season.slug === selectedSeasonSlug && collection.slug === selectedCollectionSlug && tour.id === selectedId,
+  )?.tour;
   const initialMonth = months.some((month) => month.key === monthKey(selectedId))
     ? monthKey(selectedId)
     : monthKey(today);
@@ -200,6 +199,14 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
         >
           {months.map((month) => {
             const days = monthDays(month);
+            const rangeMarkers = days.flatMap((_, index) =>
+              index % 7 === 0
+                ? weeklyRangeMarkers(
+                    days.slice(index, index + 7).map((day) => day === null ? null : isoDate(month, day)),
+                    entries,
+                  )
+                : [],
+            );
             return (
               <section
                 className="tour-calendar__month"
@@ -222,9 +229,10 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
                       return <span className="tour-calendar__empty" role="gridcell" key={`empty-${index}`} />;
                     }
                     const date = isoDate(month, day);
-                    const dateEntries = entriesByDate.get(date) ?? [];
+                    const dateEntries = entries.filter(({ tour }) => tourIncludesDate(tour, date));
+                    const singleDayEntries = dateEntries.filter(({ tour }) => tourEndDate(tour) === tour.id.slice(0, 10));
                     const isToday = date === today;
-                    const isSelected = date === selectedId.slice(0, 10);
+                    const isSelected = selectedTour ? tourIncludesDate(selectedTour, date) : date === selectedId.slice(0, 10);
                     return (
                       <div
                         className={`tour-calendar__day${isToday ? ' tour-calendar__day--today' : ''}${isSelected ? ' tour-calendar__day--selected' : ''}`}
@@ -233,9 +241,24 @@ export function TourCalendar({ seasons, selectedId, onSelect, onClose }: Props) 
                         key={date}
                       >
                         <span className="tour-calendar__day-number">{day}</span>
-                        {dateEntries.length > 0 && (
+                        {rangeMarkers[index].length > 0 && (
+                          <div className="tour-calendar__ranges">
+                            {rangeMarkers[index].map((entry, lane) => entry ? (
+                              <button
+                                type="button"
+                                className={`tour-calendar__range${date === entry.tour.id.slice(0, 10) ? ' tour-calendar__range--start' : ''}${date === tourEndDate(entry.tour) ? ' tour-calendar__range--end' : ''}`}
+                                style={{ '--marker-color': entry.collection.color } as React.CSSProperties}
+                                key={`${entry.season.slug}-${entry.collection.slug}-${entry.tour.id}`}
+                                aria-label={`${entry.collection.label}, ${date}: ${entry.tour.title}`}
+                                title={`${entry.season.label} · ${entry.collection.label}: ${entry.tour.title}`}
+                                onClick={() => onSelect(entry.season, entry.collection, entry.tour.id)}
+                              />
+                            ) : <span className="tour-calendar__range-empty" key={`empty-${lane}`} />)}
+                          </div>
+                        )}
+                        {singleDayEntries.length > 0 && (
                           <div className="tour-calendar__markers">
-                            {dateEntries.map(({ season, collection, tour }) => (
+                            {singleDayEntries.map(({ season, collection, tour }) => (
                               <button
                                 type="button"
                                 className="tour-calendar__marker"

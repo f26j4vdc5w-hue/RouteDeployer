@@ -171,6 +171,38 @@
   gap: 3px;
 }
 
+.tour-calendar__ranges {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+}
+
+.tour-calendar__range,
+.tour-calendar__range-empty {
+  height: 8px;
+}
+
+.tour-calendar__range {
+  position: relative;
+  width: calc(100% + 6px);
+  margin-left: -3px;
+  padding: 0;
+  border: 0;
+  background: var(--marker-color);
+  cursor: pointer;
+}
+
+.tour-calendar__range--start {
+  width: calc(50% + 3px);
+  margin-left: 50%;
+  border-radius: 4px 0 0 4px;
+}
+
+.tour-calendar__range--end {
+  width: calc(50% + 3px);
+  border-radius: 0 4px 4px 0;
+}
+
 .tour-calendar__marker {
   width: 8px;
   height: 8px;
@@ -182,7 +214,9 @@
 }
 
 .tour-calendar__marker:focus-visible,
+.tour-calendar__range:focus-visible,
 .tour-calendar__jump select:focus-visible {
+  z-index: 1;
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }

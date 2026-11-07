@@ -77,6 +77,8 @@ einer leeren oder veralteten Tourenansicht.
    Migrationen aus Schritt 2.
    Die Migration [`202611090001`](supabase/migrations/202611090001_member_clothing_size_phone.sql)
    ergänzt Kleidergröße und Telefonnummer im Profil und bei Event-Pflichtangaben.
+   Die Migration [`202611100001`](supabase/migrations/202611100001_event_end_date.sql)
+   ergänzt ein optionales Enddatum für mehrtägige Events.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`

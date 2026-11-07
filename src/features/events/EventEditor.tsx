@@ -34,6 +34,16 @@ function errorText(cause: unknown) {
     cause &&
     typeof cause === 'object' &&
     'code' in cause &&
+    (cause.code === '42703' || cause.code === 'PGRST204') &&
+    'message' in cause &&
+    String(cause.message).includes('end_date')
+  ) {
+    return 'Enddaten sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611100001_event_end_date.sql anwenden.';
+  }
+  if (
+    cause &&
+    typeof cause === 'object' &&
+    'code' in cause &&
     cause.code === '42703' &&
     'message' in cause &&
     String(cause.message).includes('event_url')
@@ -67,6 +77,7 @@ export function EventEditor({
   const [title, setTitle] = useState(tour?.title ?? '');
   const [teaser, setTeaser] = useState(tour?.teaser ?? '');
   const [date, setDate] = useState(tour ? isoToGerman(tour.id.slice(0, 10)) : '');
+  const [endDate, setEndDate] = useState(isoToGerman(tour?.endDate));
   const [time, setTime] = useState(tour?.meetingTime ?? '');
   const [place, setPlace] = useState(tour?.meetingPlace ?? '');
   const [eventUrl, setEventUrl] = useState(tour?.eventUrl ?? '');
@@ -98,6 +109,11 @@ export function EventEditor({
     if (!unchangedDate && iso < todayIso(new Date())) {
       return setError('Das Datum darf nicht in der Vergangenheit liegen.');
     }
+    const endIso = collectionSlug === 'events' && endDate.trim() ? parseGermanDate(endDate) : null;
+    if (collectionSlug === 'events' && endDate.trim() && !endIso) {
+      return setError('Bitte ein gültiges Enddatum im Format TT.MM.JJJJ eingeben.');
+    }
+    if (endIso && endIso < iso) return setError('Das Enddatum darf nicht vor dem Startdatum liegen.');
     if (time && !isValidTime(time)) return setError('Bitte eine Uhrzeit im Format HH:MM eingeben.');
     const trimmedEventUrl = eventUrl.trim();
     if (collectionSlug === 'events' && trimmedEventUrl) {
@@ -159,6 +175,7 @@ export function EventEditor({
         ...(collectionSlug === 'events'
           ? {
               event_url: trimmedEventUrl || null,
+              end_date: endIso,
               ...(!tour || chatEdited ? { chat_url: trimmedChatUrl || null } : {}),
             }
           : {}),
@@ -244,7 +261,7 @@ export function EventEditor({
               />
             </label>
             <label>
-              Datum
+              {collectionSlug === 'events' ? 'Startdatum' : 'Datum'}
               <input
                 inputMode="numeric"
                 placeholder="TT.MM.JJJJ"
@@ -254,6 +271,18 @@ export function EventEditor({
                 required
               />
             </label>
+            {collectionSlug === 'events' && (
+              <label>
+                Enddatum (optional)
+                <input
+                  inputMode="numeric"
+                  placeholder="TT.MM.JJJJ"
+                  maxLength={10}
+                  value={endDate}
+                  onChange={(e) => setEndDate(formatGermanDateInput(e.target.value))}
+                />
+              </label>
+            )}
             <label>
               Uhrzeit
               <input

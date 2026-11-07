@@ -1,7 +1,7 @@
 import { CalendarDays, Check, Plus, Star } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import type { Tour } from '../../domain/tour';
-import { formatShort } from '../../shared/format/date';
+import { formatDateRange, formatShort, isoToGermanDate, tourEndDate } from '../../shared/format/date';
 
 interface Props {
   tours: Tour[];
@@ -62,7 +62,8 @@ export function TourTimeline({
         <ol className="timeline__list">
           {tours.map((tour) => {
             const selected = tour.id === selectedId;
-            const done = tour.id < today;
+            const done = tourEndDate(tour) < today;
+            const isMultiDay = Boolean(tour.endDate && tour.endDate !== tour.id.slice(0, 10));
             const highlighted = tour.highlight || tour.alternative?.highlight;
             const dotClass = [
               selected ? 'dot--selected' : done ? 'dot--done' : 'dot--upcoming',
@@ -94,9 +95,9 @@ export function TourTimeline({
                 <button
                   ref={selected ? selectedRef : undefined}
                   type="button"
-                  className={`timeline__item${selected ? ' timeline__item--selected' : ''}`}
+                  className={`timeline__item${selected ? ' timeline__item--selected' : ''}${isMultiDay ? ' timeline__item--multi-day' : ''}`}
                   aria-current={selected ? 'true' : undefined}
-                  aria-label={`${formatShort(tour.id)}${highlighted ? ', Highlight' : ''}`}
+                  aria-label={`${formatDateRange(tour.id, tour.endDate, isoToGermanDate)}${highlighted ? ', Highlight' : ''}`}
                   onClick={() =>
                     selected && tour.alternative ? onToggleAlternative(tour.id) : onSelect(tour.id)
                   }
@@ -113,7 +114,10 @@ export function TourTimeline({
                       {marker}
                     </span>
                   )}
-                  <span className="timeline__date">{formatShort(tour.id)}</span>
+                  <span className="timeline__date">
+                    {formatShort(tour.id)}
+                    {isMultiDay && tour.endDate && <><br />– {formatShort(tour.endDate)}</>}
+                  </span>
                 </button>
               </li>
             );
