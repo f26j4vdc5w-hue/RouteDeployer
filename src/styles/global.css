@@ -283,6 +283,12 @@ select {
   font-weight: 400;
   color: var(--accent-strong);
 }
+.timeline__item--multi-day {
+  height: 85px;
+}
+.timeline__item--multi-day.timeline__item--selected::before {
+  height: 76px;
+}
 .timeline__item--selected::before {
   content: '';
   position: absolute;

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { RouteStats } from '../../domain/route';
 import type { Tour } from '../../domain/tour';
-import { formatLong } from '../../shared/format/date';
+import { formatDateRange, formatLong } from '../../shared/format/date';
 import { estimateDurationMin, formatDuration, formatNumber } from '../../shared/format/number';
 import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
@@ -244,7 +244,7 @@ export function TourDetails({
             ETAPPE {position} / {count}
           </span>
         </div>
-        <p className="details__date">{formatLong(tour.id)}</p>
+        <p className="details__date">{formatDateRange(tour.id, tour.endDate, formatLong)}</p>
         <div className="details__title-row">
           {onVariantChange && (
             <button

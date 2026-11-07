@@ -37,6 +37,7 @@ interface TourRow {
   alternative: StoredTourRoute | null;
   organizer_id: string | null;
   event_url?: string | null;
+  end_date?: string | null;
   required_personal_fields?: PersonalField[] | null;
 }
 
@@ -103,9 +104,12 @@ export async function fetchRoadbook(onProgress?: (fraction: number) => void): Pr
       const withEventUrl = await client
         .from('tours')
         .select(
-          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id, event_url, required_personal_fields',
+          'id, season_slug, collection_slug, title, teaser, planned_by, meeting_time, meeting_place, stations, highlight, duration_min, gpx_key, route_stats, alternative, organizer_id, event_url, required_personal_fields, end_date',
         )
         .order('id');
+      if (withEventUrl.error?.code === '42703' && withEventUrl.error.message.includes('end_date')) {
+        throw new Error('Das Event-Enddatum ist noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611100001_event_end_date.sql anwenden.');
+      }
       if (!withEventUrl.error || !isMissingEventUrlColumn(withEventUrl.error)) {
         return withEventUrl;
       }
@@ -160,6 +164,8 @@ export async function fetchRoadbook(onProgress?: (fraction: number) => void): Pr
             organizerId: row.organizer_id ?? undefined,
             eventUrl:
               row.collection_slug === 'events' ? row.event_url ?? undefined : undefined,
+            endDate:
+              row.collection_slug === 'events' ? row.end_date ?? undefined : undefined,
             requiredPersonalFields:
               row.collection_slug === 'events'
                 ? row.required_personal_fields ?? ['full_name', 'address', 'birth_date']

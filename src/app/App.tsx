@@ -11,7 +11,7 @@ import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
 import { EventEditor } from '../features/events/EventEditor';
 import { useCommunityAuth } from '../features/community/useCommunityAuth';
-import { todayIso } from '../shared/format/date';
+import { todayIso, tourEndDate } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
 
 const BASE = import.meta.env.BASE_URL;
@@ -295,10 +295,10 @@ function Roadbook({
     [collection],
   );
   const selected =
-    sorted.find((t) => t.id === tourId) ?? sorted.find((t) => t.id >= today) ?? sorted.at(-1);
+    sorted.find((t) => t.id === tourId) ?? sorted.find((t) => tourEndDate(t) >= today) ?? sorted.at(-1);
   const displayedTour: Tour | undefined =
     selected && variant === 'B' && selected.alternative
-      ? { ...selected.alternative, id: selected.id }
+      ? { ...selected.alternative, id: selected.id, endDate: selected.endDate }
       : selected;
   const displayedVariant = variant === 'B' && selected?.alternative ? 'B' : 'A';
   const displayedRoute = displayedTour?.routeStats;
@@ -354,6 +354,8 @@ function Roadbook({
         <TourCalendar
           seasons={availableSeasons}
           selectedId={selected?.id ?? today}
+          selectedSeasonSlug={season.slug}
+          selectedCollectionSlug={collection.slug}
           onClose={() => setCalendarOpen(false)}
           onSelect={(targetSeason, targetCollection, id) => {
             setCalendarOpen(false);
@@ -388,7 +390,7 @@ function Roadbook({
             member={community.member}
             position={sorted.indexOf(selected) + 1}
             count={sorted.length}
-            isPast={selected.id < today}
+            isPast={tourEndDate(selected) < today}
             route={displayedRoute}
             durationMin={durationMin}
             weatherLocation={weatherLocation}
