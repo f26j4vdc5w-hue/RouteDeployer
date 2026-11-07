@@ -10,6 +10,9 @@ Das Roadbook ist eine React-/Vite-Website mit getrenntem Frontend und Backend:
 
 Touren und GPX-Dateien werden zur Laufzeit aus Supabase geladen. GPX-Kennzahlen,
 Kartenverlauf und Höhenprofil werden beim Upload im Admin-Bereich berechnet.
+Bei der Interaktion mit dem Höhenprofil wird die GPX-Datei geladen, damit die
+bis zur gewählten Position zurückgelegten Höhenmeter aus allen Punkten statt
+aus dem vereinfachten Anzeigeprofil berechnet werden.
 
 ## Lokal starten
 

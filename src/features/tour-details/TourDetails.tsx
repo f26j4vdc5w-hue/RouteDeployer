@@ -30,6 +30,8 @@ import { FinishFlag } from '../events/FinishFlag';
 import { useEventChatUrl } from '../events/useEventChatUrl';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
+import { createAscentProfile, getAscentUntilDistance, type AscentProfile } from '../../shared/ascentProfile';
+import { parseGpxPoints } from '../../shared/gpx';
 import '../events/events.css';
 
 interface Props {
@@ -51,35 +53,6 @@ interface Props {
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
   onEditEvent?: () => void;
-}
-
-function getAscentUntilDistance(route: RouteStats, distanceKm: number) {
-  if (route.ascentM === null || route.profile.length < 2) return null;
-  if (distanceKm >= route.distanceKm) return route.ascentM;
-
-  let referenceElevation = route.profile[0][1];
-  let ascent = 0;
-  const addElevation = (elevation: number) => {
-    if (elevation - referenceElevation >= 3) {
-      ascent += elevation - referenceElevation;
-      referenceElevation = elevation;
-    } else if (referenceElevation - elevation >= 3) {
-      referenceElevation = elevation;
-    }
-  };
-
-  for (let index = 1; index < route.profile.length; index++) {
-    const [previousKm, previousElevation] = route.profile[index - 1];
-    const [currentKm, currentElevation] = route.profile[index];
-    if (currentKm > distanceKm) {
-      const progress = (distanceKm - previousKm) / (currentKm - previousKm);
-      addElevation(previousElevation + (currentElevation - previousElevation) * progress);
-      break;
-    }
-    addElevation(currentElevation);
-  }
-
-  return Math.round(ascent);
 }
 
 export function TourDetails({
@@ -112,6 +85,13 @@ export function TourDetails({
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
   const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
+  const [ascentRequested, setAscentRequested] = useState(false);
+  const [ascentData, setAscentData] = useState<{
+    route: RouteStats;
+    gpx: string | undefined;
+    profile: AscentProfile | null;
+    error: string | null;
+  } | null>(null);
   const [attendeeListOpen, setAttendeeListOpen] = useState(false);
   const attendance = useTourAttendance({
     seasonSlug,
@@ -152,6 +132,36 @@ export function TourDetails({
     setActiveDistanceKm(null);
   }, [route]);
 
+  useEffect(() => {
+    if (!ascentRequested || !route || route.ascentM === null || route.profile.length < 2) return;
+    const controller = new AbortController();
+    const gpx = tour.gpx;
+    const expectedAscent = route.ascentM;
+    setAscentData(null);
+    void (async () => {
+      try {
+        if (!gpx) throw new Error('Für diese Route ist keine GPX-Datei verfügbar.');
+        const response = await fetch(gpx, { signal: controller.signal });
+        if (!response.ok) throw new Error(`GPX-Datei konnte nicht geladen werden (HTTP ${response.status}).`);
+        const profile = createAscentProfile(parseGpxPoints(await response.text()));
+        if (Math.abs(profile.ascentM - expectedAscent) > 1) {
+          throw new Error('Die GPX-Datei stimmt nicht mit den gespeicherten Höhenmetern überein.');
+        }
+        if (!controller.signal.aborted) setAscentData({ route, gpx, profile, error: null });
+      } catch (cause) {
+        if (!controller.signal.aborted) {
+          setAscentData({
+            route,
+            gpx,
+            profile: null,
+            error: cause instanceof Error ? cause.message : 'Die GPX-Datei konnte nicht ausgewertet werden.',
+          });
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [ascentRequested, route, tour.gpx]);
+
   useLayoutEffect(() => {
     const container = teaserContainerRef.current;
     const teaser = teaserRef.current;
@@ -173,15 +183,20 @@ export function TourDetails({
   }, [tour.teaser]);
 
   const isPartialStats = route !== undefined && activeDistanceKm !== null;
+  const currentAscentData = ascentData && ascentData.route === route && ascentData.gpx === tour.gpx ? ascentData : null;
   const partialAscent =
-    isPartialStats && route ? getAscentUntilDistance(route, activeDistanceKm) : null;
+    isPartialStats && route && currentAscentData?.profile
+      ? getAscentUntilDistance(currentAscentData.profile, activeDistanceKm, route.distanceKm)
+      : null;
   const partialDuration =
     isPartialStats && durationMin !== null && route
       ? tour.durationMin !== null && tour.durationMin !== undefined
         ? route.distanceKm > 0
           ? durationMin * (activeDistanceKm / route.distanceKm)
           : 0
-        : estimateDurationMin(activeDistanceKm, partialAscent)
+        : partialAscent !== null || route.ascentM === null
+          ? estimateDurationMin(activeDistanceKm, partialAscent)
+          : null
       : null;
   const stats = [
     {
@@ -206,8 +221,8 @@ export function TourDetails({
     },
     {
       value:
-        isPartialStats && partialDuration !== null
-          ? formatDuration(partialDuration)
+        isPartialStats
+          ? partialDuration !== null ? formatDuration(partialDuration) : '–'
           : durationMin != null
             ? formatDuration(durationMin)
             : '–',
@@ -456,8 +471,19 @@ export function TourDetails({
             <ElevationProfile
               route={route}
               activeDistanceKm={activeDistanceKm}
-              onHoverDistance={setActiveDistanceKm}
+              onHoverDistance={(distance) => {
+                if (distance !== null) setAscentRequested(true);
+                setActiveDistanceKm(distance);
+              }}
             />
+          )}
+          {isPartialStats && route?.ascentM != null && !currentAscentData && (
+            <p role="status">Höhenmeter werden geladen …</p>
+          )}
+          {isPartialStats && currentAscentData?.error && (
+            <p className="attendance__error" role="alert">
+              Höhenmeter für die Position nicht verfügbar: {currentAscentData.error}
+            </p>
           )}
 
           {tour.stations.length > 0 && (
