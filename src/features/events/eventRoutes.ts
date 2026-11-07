@@ -19,3 +19,8 @@ export function swipedRouteIndex(
   const next = index + (dx < 0 ? 1 : -1);
   return next >= 0 && next < count ? next : null;
 }
+
+export function routeDragOffset(index: number, count: number, dx: number, width: number): number {
+  if ((dx > 0 && index === 0) || (dx < 0 && index >= count - 1) || count < 2) return 0;
+  return Math.max(-width, Math.min(width, dx));
+}

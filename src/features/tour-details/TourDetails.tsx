@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Bike,
   CalendarCheck,
@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ChevronUp,
   ExternalLink,
+  IdCard,
   MapPin,
   MessageCircle,
   Mountain,
@@ -24,13 +25,13 @@ import { formatDateRange, formatLong } from '../../shared/format/date';
 import { estimateDurationMin, formatDuration, formatNumber } from '../../shared/format/number';
 import { ElevationProfile } from '../elevation-profile/ElevationProfile';
 import { GpxDownload } from '../gpx-download/GpxDownload';
-import { RouteMap } from '../route-map/RouteMap';
+import { RouteMap, RouteMapLegend } from '../route-map/RouteMap';
 import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
 import { useEventChatUrl } from '../events/useEventChatUrl';
-import { swipedRouteIndex } from '../events/eventRoutes';
+import { eventRouteAt, routeDragOffset, swipedRouteIndex } from '../events/eventRoutes';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import { createAscentProfile, getAscentUntilDistance, type AscentProfile } from '../../shared/ascentProfile';
@@ -56,6 +57,7 @@ interface Props {
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
   onEditEvent?: () => void;
+  eventRefreshKey?: Tour;
   eventRouteIndex?: number;
   eventRouteCount?: number;
   onEventRouteChange?: (index: number) => void;
@@ -76,6 +78,7 @@ export function TourDetails({
   variant,
   onVariantChange,
   onEditEvent,
+  eventRefreshKey,
   eventRouteIndex = 0,
   eventRouteCount = 1,
   onEventRouteChange,
@@ -91,7 +94,12 @@ export function TourDetails({
   const teaserContainerRef = useRef<HTMLDivElement>(null);
   const teaserRef = useRef<HTMLParagraphElement>(null);
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{
+    id: number; x: number; y: number; direction: 'pending' | 'horizontal' | 'vertical'; offset: number;
+  } | null>(null);
+  const [routeDrag, setRouteDrag] = useState<{
+    eventKey: string; index: number; offset: number; returning: boolean;
+  } | null>(null);
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
   const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
@@ -101,6 +109,7 @@ export function TourDetails({
     direction: 'next' | 'previous';
     previousRoute: RouteStats | undefined;
     previousDistanceKm: number | null;
+    startOffset: number;
   } | null>(null);
   const [ascentRequested, setAscentRequested] = useState(false);
   const [ascentData, setAscentData] = useState<{
@@ -142,27 +151,34 @@ export function TourDetails({
     collectionSlug,
     tour.id,
     isEvent && (attendance.isAttending || isOrganizer),
-    tour,
+    eventRefreshKey,
   );
   const eventKey = `${seasonSlug}/${collectionSlug}/${tour.id}`;
   const activeTransition = routeTransition?.eventKey === eventKey && routeTransition.targetIndex === eventRouteIndex
     ? routeTransition
     : null;
 
-  function changeEventRoute(index: number) {
+  const activeDrag = routeDrag?.eventKey === eventKey && routeDrag.index === eventRouteIndex ? routeDrag : null;
+
+  function changeEventRoute(index: number, startOffset = 0) {
     if (!onEventRouteChange || index === eventRouteIndex || index < 0 || index >= eventRouteCount) return;
+    touchStartRef.current = null;
+    setRouteDrag(null);
     setRouteTransition({
       eventKey,
       targetIndex: index,
       direction: index > eventRouteIndex ? 'next' : 'previous',
       previousRoute: route,
       previousDistanceKm: activeDistanceKm,
+      startOffset,
     });
     onEventRouteChange(index);
   }
 
   useEffect(() => {
     setRouteTransition(null);
+    setRouteDrag(null);
+    touchStartRef.current = null;
   }, [eventKey]);
 
   useEffect(() => {
@@ -300,18 +316,6 @@ export function TourDetails({
             </h1>
             {tour.plannedBy && <span className="details__planner">by {tour.plannedBy}</span>}
           </div>
-          {isEvent && tour.eventUrl && (
-            <a
-              className="details__event-link"
-              href={tour.eventUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={`Link zu ${tour.title} in neuem Tab öffnen`}
-              title="Link in neuem Tab öffnen"
-            >
-              <ExternalLink size={18} aria-hidden="true" />
-            </a>
-          )}
         </div>
         <div className="details__teaser-row" ref={teaserContainerRef}>
           <p
@@ -337,8 +341,8 @@ export function TourDetails({
         </div>
       </header>
 
-      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1) && (
-        <div className={`meeting${eventRouteCount > 1 ? ' meeting--with-routes' : ''}`}>
+      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer) && (
+        <div className={`meeting${isEvent ? ' meeting--event' : ''}`}>
           {(tour.meetingTime || tour.meetingPlace) && (
             <span className="meeting__location">
               <MapPin size={16} />
@@ -351,20 +355,59 @@ export function TourDetails({
               <button type="button" onClick={retryChat}>Erneut laden</button>
             </p>
           )}
-          {(attendance.canAttend || chatUrl || eventRouteCount > 1) && (
+          {(attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer) && (
             <div className="meeting__actions">
+              {isOrganizer && (
+                <>
+                  <button
+                    type="button"
+                    className="attendance__people events__organizer-action"
+                    onClick={() => setParticipantsOpen(true)}
+                    aria-label="Teilnehmerdaten öffnen"
+                    title="Teilnehmerdaten öffnen"
+                    aria-haspopup="dialog"
+                  >
+                    <IdCard size={16} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="attendance__people events__organizer-action"
+                    onClick={onEditEvent}
+                    aria-label="Event bearbeiten"
+                    title="Event bearbeiten"
+                  >
+                    <Pencil size={16} aria-hidden="true" />
+                  </button>
+                </>
+              )}
               {eventRouteCount > 1 && (
                 <div className="events__route-navigation" role="group" aria-label="Eventrouten">
                   <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}
                     onClick={() => changeEventRoute(eventRouteIndex - 1)}>
                     <ChevronLeft size={16} aria-hidden="true" />
                   </button>
-                  <span aria-live="polite">{eventRouteIndex + 1} von {eventRouteCount}</span>
+                  <span aria-live="polite">
+                    <span className="events__route-number">{eventRouteIndex + 1}</span>
+                    {' von '}
+                    <span className="events__route-number">{eventRouteCount}</span>
+                  </span>
                   <button type="button" aria-label="Nächste Route" disabled={eventRouteIndex === eventRouteCount - 1}
                     onClick={() => changeEventRoute(eventRouteIndex + 1)}>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
                 </div>
+              )}
+              {isEvent && tour.eventUrl && (
+                <a
+                  className="attendance__people"
+                  href={tour.eventUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Link zu ${tour.title} in neuem Tab öffnen`}
+                  title="Link in neuem Tab öffnen"
+                >
+                  <ExternalLink size={16} aria-hidden="true" />
+                </a>
               )}
               {chatUrl && (
                 <a
@@ -397,20 +440,6 @@ export function TourDetails({
         </div>
       )}
 
-      {isOrganizer && (
-        <div className="events__organizer">
-          <button type="button" onClick={onEditEvent}>
-            <Pencil size={14} aria-hidden="true" /> Event bearbeiten
-          </button>
-          <button
-            type="button"
-            onClick={() => setParticipantsOpen(true)}
-            aria-haspopup="dialog"
-          >
-            <UsersRound size={14} aria-hidden="true" /> Teilnehmerdaten
-          </button>
-        </div>
-      )}
       {isOrganizer && participantsOpen && (
         <EventParticipantData
           seasonSlug={seasonSlug}
@@ -491,40 +520,101 @@ export function TourDetails({
 
       {tour.gpx ? (
         <>
-          <div
-            className={eventRouteCount > 1 ? 'events__route-swipe' : undefined}
-            onTouchStart={(event) => {
-              const touch = event.touches.length === 1 ? event.touches[0] : null;
-              touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
-            }}
-            onTouchEnd={(event) => {
-              const start = touchStartRef.current;
-              const touch = event.changedTouches[0];
-              touchStartRef.current = null;
-              if (!start || !touch) return;
-              const dx = touch.clientX - start.x;
-              const dy = touch.clientY - start.y;
-              const next = swipedRouteIndex(eventRouteIndex, eventRouteCount, dx, dy);
-              if (next !== null) changeEventRoute(next);
-            }}
-            onTouchCancel={() => { touchStartRef.current = null; }}
-          >
+          <div className={eventRouteCount > 1 ? 'events__route-container' : undefined}>
             <div
-              key={`${eventKey}-${eventRouteIndex}`}
-              className={activeTransition ? `events__route-enter events__route-enter--${activeTransition.direction}` : undefined}
+              className={eventRouteCount > 1 ? 'events__route-swipe' : undefined}
+              onTouchStart={(event) => {
+                if (eventRouteCount < 2 || !eventRefreshKey || !onEventRouteChange || event.touches.length !== 1) {
+                  touchStartRef.current = null;
+                  setRouteDrag((current) => current ? { ...current, returning: true } : null);
+                  return;
+                }
+                const touch = event.touches[0];
+                setRouteTransition(null);
+                setRouteDrag(null);
+                touchStartRef.current = {
+                  id: touch.identifier, x: touch.clientX, y: touch.clientY, direction: 'pending', offset: 0,
+                };
+              }}
+              onTouchMove={(event) => {
+                const start = touchStartRef.current;
+                if (!start) return;
+                if (event.touches.length !== 1) {
+                  touchStartRef.current = null;
+                  setRouteDrag((current) => current ? { ...current, returning: true } : null);
+                  return;
+                }
+                const touch = Array.from(event.touches).find((item) => item.identifier === start.id);
+                if (!touch) return;
+                const dx = touch.clientX - start.x;
+                const dy = touch.clientY - start.y;
+                if (start.direction === 'pending' && Math.max(Math.abs(dx), Math.abs(dy)) >= 8) {
+                  start.direction = Math.abs(dx) > Math.abs(dy) * 1.5 ? 'horizontal' : 'vertical';
+                }
+                if (start.direction !== 'horizontal') return;
+                start.offset = routeDragOffset(eventRouteIndex, eventRouteCount, dx, event.currentTarget.clientWidth);
+                setRouteDrag(start.offset ? { eventKey, index: eventRouteIndex, offset: start.offset, returning: false } : null);
+              }}
+              onTouchEnd={(event) => {
+                const start = touchStartRef.current;
+                const touch = start && Array.from(event.changedTouches).find((item) => item.identifier === start.id);
+                if (!start || !touch) return;
+                touchStartRef.current = null;
+                if (start.direction !== 'horizontal' || !start.offset) return;
+                const dy = touch.clientY - start.y;
+                const next = swipedRouteIndex(eventRouteIndex, eventRouteCount, start.offset, dy);
+                if (next !== null) changeEventRoute(next, start.offset);
+                else setRouteDrag({ eventKey, index: eventRouteIndex, offset: start.offset, returning: true });
+              }}
+              onTouchCancel={() => {
+                touchStartRef.current = null;
+                setRouteDrag((current) => current ? { ...current, returning: true } : null);
+              }}
             >
-              <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
-            </div>
-            {activeTransition && (
               <div
-                key={`${eventKey}-${eventRouteIndex}-out`}
-                className={`events__route-exit events__route-exit--${activeTransition.direction}`}
-                aria-hidden="true"
-                onAnimationEnd={() => setRouteTransition(null)}
+                key={`${eventKey}-${eventRouteIndex}`}
+                className={activeDrag?.returning ? 'events__route-return' : activeTransition ? `events__route-enter events__route-enter--${activeTransition.direction}` : undefined}
+                style={activeDrag
+                  ? activeDrag.returning
+                    ? { '--route-slide-from': `${activeDrag.offset}px`, '--route-slide-to': '0px' } as CSSProperties
+                    : { transform: `translateX(${activeDrag.offset}px)` }
+                  : activeTransition?.startOffset
+                    ? { '--route-slide-from': `calc(${activeTransition.direction === 'next' ? '100% + 12px' : '-100% - 12px'} + ${activeTransition.startOffset}px)` } as CSSProperties
+                    : undefined}
+                onAnimationEnd={activeDrag?.returning ? () => setRouteDrag(null) : undefined}
               >
-                <RouteMap route={activeTransition.previousRoute} activeDistanceKm={activeTransition.previousDistanceKm} />
+                <RouteMap route={route} activeDistanceKm={activeDistanceKm} showLegend={eventRouteCount <= 1} />
               </div>
-            )}
+              {activeDrag && eventRefreshKey && (
+                <div
+                  className={`events__route-neighbor${activeDrag.returning ? ' events__route-return' : ''}`}
+                  aria-hidden="true"
+                  style={activeDrag.returning
+                    ? {
+                        '--route-slide-from': `calc(${activeDrag.offset < 0 ? '100% + 12px' : '-100% - 12px'} + ${activeDrag.offset}px)`,
+                        '--route-slide-to': activeDrag.offset < 0 ? 'calc(100% + 12px)' : 'calc(-100% - 12px)',
+                      } as CSSProperties
+                    : { transform: `translateX(calc(${activeDrag.offset < 0 ? '100% + 12px' : '-100% - 12px'} + ${activeDrag.offset}px))` }}
+                >
+                  <RouteMap route={eventRouteAt(eventRefreshKey, eventRouteIndex + (activeDrag.offset < 0 ? 1 : -1)).routeStats}
+                    activeDistanceKm={null} showLegend={false} />
+                </div>
+              )}
+              {activeTransition && (
+                <div
+                  key={`${eventKey}-${eventRouteIndex}-out`}
+                  className={`events__route-exit events__route-exit--${activeTransition.direction}`}
+                  style={activeTransition.startOffset
+                    ? { '--route-slide-from': `${activeTransition.startOffset}px` } as CSSProperties
+                    : undefined}
+                  aria-hidden="true"
+                  onAnimationEnd={() => setRouteTransition(null)}
+                >
+                  <RouteMap route={activeTransition.previousRoute} activeDistanceKm={activeTransition.previousDistanceKm} showLegend={false} />
+                </div>
+              )}
+            </div>
+            {eventRouteCount > 1 && <RouteMapLegend route={route} />}
           </div>
           <div className={`stats${isPartialStats ? ' stats--partial' : ''}`}>
             {stats.map((s) => (

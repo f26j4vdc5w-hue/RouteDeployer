@@ -48,9 +48,22 @@ const arrowIndexes = (coords: number[][]) => {
 interface Props {
   route?: RouteStats;
   activeDistanceKm: number | null;
+  showLegend?: boolean;
 }
 
-export function RouteMap({ route, activeDistanceKm }: Props) {
+export function RouteMapLegend({ route }: { route?: RouteStats }) {
+  return (
+    <div className="map__legend">
+      <span className="map__key">
+        <i />
+        {route?.isLoop ? 'Rundtour · Start = Ziel' : 'Streckentour'}
+      </span>
+      <span>{(route?.geoPath.length ?? 0) > 1 ? '© OpenStreetMap-Mitwirkende' : 'Illustrative Karte'}</span>
+    </div>
+  );
+}
+
+export function RouteMap({ route, activeDistanceKm, showLegend = true }: Props) {
   const points = route?.path ?? [];
   const geoPath = route?.geoPath ?? [];
   const geoWorld = geoPath.map(([longitude, latitude]) => project(longitude, latitude, 0));
@@ -208,13 +221,7 @@ export function RouteMap({ route, activeDistanceKm }: Props) {
           </>
         )}
       </svg>
-      <div className="map__legend">
-        <span className="map__key">
-          <i />
-          {route?.isLoop ? 'Rundtour · Start = Ziel' : 'Streckentour'}
-        </span>
-        <span>{geoPath.length > 1 ? '© OpenStreetMap-Mitwirkende' : 'Illustrative Karte'}</span>
-      </div>
+      {showLegend && <RouteMapLegend route={route} />}
     </div>
   );
 }

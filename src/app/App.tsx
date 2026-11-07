@@ -410,6 +410,7 @@ function Roadbook({
                 : undefined
             }
             onEditEvent={() => setEditor({ mode: 'edit', tour: selected })}
+            eventRefreshKey={selected}
             eventRouteIndex={eventRouteIndex}
             eventRouteCount={eventRouteCount}
             onEventRouteChange={(index) => setEventRouteSelection({ key: selectionKey, index })}
