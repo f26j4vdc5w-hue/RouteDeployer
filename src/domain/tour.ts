@@ -22,6 +22,14 @@ export interface TourRoute {
   durationMin?: number;
 }
 
+export interface EventRoute {
+  gpxKey: string;
+  gpx: string;
+  routeStats: RouteStats;
+  durationMin?: number;
+  stations: string[];
+}
+
 export interface Tour extends TourRoute {
   /** Datum im Format YYYY-MM-DD, eindeutig innerhalb einer Kollektion und URL-Parameter. */
   id: string;
@@ -35,6 +43,8 @@ export interface Tour extends TourRoute {
   endDate?: string;
   /** Pflichtangaben der Teilnehmer; nur bei Events gesetzt. */
   requiredPersonalFields?: PersonalField[];
+  /** Zusätzliche GPX-Routen; die erste Route steht in den normalen Routenfeldern. */
+  additionalRoutes?: EventRoute[];
   /** Optionale zweite Route für denselben Termin. */
   alternative?: TourRoute;
 }

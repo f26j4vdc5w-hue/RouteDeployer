@@ -4,6 +4,8 @@ import {
   CalendarCheck,
   CalendarDays,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   ExternalLink,
   MapPin,
@@ -28,6 +30,7 @@ import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
 import { useEventChatUrl } from '../events/useEventChatUrl';
+import { swipedRouteIndex } from '../events/eventRoutes';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import { createAscentProfile, getAscentUntilDistance, type AscentProfile } from '../../shared/ascentProfile';
@@ -53,6 +56,9 @@ interface Props {
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
   onEditEvent?: () => void;
+  eventRouteIndex?: number;
+  eventRouteCount?: number;
+  onEventRouteChange?: (index: number) => void;
 }
 
 export function TourDetails({
@@ -70,6 +76,9 @@ export function TourDetails({
   variant,
   onVariantChange,
   onEditEvent,
+  eventRouteIndex = 0,
+  eventRouteCount = 1,
+  onEventRouteChange,
 }: Props) {
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
@@ -82,6 +91,7 @@ export function TourDetails({
   const teaserContainerRef = useRef<HTMLDivElement>(null);
   const teaserRef = useRef<HTMLParagraphElement>(null);
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
   const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
@@ -435,7 +445,39 @@ export function TourDetails({
 
       {tour.gpx ? (
         <>
-          <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
+          <div
+            className={eventRouteCount > 1 ? 'events__route-swipe' : undefined}
+            onTouchStart={(event) => {
+              const touch = event.touches.length === 1 ? event.touches[0] : null;
+              touchStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+            }}
+            onTouchEnd={(event) => {
+              const start = touchStartRef.current;
+              const touch = event.changedTouches[0];
+              touchStartRef.current = null;
+              if (!start || !touch) return;
+              const dx = touch.clientX - start.x;
+              const dy = touch.clientY - start.y;
+              const next = swipedRouteIndex(eventRouteIndex, eventRouteCount, dx, dy);
+              if (next !== null) onEventRouteChange?.(next);
+            }}
+            onTouchCancel={() => { touchStartRef.current = null; }}
+          >
+            <RouteMap route={route} activeDistanceKm={activeDistanceKm} />
+          </div>
+          {eventRouteCount > 1 && (
+            <div className="events__route-navigation" role="group" aria-label="Eventrouten">
+              <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}
+                onClick={() => onEventRouteChange?.(eventRouteIndex - 1)}>
+                <ChevronLeft size={18} aria-hidden="true" />
+              </button>
+              <span aria-live="polite">{eventRouteIndex + 1} von {eventRouteCount}</span>
+              <button type="button" aria-label="Nächste Route" disabled={eventRouteIndex === eventRouteCount - 1}
+                onClick={() => onEventRouteChange?.(eventRouteIndex + 1)}>
+                <ChevronRight size={18} aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
           <div className={`stats${isPartialStats ? ' stats--partial' : ''}`}>
             {stats.map((s) => (

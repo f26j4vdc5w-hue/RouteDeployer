@@ -20,11 +20,74 @@
 }
 
 .timeline__add:focus-visible,
+.events__route-navigation button:focus-visible,
+.events__route-add:focus-visible,
+.events__route-remove:focus-visible,
 .events__organizer button:focus-visible,
 .events__consent button:focus-visible,
 .events__copy:focus-visible {
   outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
+}
+
+.events__route-swipe {
+  touch-action: pan-y;
+}
+
+.events__route-navigation {
+  width: fit-content;
+  margin: 10px auto;
+  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.events__route-navigation button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.events__route-navigation button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.community__form .events__route-fields {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.events__route-add,
+.events__route-remove {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  cursor: pointer;
 }
 
 .events__organizer {

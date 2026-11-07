@@ -1,8 +1,9 @@
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Tour } from '../../domain/tour';
-import { deleteStoredRoutes, deleteTour } from '../../data/backend';
+import { deleteStoredRoutes, deleteTour, type StoredEventRoute } from '../../data/backend';
+import type { RouteStats } from '../../domain/route';
 import { requireSupabase } from '../../lib/supabase';
 import {
   formatGermanDateInput,
@@ -29,7 +30,36 @@ interface Props {
 
 const randomSuffix = () => crypto.randomUUID().replace(/-/g, '').slice(0, 6);
 
+interface RouteDraft {
+  key: string;
+  gpxKey: string | null;
+  routeStats: RouteStats | null;
+  stations: string;
+  duration: string;
+  file: File | null;
+  removeGpx: boolean;
+}
+
+function routeDraft(route?: { gpxKey?: string; routeStats?: RouteStats; stations: string[]; durationMin?: number }): RouteDraft {
+  return {
+    key: crypto.randomUUID(),
+    gpxKey: route?.gpxKey ?? null,
+    routeStats: route?.routeStats ?? null,
+    stations: route?.stations.join(', ') ?? '',
+    duration: route?.durationMin?.toString() ?? '',
+    file: null,
+    removeGpx: false,
+  };
+}
+
 function errorText(cause: unknown) {
+  if (
+    cause && typeof cause === 'object' && 'code' in cause &&
+    (cause.code === '42703' || cause.code === 'PGRST204') &&
+    'message' in cause && String(cause.message).includes('additional_routes')
+  ) {
+    return 'Zusätzliche Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611110001_event_additional_routes.sql anwenden.';
+  }
   if (
     cause &&
     typeof cause === 'object' &&
@@ -90,15 +120,19 @@ export function EventEditor({
     Boolean(tour) && collectionSlug === 'events',
   );
   const chatValue = chatEdited ? chatUrl : existingChat.chatUrl ?? '';
-  const [stations, setStations] = useState(tour?.stations.join(', ') ?? '');
   const [requiredFields, setRequiredFields] = useState<PersonalField[]>(
     tour?.requiredPersonalFields ?? ['full_name'],
   );
-  const [duration, setDuration] = useState(tour?.durationMin ? String(tour.durationMin) : '');
-  const [file, setFile] = useState<File | null>(null);
-  const [removeGpx, setRemoveGpx] = useState(false);
+  const [routes, setRoutes] = useState<RouteDraft[]>(() => [
+    routeDraft(tour),
+    ...(tour?.additionalRoutes ?? []).map(routeDraft),
+  ]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function updateRoute(key: string, change: Partial<RouteDraft>) {
+    setRoutes((current) => current.map((route) => route.key === key ? { ...route, ...change } : route));
+  }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,7 +160,6 @@ export function EventEditor({
         return setError('Bitte einen gültigen Link eingeben.');
       }
     }
-    const durationMin = duration.trim() ? Number(duration) : null;
     const trimmedChatUrl = chatValue.trim();
     if (
       collectionSlug === 'events' &&
@@ -135,32 +168,60 @@ export function EventEditor({
     ) {
       return setError('Bitte einen WhatsApp-Link angeben (z. B. https://chat.whatsapp.com/…).');
     }
-    if (durationMin !== null && (!Number.isFinite(durationMin) || durationMin <= 0)) {
-      return setError('Die Dauer muss eine positive Zahl (Minuten) sein.');
+    for (const [index, route] of routes.entries()) {
+      const durationMin = route.duration.trim() ? Number(route.duration) : null;
+      if (durationMin !== null && (!Number.isSafeInteger(durationMin) || durationMin <= 0 || durationMin > 2147483647)) {
+        return setError(`Die Dauer von Route ${index + 1} muss eine positive Zahl (Minuten) sein.`);
+      }
+      if (routes.length > 1 && !route.file && (!route.gpxKey || route.removeGpx)) {
+        return setError(`Bitte für Route ${index + 1} eine GPX-Datei auswählen.`);
+      }
+      if (routes.length > 1 && !route.file && !route.routeStats) {
+        return setError(`Bitte die GPX-Datei für Route ${index + 1} erneut auswählen, um ihre Routendaten zu berechnen.`);
+      }
     }
 
     setBusy(true);
-    let uploadedKey: string | null = null;
+    const uploadedKeys: string[] = [];
     let persisted = false;
     try {
       const client = requireSupabase();
       const suffix = tour?.id.length && tour.id.length > 10 ? tour.id.slice(11) : randomSuffix();
       const id = `${iso}-${suffix}`;
 
-      let gpxKey = removeGpx ? null : tour?.gpxKey ?? null;
-      let routeStats = removeGpx ? null : tour?.routeStats ?? null;
-      if (file) {
-        routeStats = await analyzeGpx(file);
-        const name = file.name.toLowerCase().replace(/[^a-z0-9.-]+/g, '-').replace(/^-|-$/g, '');
-        gpxKey = `member-events/${memberId}/${crypto.randomUUID()}-${name}`;
-        const { error: uploadError } = await client.storage.from('routes').upload(gpxKey, file, {
-          cacheControl: '3600',
-          contentType: 'application/gpx+xml',
-          upsert: false,
+      const preparedRoutes: {
+        gpxKey: string | null;
+        routeStats: RouteStats | null;
+        stations: string[];
+        durationMin: number | null;
+      }[] = [];
+      for (const route of routes) {
+        let gpxKey = route.removeGpx ? null : route.gpxKey;
+        let routeStats = route.removeGpx ? null : route.routeStats;
+        if (route.file) {
+          routeStats = await analyzeGpx(route.file);
+          const name = route.file.name.toLowerCase().replace(/[^a-z0-9.-]+/g, '-').replace(/^-|-$/g, '');
+          gpxKey = `member-events/${memberId}/${crypto.randomUUID()}-${name}`;
+          const { error: uploadError } = await client.storage.from('routes').upload(gpxKey, route.file, {
+            cacheControl: '3600',
+            contentType: 'application/gpx+xml',
+            upsert: false,
+          });
+          if (uploadError) throw uploadError;
+          uploadedKeys.push(gpxKey);
+        }
+        preparedRoutes.push({
+          gpxKey,
+          routeStats,
+          stations: route.stations.split(',').map((station) => station.trim()).filter(Boolean),
+          durationMin: route.duration.trim() ? Number(route.duration) : null,
         });
-        if (uploadError) throw uploadError;
-        uploadedKey = gpxKey;
       }
+      const primary = preparedRoutes[0];
+      const additionalRoutes: StoredEventRoute[] = preparedRoutes.slice(1).map((route) => {
+        if (!route.gpxKey || !route.routeStats) throw new Error('Eine zusätzliche Route enthält keine gültigen GPX-Daten.');
+        return { ...route, gpxKey: route.gpxKey, routeStats: route.routeStats };
+      });
 
       const values = {
         id,
@@ -168,14 +229,15 @@ export function EventEditor({
         teaser: teaser.trim(),
         meeting_time: time,
         meeting_place: place.trim(),
-        stations: stations.split(',').map((station) => station.trim()).filter(Boolean),
-        duration_min: durationMin,
-        gpx_key: gpxKey,
-        route_stats: routeStats,
+        stations: primary.stations,
+        duration_min: primary.durationMin,
+        gpx_key: primary.gpxKey,
+        route_stats: primary.routeStats,
         ...(collectionSlug === 'events'
           ? {
               event_url: trimmedEventUrl || null,
               end_date: endIso,
+              additional_routes: additionalRoutes,
               ...(!tour || chatEdited ? { chat_url: trimmedChatUrl || null } : {}),
             }
           : {}),
@@ -205,13 +267,23 @@ export function EventEditor({
       }
       persisted = true;
 
-      if (tour?.gpxKey && tour.gpxKey !== gpxKey) {
-        await deleteStoredRoutes([tour.gpxKey]).catch(() => undefined);
+      const oldKeys = [tour?.gpxKey, ...(tour?.additionalRoutes ?? []).map((route) => route.gpxKey)]
+        .filter((key): key is string => Boolean(key));
+      const retainedKeys = new Set(preparedRoutes.map((route) => route.gpxKey));
+      const obsoleteKeys = oldKeys.filter((key) => !retainedKeys.has(key));
+      try {
+        await deleteStoredRoutes(obsoleteKeys);
+      } catch (cleanupError) {
+        console.error('Nicht mehr benötigte GPX-Dateien konnten nicht gelöscht werden:', cleanupError);
       }
       onSaved(id);
     } catch (cause) {
-      if (!persisted && uploadedKey) {
-        await deleteStoredRoutes([uploadedKey]).catch(() => undefined);
+      if (!persisted && uploadedKeys.length) {
+        try {
+          await deleteStoredRoutes(uploadedKeys);
+        } catch (cleanupError) {
+          console.error('Hochgeladene GPX-Dateien konnten nicht bereinigt werden:', cleanupError);
+        }
       }
       setError(errorText(cause));
     } finally {
@@ -348,38 +420,59 @@ export function EventEditor({
                 </small>
               </fieldset>
             )}
-            <label>
-              Orte (mit Komma getrennt)
-              <input value={stations} onChange={(e) => setStations(e.target.value)} />
-            </label>
-            <label>
-              Dauer in Minuten (optional)
-              <input
-                inputMode="numeric"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value.replace(/\D/g, ''))}
-              />
-            </label>
-            <label>
-              GPX-Datei (optional)
-              <input
-                type="file"
-                accept=".gpx,application/gpx+xml"
-                onChange={(e) => {
-                  setFile(e.target.files?.[0] ?? null);
-                  setRemoveGpx(false);
-                }}
-              />
-            </label>
-            {tour?.gpxKey && !file && (
-              <label className="events__check">
-                <input
-                  type="checkbox"
-                  checked={removeGpx}
-                  onChange={(e) => setRemoveGpx(e.target.checked)}
-                />
-                Bestehende GPX-Datei entfernen
-              </label>
+            {routes.map((route, index) => (
+              <fieldset key={route.key} className="events__route-fields">
+                <legend>Route {index + 1}</legend>
+                <label>
+                  Orte (mit Komma getrennt)
+                  <input value={route.stations} onChange={(e) => updateRoute(route.key, { stations: e.target.value })} />
+                </label>
+                <label>
+                  Dauer in Minuten (optional)
+                  <input
+                    inputMode="numeric"
+                    value={route.duration}
+                    onChange={(e) => updateRoute(route.key, { duration: e.target.value.replace(/\D/g, '') })}
+                  />
+                </label>
+                <label>
+                  GPX-Datei {routes.length === 1 ? '(optional)' : ''}
+                  <input
+                    type="file"
+                    accept=".gpx,application/gpx+xml"
+                    onChange={(e) => updateRoute(route.key, { file: e.target.files?.[0] ?? null, removeGpx: false })}
+                  />
+                </label>
+                {route.gpxKey && !route.file && (
+                  <>
+                    <small>Hinterlegte GPX-Datei: {route.gpxKey.split('/').at(-1)}</small>
+                    {routes.length === 1 && (
+                      <label className="events__check">
+                        <input
+                          type="checkbox"
+                          checked={route.removeGpx}
+                          onChange={(e) => updateRoute(route.key, { removeGpx: e.target.checked })}
+                        />
+                        Bestehende GPX-Datei entfernen
+                      </label>
+                    )}
+                  </>
+                )}
+                {routes.length > 1 && (
+                  <button type="button" className="events__route-remove" onClick={() =>
+                    setRoutes((current) => current.filter((entry) => entry.key !== route.key))
+                  }>
+                    Route {index + 1} entfernen
+                  </button>
+                )}
+              </fieldset>
+            ))}
+            {collectionSlug === 'events' && (
+              <button type="button" className="events__route-add" onClick={() =>
+                setRoutes((current) => [...current, routeDraft()])
+              }>
+                <Plus size={16} aria-hidden="true" /> Weitere Route hinzufügen
+              </button>
             )}
             {error && <p className="community__message community__message--error" role="alert">{error}</p>}
             <button className="community__submit" type="submit" disabled={busy}>
