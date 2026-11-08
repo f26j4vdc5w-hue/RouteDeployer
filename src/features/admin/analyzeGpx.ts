@@ -1,6 +1,6 @@
 import type { RouteStats } from '../../domain/route';
 import { haversineKm, parseGpxPoints } from '../../shared/gpx';
-import { ASCENT_THRESHOLD_M } from '../../shared/ascentProfile';
+import { createSmoothedAscentProfile } from '../../shared/elevationSmoothing.mjs';
 
 const MAX_POINTS = 120;
 const LOOP_TOLERANCE_KM = 0.5;
@@ -25,29 +25,20 @@ export async function analyzeGpx(file: File): Promise<RouteStats> {
 
   const points = parseGpxPoints(await file.text());
   let distanceKm = 0;
-  let ascentM = 0;
-  let referenceElevation = points.find((point) => point.ele !== null)?.ele ?? 0;
   const cumulative = [0];
 
   for (let index = 1; index < points.length; index++) {
     distanceKm += haversineKm(points[index - 1], points[index]);
     cumulative.push(distanceKm);
-    const elevation = points[index].ele;
-    if (elevation === null) continue;
-    if (elevation - referenceElevation >= ASCENT_THRESHOLD_M) {
-      ascentM += elevation - referenceElevation;
-      referenceElevation = elevation;
-    } else if (referenceElevation - elevation >= ASCENT_THRESHOLD_M) {
-      referenceElevation = elevation;
-    }
   }
 
   const hasElevation = points.some((point) => point.ele !== null);
-  const profile = hasElevation
-    ? sample(
-        points.map((point, index) => [cumulative[index], point.ele ?? 0] as const),
-        MAX_POINTS,
-      ).map(([km, elevation]) => [round(km, 2), round(elevation, 1)] as [number, number])
+  const ascentProfile = hasElevation
+    ? createSmoothedAscentProfile(cumulative.map((km) => km * 1000), points.map((point) => point.ele))
+    : null;
+  const profile = ascentProfile
+    ? sample(ascentProfile.points.map((point) => [point.distanceM / 1000, point.elevationM] as const), MAX_POINTS)
+        .map(([km, elevation]) => [round(km, 2), round(elevation, 1)] as [number, number])
     : [];
   const latitudeOrigin = points.reduce((sum, point) => sum + point.lat, 0) / points.length;
   const projected = points.map((point) => ({
@@ -64,10 +55,11 @@ export async function analyzeGpx(file: File): Promise<RouteStats> {
   const path = sample(projected, MAX_POINTS).map(
     (point) => [round((point.x - minX) / span, 4), round((point.y - minY) / span, 4)] as [number, number],
   );
+  const analyzedDistanceKm = ascentProfile ? ascentProfile.distanceM / 1000 : distanceKm;
 
   return {
-    distanceKm: round(distanceKm, 1),
-    ascentM: hasElevation ? Math.round(ascentM) : null,
+    distanceKm: round(analyzedDistanceKm, 1),
+    ascentM: ascentProfile?.ascentM ?? null,
     isLoop: haversineKm(points[0], points.at(-1)!) <= LOOP_TOLERANCE_KM,
     path,
     geoPath: sample(points, MAX_POINTS).map(

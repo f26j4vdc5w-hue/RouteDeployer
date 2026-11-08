@@ -102,7 +102,10 @@ export function TourDetails({
   } | null>(null);
   const [teaserCanExpand, setTeaserCanExpand] = useState(false);
   const [teaserExpanded, setTeaserExpanded] = useState(false);
-  const [activeDistanceKm, setActiveDistanceKm] = useState<number | null>(null);
+  const [activeDistance, setActiveDistance] = useState<{
+    route: RouteStats;
+    distanceKm: number;
+  } | null>(null);
   const [routeTransition, setRouteTransition] = useState<{
     eventKey: string;
     targetIndex: number;
@@ -111,7 +114,6 @@ export function TourDetails({
     previousDistanceKm: number | null;
     startOffset: number;
   } | null>(null);
-  const [ascentRequested, setAscentRequested] = useState(false);
   const [ascentData, setAscentData] = useState<{
     route: RouteStats;
     gpx: string | undefined;
@@ -182,14 +184,13 @@ export function TourDetails({
   }, [eventKey]);
 
   useEffect(() => {
-    setActiveDistanceKm(null);
+    setActiveDistance(null);
   }, [route]);
 
   useEffect(() => {
-    if (!ascentRequested || !route || route.ascentM === null || route.profile.length < 2) return;
+    if (!route || route.profile.length < 2) return;
     const controller = new AbortController();
     const gpx = tour.gpx;
-    const expectedAscent = route.ascentM;
     setAscentData(null);
     void (async () => {
       try {
@@ -197,8 +198,8 @@ export function TourDetails({
         const response = await fetch(gpx, { signal: controller.signal });
         if (!response.ok) throw new Error(`GPX-Datei konnte nicht geladen werden (HTTP ${response.status}).`);
         const profile = createAscentProfile(parseGpxPoints(await response.text()));
-        if (Math.abs(profile.ascentM - expectedAscent) > 1) {
-          throw new Error('Die GPX-Datei stimmt nicht mit den gespeicherten Höhenmetern überein.');
+        if (Math.abs(profile.distanceKm - route.distanceKm) > 0.15) {
+          throw new Error('Die GPX-Datei stimmt nicht mit der gespeicherten Streckenlänge überein.');
         }
         if (!controller.signal.aborted) setAscentData({ route, gpx, profile, error: null });
       } catch (cause) {
@@ -213,7 +214,7 @@ export function TourDetails({
       }
     })();
     return () => controller.abort();
-  }, [ascentRequested, route, tour.gpx]);
+  }, [route, tour.gpx]);
 
   useLayoutEffect(() => {
     const container = teaserContainerRef.current;
@@ -235,12 +236,25 @@ export function TourDetails({
     return () => observer.disconnect();
   }, [tour.teaser]);
 
+  const activeDistanceKm =
+    route && activeDistance?.route === route ? activeDistance.distanceKm : null;
   const isPartialStats = route !== undefined && activeDistanceKm !== null;
   const currentAscentData = ascentData && ascentData.route === route && ascentData.gpx === tour.gpx ? ascentData : null;
+  const isAscentLoading =
+    Boolean(route && route.profile.length >= 2 && tour.gpx && !currentAscentData);
   const partialAscent =
     isPartialStats && route && currentAscentData?.profile
       ? getAscentUntilDistance(currentAscentData.profile, activeDistanceKm, route.distanceKm)
       : null;
+  const totalAscent =
+    currentAscentData?.profile?.ascentM ?? (isAscentLoading ? null : route?.ascentM);
+  const fullDuration =
+    tour.durationMin ??
+    (isAscentLoading
+      ? null
+      : route && totalAscent != null
+        ? estimateDurationMin(route.distanceKm, totalAscent)
+        : durationMin);
   const partialDuration =
     isPartialStats && durationMin !== null && route
       ? tour.durationMin !== null && tour.durationMin !== undefined
@@ -265,8 +279,8 @@ export function TourDetails({
         ? partialAscent !== null
           ? formatNumber(partialAscent)
           : '–'
-        : route?.ascentM != null
-          ? formatNumber(route.ascentM)
+        : totalAscent != null
+          ? formatNumber(totalAscent)
           : '–',
       unit: 'm',
       label: 'Anstieg',
@@ -276,8 +290,8 @@ export function TourDetails({
       value:
         isPartialStats
           ? partialDuration !== null ? formatDuration(partialDuration) : '–'
-          : durationMin != null
-            ? formatDuration(durationMin)
+          : fullDuration != null
+            ? formatDuration(fullDuration)
             : '–',
       unit: 'h',
       label: 'Dauer ca.',
@@ -651,17 +665,16 @@ export function TourDetails({
               route={route}
               activeDistanceKm={activeDistanceKm}
               onHoverDistance={(distance) => {
-                if (distance !== null) setAscentRequested(true);
-                setActiveDistanceKm(distance);
+                setActiveDistance(route && distance !== null ? { route, distanceKm: distance } : null);
               }}
             />
           )}
-          {isPartialStats && route?.ascentM != null && !currentAscentData && (
+          {route && route.profile.length >= 2 && !currentAscentData && (
             <p role="status">Höhenmeter werden geladen …</p>
           )}
-          {isPartialStats && currentAscentData?.error && (
+          {currentAscentData?.error && (
             <p className="attendance__error" role="alert">
-              Höhenmeter für die Position nicht verfügbar: {currentAscentData.error}
+              Höhenmeter nicht verfügbar: {currentAscentData.error}
             </p>
           )}
 

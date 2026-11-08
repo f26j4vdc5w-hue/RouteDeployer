@@ -38,8 +38,9 @@ werden soll.
    aus. Orte entlang der Strecke werden durch Kommas getrennt.
 4. Optional: lade eine `.gpx`-Datei mit maximal 10 MB hoch. Die Website prüft
    die GPX-Punkte und berechnet Distanz, Höhenmeter, Kartenverlauf und
-   Höhenprofil. Eine bestehende Datei bleibt erhalten, wenn keine neue Datei
-   ausgewählt wird.
+   Höhenprofil. Ein distanzbasiertes 450-m-Medianfilter glättet kurzfristige
+   Höhenzacken vor der Anstiegsberechnung. Eine bestehende Datei bleibt
+   erhalten, wenn keine neue Datei ausgewählt wird.
 5. Für Variante B aktiviere **Alternative Route anbieten** und pflege deren
    Daten separat.
 6. Speichere die Tour. Änderungen stehen anschließend direkt auf der

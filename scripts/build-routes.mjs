@@ -2,11 +2,11 @@
 // und einen normalisierten Kartenverlauf. Ergebnis: src/data/routes.generated.json
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
+import { createSmoothedAscentProfile } from '../src/shared/elevationSmoothing.mjs';
 
 const ROUTES_DIR = 'public/routes';
 const OUT_FILE = 'src/data/routes.generated.json';
 const MAX_POINTS = 120;
-const ASCENT_THRESHOLD_M = 3;
 const LOOP_TOLERANCE_KM = 0.5;
 
 const toRad = (deg) => (deg * Math.PI) / 180;
@@ -43,26 +43,19 @@ function sample(items, count) {
 
 function analyze(points) {
   let distanceKm = 0;
-  let ascentM = 0;
-  let refEle = points.find((p) => p.ele !== null)?.ele ?? 0;
   const cumulative = [0];
   for (let i = 1; i < points.length; i++) {
     distanceKm += haversineKm(points[i - 1], points[i]);
     cumulative.push(distanceKm);
-    const ele = points[i].ele;
-    if (ele === null) continue;
-    if (ele - refEle >= ASCENT_THRESHOLD_M) {
-      ascentM += ele - refEle;
-      refEle = ele;
-    } else if (refEle - ele >= ASCENT_THRESHOLD_M) {
-      refEle = ele;
-    }
   }
 
   const hasElevation = points.some((p) => p.ele !== null);
+  const ascentProfile = hasElevation
+    ? createSmoothedAscentProfile(cumulative.map((km) => km * 1000), points.map((point) => point.ele))
+    : null;
   const profile = hasElevation
     ? sample(
-        points.map((p, i) => [cumulative[i], p.ele ?? 0]),
+        ascentProfile.points.map((point) => [point.distanceM / 1000, point.elevationM]),
         MAX_POINTS,
       ).map(([km, ele]) => [round(km, 2), round(ele, 1)])
     : [];
@@ -81,10 +74,11 @@ function analyze(points) {
     round((p.x - minX) / span, 4),
     round((p.y - minY) / span, 4),
   ]);
+  const analyzedDistanceKm = ascentProfile ? ascentProfile.distanceM / 1000 : distanceKm;
 
   return {
-    distanceKm: round(distanceKm, 1),
-    ascentM: hasElevation ? Math.round(ascentM) : null,
+    distanceKm: round(analyzedDistanceKm, 1),
+    ascentM: ascentProfile?.ascentM ?? null,
     isLoop: haversineKm(points[0], points.at(-1)) <= LOOP_TOLERANCE_KM,
     path,
     geoPath: sample(points, MAX_POINTS).map((p) => [round(p.lon, 6), round(p.lat, 6)]),
