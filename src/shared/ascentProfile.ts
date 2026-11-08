@@ -1,11 +1,9 @@
 import { haversineKm, type GpxPoint } from './gpx';
-
-export const ASCENT_THRESHOLD_M = 3;
+import { createSmoothedAscentProfile } from './elevationSmoothing.mjs';
 
 interface AscentPoint {
   distanceKm: number;
-  elevation: number | null;
-  referenceElevation: number;
+  elevation: number;
   ascentM: number;
 }
 
@@ -20,31 +18,28 @@ export function createAscentProfile(points: GpxPoint[]): AscentProfile {
     throw new Error('Die GPX-Datei enthält kein auswertbares Höhenprofil.');
   }
 
-  let distanceKm = 0;
-  let ascentM = 0;
-  const firstElevation = points.find((point) => point.ele !== null)?.ele;
-  if (firstElevation == null) throw new Error('Die GPX-Datei enthält keine Höhenangaben.');
-  let referenceElevation = firstElevation;
-  const profile: AscentPoint[] = [{
-    distanceKm, elevation: points[0].ele, referenceElevation, ascentM,
-  }];
+  const distancesM = [0];
   for (let index = 1; index < points.length; index++) {
-    distanceKm += haversineKm(points[index - 1], points[index]);
-    const elevation = points[index].ele;
-    if (elevation !== null) {
-      if (elevation - referenceElevation >= ASCENT_THRESHOLD_M) {
-        ascentM += elevation - referenceElevation;
-        referenceElevation = elevation;
-      } else if (referenceElevation - elevation >= ASCENT_THRESHOLD_M) {
-        referenceElevation = elevation;
-      }
-    }
-    profile.push({ distanceKm, elevation, referenceElevation, ascentM });
+    distancesM.push(distancesM[index - 1] + haversineKm(points[index - 1], points[index]) * 1000);
   }
-  return { points: profile, distanceKm, ascentM: Math.round(ascentM) };
+
+  const smoothed = createSmoothedAscentProfile(distancesM, points.map((point) => point.ele));
+  return {
+    points: smoothed.points.map(({ distanceM, elevationM, ascentM }) => ({
+      distanceKm: distanceM / 1000,
+      elevation: elevationM,
+      ascentM,
+    })),
+    distanceKm: smoothed.distanceM / 1000,
+    ascentM: smoothed.ascentM,
+  };
 }
 
-export function getAscentUntilDistance(profile: AscentProfile, distanceKm: number, displayedDistanceKm: number) {
+export function getAscentUntilDistance(
+  profile: AscentProfile,
+  distanceKm: number,
+  displayedDistanceKm: number,
+) {
   if (distanceKm <= 0 || displayedDistanceKm <= 0) return 0;
   if (distanceKm >= displayedDistanceKm) return profile.ascentM;
 
@@ -59,13 +54,8 @@ export function getAscentUntilDistance(profile: AscentProfile, distanceKm: numbe
 
   const previous = profile.points[left];
   const next = profile.points[left + 1];
-  let ascent = previous.ascentM;
-  if (next && previous.elevation !== null && next.elevation !== null && next.distanceKm > previous.distanceKm) {
-    const fraction = (target - previous.distanceKm) / (next.distanceKm - previous.distanceKm);
-    const elevation = previous.elevation + (next.elevation - previous.elevation) * fraction;
-    if (elevation - previous.referenceElevation >= ASCENT_THRESHOLD_M) {
-      ascent += elevation - previous.referenceElevation;
-    }
-  }
-  return Math.round(ascent);
+  if (!next || next.distanceKm <= previous.distanceKm) return Math.round(previous.ascentM);
+  const fraction = (target - previous.distanceKm) / (next.distanceKm - previous.distanceKm);
+  const ascent = previous.ascentM + (next.ascentM - previous.ascentM) * fraction;
+  return Math.min(profile.ascentM, Math.round(ascent));
 }

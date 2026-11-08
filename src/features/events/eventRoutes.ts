@@ -6,7 +6,7 @@ export function eventRouteCount(tour: Tour): number {
 
 export function eventRouteAt(tour: Tour, index: number): Tour {
   const route = index > 0 ? tour.additionalRoutes?.[index - 1] : undefined;
-  return route ? { ...tour, ...route } : tour;
+  return route ? { ...tour, ...route, durationMin: route.durationMin } : tour;
 }
 
 export function swipedRouteIndex(

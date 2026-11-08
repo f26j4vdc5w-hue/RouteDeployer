@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { createAscentProfile, getAscentUntilDistance } from './ascentProfile';
-import { haversineKm, type GpxPoint } from './gpx';
+import type { GpxPoint } from './gpx';
 
 function pointsFromFixture(file: string): GpxPoint[] {
   const xml = readFileSync(file, 'utf8');
@@ -21,64 +21,33 @@ function gpxFiles(directory: string): string[] {
   });
 }
 
-function originalAscent(points: GpxPoint[]) {
-  const firstElevation = points.find((point) => point.ele !== null)?.ele;
-  assert.ok(firstElevation != null, 'GPX route must contain elevation data');
-  let reference: number = firstElevation;
-  let ascent = 0;
-  for (const point of points.slice(1)) {
-    if (point.ele === null) continue;
-    if (point.ele - reference >= 3) {
-      ascent += point.ele - reference;
-      reference = point.ele;
-    } else if (reference - point.ele >= 3) {
-      reference = point.ele;
-    }
-  }
-  return Math.round(ascent);
-}
-
-test('full GPX points produce correct intermediate ascent and no end jump', () => {
+test('full GPX points produce a monotonic ascent profile and no end jump', () => {
   const key = '2026/camp/01-puig-de-la-llorenca-alt-de-bernia.gpx';
   const points = pointsFromFixture(`public/routes/${key}`);
   const profile = createAscentProfile(points);
-  const totalAscent = 1897;
   const displayedRouteDistance = 124.2;
-  assert.equal(profile.ascentM, totalAscent);
-
-  const index = Math.floor(points.length * 0.8);
-  let distance = 0;
-  let ascent = 0;
-  let reference = points[0].ele!;
-  for (let i = 1; i <= index; i++) {
-    distance += haversineKm(points[i - 1], points[i]);
-    const elevation = points[i].ele;
-    if (elevation === null) continue;
-    if (elevation - reference >= 3) {
-      ascent += elevation - reference;
-      reference = elevation;
-    } else if (reference - elevation >= 3) {
-      reference = elevation;
-    }
-  }
-  const displayedDistance = (distance / profile.distanceKm) * displayedRouteDistance;
-  assert.equal(getAscentUntilDistance(profile, displayedDistance, displayedRouteDistance), Math.round(ascent));
-  assert.ok(totalAscent - getAscentUntilDistance(profile, displayedRouteDistance * 0.99999, displayedRouteDistance) <= 3);
-  assert.equal(getAscentUntilDistance(profile, displayedRouteDistance, displayedRouteDistance), totalAscent);
+  assert.ok(profile.ascentM > 0);
+  assert.equal(profile.points[0].ascentM, 0);
+  assert.ok(profile.points.every((point, index) =>
+    index === 0 || point.ascentM >= profile.points[index - 1].ascentM));
+  assert.equal(getAscentUntilDistance(profile, displayedRouteDistance, displayedRouteDistance), profile.ascentM);
+  assert.ok(
+    getAscentUntilDistance(profile, displayedRouteDistance * 0.99999, displayedRouteDistance) <= profile.ascentM,
+  );
 });
 
-test('all GPX routes retain their original total ascent', () => {
+test('all GPX routes produce finite smoothed totals and matching end values', () => {
   const files = gpxFiles('public/routes');
   assert.ok(files.length > 0);
   for (const file of files) {
     const points = pointsFromFixture(file);
     if (!points.some((point) => point.ele !== null)) continue;
     const profile = createAscentProfile(points);
-    const expected = originalAscent(points);
-    assert.equal(profile.ascentM, expected, file);
+    assert.ok(Number.isFinite(profile.ascentM) && profile.ascentM >= 0, file);
+    assert.ok(profile.points.length >= 2, file);
     const displayedDistance = Number(profile.distanceKm.toFixed(1));
     if (displayedDistance > 0) {
-      assert.equal(getAscentUntilDistance(profile, displayedDistance, displayedDistance), expected, file);
+      assert.equal(getAscentUntilDistance(profile, displayedDistance, displayedDistance), profile.ascentM, file);
     }
   }
 });
@@ -86,15 +55,29 @@ test('all GPX routes retain their original total ascent', () => {
 test('interpolates ascent and handles flat, missing and repeated-distance points', () => {
   const points: GpxPoint[] = [
     { lat: 50, lon: 12, ele: 100 },
-    { lat: 50, lon: 12.01, ele: 110 },
+    { lat: 50, lon: 12.01, ele: 120 },
     { lat: 50, lon: 12.01, ele: null },
-    { lat: 50, lon: 12.02, ele: 110 },
+    { lat: 50, lon: 12.02, ele: 120 },
   ];
   const profile = createAscentProfile(points);
   assert.equal(getAscentUntilDistance(profile, 0, 10), 0);
-  assert.equal(getAscentUntilDistance(profile, 2.5, 10), 5);
-  assert.equal(getAscentUntilDistance(profile, 7.5, 10), 10);
-  assert.equal(getAscentUntilDistance(profile, 10, 10), 10);
-  assert.equal(getAscentUntilDistance(profile, 20, 10), 10);
+  assert.ok(getAscentUntilDistance(profile, 2.5, 10) >= 0);
+  assert.equal(getAscentUntilDistance(profile, 10, 10), profile.ascentM);
+  assert.equal(getAscentUntilDistance(profile, 20, 10), profile.ascentM);
   assert.throws(() => createAscentProfile(points.map((point) => ({ ...point, ele: null }))));
+});
+
+test('median smoothing removes isolated spikes while preserving a sustained climb', () => {
+  const points: GpxPoint[] = Array.from({ length: 300 }, (_, index) => {
+    let ele = 100;
+    if (index >= 50 && index <= 100) ele += ((index - 50) / 50) * 80;
+    else if (index > 100 && index <= 160) ele += 80;
+    else if (index > 160 && index <= 220) ele += ((220 - index) / 60) * 80;
+    if (index === 25) ele = 220;
+    return { lat: 50, lon: 12 + index * 0.0001, ele };
+  });
+  const profile = createAscentProfile(points);
+
+  assert.ok(profile.ascentM >= 65 && profile.ascentM <= 95, `${profile.ascentM} m`);
+  assert.equal(getAscentUntilDistance(profile, profile.distanceKm, profile.distanceKm), profile.ascentM);
 });

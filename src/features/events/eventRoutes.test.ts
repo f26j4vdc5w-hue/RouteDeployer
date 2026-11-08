@@ -34,6 +34,18 @@ test('switches route-specific fields without changing event identity or consent'
   assert.equal(eventRouteCount({ ...event, gpx: undefined, additionalRoutes: [] }), 1);
 });
 
+test('does not inherit the primary route duration when an additional route has none', () => {
+  const eventWithPrimaryDuration: Tour = {
+    ...event,
+    durationMin: 180,
+    additionalRoutes: [
+      { ...event.additionalRoutes![0], durationMin: undefined },
+    ],
+  };
+
+  assert.equal(eventRouteAt(eventWithPrimaryDuration, 1).durationMin, undefined);
+});
+
 test('only horizontal swipes within route bounds change selection', () => {
   assert.equal(swipedRouteIndex(0, 3, -80, 10), 1);
   assert.equal(swipedRouteIndex(1, 3, 80, 10), 0);
