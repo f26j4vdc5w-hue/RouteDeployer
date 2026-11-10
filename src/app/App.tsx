@@ -273,17 +273,12 @@ export default function App() {
 const PUBLIC_COLLECTION = 'after-work';
 
 function hasRequestedPrivateCollection(seasons: Season[]): boolean {
-  const [seasonSlug, collectionSlug] = window.location.pathname
-    .slice(BASE.length)
-    .split('/')
-    .filter(Boolean);
-  return seasons.some(
-    (season) =>
-      season.slug === seasonSlug &&
-      season.collections.some(
-        (collection) =>
-          collection.slug === collectionSlug && collection.slug !== PUBLIC_COLLECTION,
-      ),
+  const [seasonSlug, collectionSlug] = window.location.pathname.slice(BASE.length).split('/');
+  return Boolean(
+    seasonSlug &&
+      collectionSlug &&
+      collectionSlug !== PUBLIC_COLLECTION &&
+      seasons.some((season) => season.slug === seasonSlug),
   );
 }
 
