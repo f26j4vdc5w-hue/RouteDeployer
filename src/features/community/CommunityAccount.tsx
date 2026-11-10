@@ -101,7 +101,7 @@ export function CommunityAccount({
           password,
           options: {
             data: { display_name: displayName.trim() },
-            emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString(),
+            emailRedirectTo: window.location.href,
           },
         });
         if (signupError) throw signupError;
@@ -144,7 +144,7 @@ export function CommunityAccount({
         type: 'signup',
         email: confirmationEmail,
         options: {
-          emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString(),
+          emailRedirectTo: window.location.href,
         },
       });
       if (resendError) throw resendError;
@@ -195,7 +195,7 @@ export function CommunityAccount({
     setBusy(true);
     const { error: oauthError } = await requireSupabase().auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).toString() },
+      options: { redirectTo: window.location.href },
     });
     if (oauthError) {
       setFormError(oauthError.message);
