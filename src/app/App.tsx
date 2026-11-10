@@ -207,6 +207,7 @@ export default function App() {
       onReload={() => setReloadVersion((version) => version + 1)}
       community={community}
       loggedIn={loggedIn}
+      isAdmin={isAdmin}
     />
   );
 }
@@ -218,12 +219,14 @@ function RoadbookGate({
   dataVersion,
   community,
   loggedIn,
+  isAdmin,
   onReload,
 }: {
   seasons: Season[];
   dataVersion: number;
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
+  isAdmin: boolean;
   onReload: () => void;
 }) {
   const visibleSeasons = useMemo(
@@ -250,6 +253,7 @@ function RoadbookGate({
       seasons={visibleSeasons}
       community={community}
       loggedIn={loggedIn}
+      isAdmin={isAdmin}
       onReload={onReload}
     />
   );
@@ -259,11 +263,13 @@ function Roadbook({
   seasons,
   community,
   loggedIn,
+  isAdmin,
   onReload,
 }: {
   seasons: Season[];
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
+  isAdmin: boolean;
   onReload: () => void;
 }) {
   const today = todayIso(new Date());
@@ -281,6 +287,7 @@ function Roadbook({
     community.member?.status === 'approved' && community.member.email_confirmed_at
       ? community.session?.user.id ?? null
       : null;
+  const editorMemberId = memberId ?? (isAdmin ? community.session?.user.id ?? null : null);
 
   useEffect(() => {
     document.documentElement.style.setProperty('--collection-color', collection.color);
@@ -396,6 +403,7 @@ function Roadbook({
             seasonSlug={season.slug}
             collectionSlug={collection.slug}
             memberId={memberId}
+            isAdmin={isAdmin}
             member={community.member}
             position={sorted.indexOf(selected) + 1}
             count={sorted.length}
@@ -431,11 +439,11 @@ function Roadbook({
           )}
         </main>
       )}
-      {editor && memberId && (
+      {editor && editorMemberId && (
         <EventEditor
           seasonSlug={season.slug}
           collectionSlug={collection.slug}
-          memberId={memberId}
+          memberId={editorMemberId}
           tour={editor.mode === 'edit' ? editor.tour : undefined}
           onClose={() => setEditor(null)}
           onSaved={(id) => {

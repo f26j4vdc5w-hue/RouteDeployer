@@ -187,7 +187,7 @@ export function EventEditor({
     try {
       const client = requireSupabase();
       const suffix = tour?.id.length && tour.id.length > 10 ? tour.id.slice(11) : randomSuffix();
-      const id = `${iso}-${suffix}`;
+      const id = collectionSlug === 'events' ? `${iso}-${suffix}` : iso;
 
       const preparedRoutes: {
         gpxKey: string | null;
@@ -256,7 +256,11 @@ export function EventEditor({
           .select('id')
           .maybeSingle();
         if (updateError) throw updateError;
-        if (!updatedTour) throw new Error('Das Event wurde nicht gespeichert. Bitte prüfe deine Berechtigung und versuche es erneut.');
+        if (!updatedTour) {
+          throw new Error(
+            `${collectionSlug === 'events' ? 'Das Event' : 'Die Tour'} wurde nicht gespeichert. Bitte prüfe deine Berechtigung und versuche es erneut.`,
+          );
+        }
       } else {
         const { error: insertError } = await client.from('tours').insert({
           ...values,
@@ -295,7 +299,7 @@ export function EventEditor({
   }
 
   async function remove() {
-    if (!tour) return;
+    if (!tour || collectionSlug !== 'events') return;
     if (!window.confirm('Dieses Event wirklich löschen? Alle Zusagen gehen verloren.')) return;
     setBusy(true);
     setError(null);
@@ -314,7 +318,11 @@ export function EventEditor({
       <button className="community__backdrop" type="button" aria-label="Schließen" onClick={onClose} />
       <section className="community__panel">
         <header className="community__header">
-          <h2 id="event-editor-title">{tour ? 'Event bearbeiten' : 'Event anlegen'}</h2>
+          <h2 id="event-editor-title">
+            {tour
+              ? collectionSlug === 'events' ? 'Event bearbeiten' : 'Tour bearbeiten'
+              : 'Event anlegen'}
+          </h2>
           <button className="community__close" type="button" aria-label="Schließen" onClick={onClose}>
             <X size={20} />
           </button>
@@ -487,7 +495,7 @@ export function EventEditor({
             <button className="community__submit" type="submit" disabled={busy}>
               {busy ? 'Wird gespeichert …' : tour ? 'Speichern' : 'Event anlegen'}
             </button>
-            {tour && (
+            {tour && collectionSlug === 'events' && (
               <button
                 className="community__submit events__delete"
                 type="button"
