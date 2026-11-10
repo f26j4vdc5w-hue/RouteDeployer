@@ -89,6 +89,7 @@ export function TourDetails({
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
   const canEdit = Boolean(onEditEvent) && (isOrganizer || (isAdmin && collectionSlug === 'after-work'));
+  const hasOrganizerActions = isOrganizer || canEdit;
   const requiredFields = tour.requiredPersonalFields ?? [];
   const missingFields = member ? missingPersonalFields(requiredFields, member) : requiredFields;
   const [consentOpen, setConsentOpen] = useState(false);
@@ -403,7 +404,7 @@ export function TourDetails({
         </div>
       </header>
 
-      <div className={`meeting${isEvent ? ' meeting--event' : ''}`}>
+      <div className={`meeting${isEvent ? ' meeting--event' : ''}${hasOrganizerActions ? ' meeting--admin' : ''}`}>
           {(tour.meetingTime || tour.meetingPlace) && (
             <span className="meeting__location">
               <MapPin size={16} />
@@ -416,6 +417,38 @@ export function TourDetails({
               <button type="button" onClick={retryChat}>Erneut laden</button>
             </p>
           )}
+          {hasOrganizerActions && (
+            <section className="meeting__admin-actions" aria-labelledby="meeting-admin-title">
+              <h2 id="meeting-admin-title">Verwaltung</h2>
+              <div>
+                {isOrganizer && (
+                  <button
+                    type="button"
+                    className="attendance__people events__organizer-action"
+                    onClick={() => setParticipantsOpen(true)}
+                    aria-label="Teilnehmerdaten öffnen"
+                    title="Teilnehmerdaten öffnen"
+                    aria-haspopup="dialog"
+                  >
+                    <IdCard size={16} aria-hidden="true" />
+                    <strong>Teilnehmerdaten</strong>
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    type="button"
+                    className="attendance__people events__organizer-action"
+                    onClick={onEditEvent}
+                    aria-label={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
+                    title={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
+                  >
+                    <Pencil size={16} aria-hidden="true" />
+                    <strong>{isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}</strong>
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
           <div className="meeting__actions">
               <button
                 type="button"
@@ -426,31 +459,6 @@ export function TourDetails({
               >
                 <Share size={16} aria-hidden="true" />
               </button>
-              {isOrganizer && (
-                <>
-                  <button
-                    type="button"
-                    className="attendance__people events__organizer-action"
-                    onClick={() => setParticipantsOpen(true)}
-                    aria-label="Teilnehmerdaten öffnen"
-                    title="Teilnehmerdaten öffnen"
-                    aria-haspopup="dialog"
-                  >
-                    <IdCard size={16} aria-hidden="true" />
-                  </button>
-                </>
-              )}
-              {canEdit && (
-                <button
-                  type="button"
-                  className="attendance__people events__organizer-action"
-                  onClick={onEditEvent}
-                  aria-label={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
-                  title={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
-                >
-                  <Pencil size={16} aria-hidden="true" />
-                </button>
-              )}
               {eventRouteCount > 1 && (
                 <div className="events__route-navigation" role="group" aria-label="Eventrouten">
                   <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}

@@ -484,7 +484,7 @@ select {
   margin: 0;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 .attendance__list h2 {
@@ -615,6 +615,54 @@ select {
 }
 .meeting--event .meeting__location {
   min-width: 0;
+}
+.meeting--admin {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.meeting__admin-actions {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.meeting__admin-actions h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.meeting__admin-actions > div {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.meeting__admin-actions .attendance__people.events__organizer-action {
+  width: auto;
+  min-height: 36px;
+  margin-left: 0;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.meeting__admin-actions .events__organizer-action strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.meeting--admin .meeting__actions {
+  box-sizing: border-box;
+  width: 100%;
+  margin-left: 0;
 }
 
 /* Wettervorhersage */
