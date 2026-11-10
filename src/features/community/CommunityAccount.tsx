@@ -3,7 +3,11 @@ import { createPortal } from 'react-dom';
 import { KeyRound, LogOut, UserRound, X } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
 import { formatGermanDateInput, isoToGerman, parseGermanDate } from '../../shared/format/germanInput';
-import type { CommunityMember } from './useCommunityAuth';
+import {
+  COMMUNITY_AUTH_RETURN_TO_KEY,
+  COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY,
+  type CommunityMember,
+} from './useCommunityAuth';
 import { usePendingMemberCount } from './usePendingMemberCount';
 import './community.css';
 
@@ -193,11 +197,18 @@ export function CommunityAccount({
     setFormError(null);
     setNotice(null);
     setBusy(true);
+    sessionStorage.setItem(
+      COMMUNITY_AUTH_RETURN_TO_KEY,
+      `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    );
+    sessionStorage.setItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY, String(Date.now()));
     const { error: oauthError } = await requireSupabase().auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: window.location.href },
     });
     if (oauthError) {
+      sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_KEY);
+      sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY);
       setFormError(oauthError.message);
       setBusy(false);
     }

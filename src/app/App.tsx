@@ -12,7 +12,11 @@ import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
 import { EventEditor } from '../features/events/EventEditor';
 import { tourRouteAt, tourRouteCount } from '../features/events/tourRoutes';
-import { useCommunityAuth } from '../features/community/useCommunityAuth';
+import {
+  COMMUNITY_AUTH_RETURN_TO_KEY,
+  COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY,
+  useCommunityAuth,
+} from '../features/community/useCommunityAuth';
 import { todayIso, tourEndDate } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
 
@@ -142,6 +146,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [loadProgress, setLoadProgress] = useState(0);
   const community = useCommunityAuth();
+  const [loadedRoadbookKey, setLoadedRoadbookKey] = useState<string | null>(null);
   const isAdmin = community.session?.user.app_metadata.role === 'admin';
   const [managedCollections, setManagedCollections] = useState<{ season_slug: string; collection_slug: string }[]>([]);
   const [organizersLoading, setOrganizersLoading] = useState(false);
@@ -155,6 +160,32 @@ export default function App() {
       ? community.session?.user.id ?? null
       : null;
   const organizerUserId = isAdmin ? community.session?.user.id ?? null : approvedUserId;
+  const roadbookLoadKey = `${loggedIn}-${reloadVersion}`;
+
+  useEffect(() => {
+    if (!community.session) return;
+
+    const returnTo = sessionStorage.getItem(COMMUNITY_AUTH_RETURN_TO_KEY);
+    const savedAt = Number(sessionStorage.getItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY));
+    sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_KEY);
+    sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY);
+    if (
+      !returnTo?.startsWith('/') ||
+      returnTo.startsWith('//') ||
+      !Number.isFinite(savedAt) ||
+      savedAt > Date.now() ||
+      Date.now() - savedAt > 10 * 60 * 1000
+    ) return;
+
+    const target = new URL(returnTo, window.location.origin);
+    if (target.origin !== window.location.origin) return;
+    const targetPath = `${target.pathname}${target.search}${target.hash}`;
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (targetPath === currentPath) return;
+
+    window.history.replaceState(null, '', targetPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, [community.session]);
 
   useEffect(() => {
     let active = true;
@@ -213,6 +244,7 @@ export default function App() {
       .then((data) => {
         if (active) {
           setSeasons(data);
+          setLoadedRoadbookKey(roadbookLoadKey);
           setDataVersion((version) => version + 1);
           setError(null);
         }
@@ -226,7 +258,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [authReady, loggedIn, reloadVersion]);
+  }, [authReady, loggedIn, reloadVersion, roadbookLoadKey]);
 
   if (error) {
     return (
@@ -247,7 +279,7 @@ export default function App() {
     );
   }
   if (organizersLoading) return <LoadingScreen progress={0.5} />;
-  if (!seasons || !authReady) {
+  if (!seasons || !authReady || loadedRoadbookKey !== roadbookLoadKey) {
     return <LoadingScreen progress={authReady ? 0.15 + 0.85 * loadProgress : 0.05} />;
   }
   if (seasons.length === 0) {
