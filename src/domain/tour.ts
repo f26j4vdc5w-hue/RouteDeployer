@@ -22,10 +22,10 @@ export interface TourRoute {
   durationMin?: number;
 }
 
-export interface EventRoute {
-  gpxKey: string;
-  gpx: string;
-  routeStats: RouteStats;
+export interface AdditionalRoute {
+  gpxKey?: string;
+  gpx?: string;
+  routeStats?: RouteStats;
   durationMin?: number;
   stations: string[];
 }
@@ -44,7 +44,7 @@ export interface Tour extends TourRoute {
   /** Pflichtangaben der Teilnehmer; nur bei Events gesetzt. */
   requiredPersonalFields?: PersonalField[];
   /** Zusätzliche GPX-Routen; die erste Route steht in den normalen Routenfeldern. */
-  additionalRoutes?: EventRoute[];
+  additionalRoutes?: AdditionalRoute[];
   /** Optionale zweite Route für denselben Termin. */
   alternative?: TourRoute;
 }

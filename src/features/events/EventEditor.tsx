@@ -2,7 +2,7 @@ import { Plus, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Tour } from '../../domain/tour';
-import { deleteStoredRoutes, deleteTour, type StoredEventRoute } from '../../data/backend';
+import { deleteStoredRoutes, deleteTour, type StoredAdditionalRoute } from '../../data/backend';
 import type { RouteStats } from '../../domain/route';
 import { requireSupabase } from '../../lib/supabase';
 import {
@@ -218,7 +218,7 @@ export function EventEditor({
         });
       }
       const primary = preparedRoutes[0];
-      const additionalRoutes: StoredEventRoute[] = preparedRoutes.slice(1).map((route) => {
+      const additionalRoutes: StoredAdditionalRoute[] = preparedRoutes.slice(1).map((route) => {
         if (!route.gpxKey || !route.routeStats) throw new Error('Eine zusätzliche Route enthält keine gültigen GPX-Daten.');
         return { ...route, gpxKey: route.gpxKey, routeStats: route.routeStats };
       });

@@ -11,13 +11,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Camp-Unterkunft'],
     gpx: '2026/camp/00-prolog.gpx',
-    alternative: {
-      title: 'Prolog (Alternative)',
-      teaser: 'Alternative Einrollrunde zum Auftakt des Camps.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Camp-Unterkunft'],
       gpx: '2026/camp/00-prolog-alternative.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-13',
@@ -26,13 +23,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Puig de la Llorença', 'Alt de Bernia'],
     gpx: '2026/camp/01-puig-de-la-llorenca-alt-de-bernia.gpx',
-    alternative: {
-      title: 'Puig de la Llorença ohne Bernia',
-      teaser: 'Alternative für Tag 1: Über den Puig de la Llorença, ohne den Anstieg zur Bernia.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Puig de la Llorença'],
       gpx: '2026/camp/01-puig-de-la-llorenca-ohne-bernia.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-14',
@@ -41,13 +35,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Zitronen-Pass', 'Meer', 'Xilibre', 'Tollos'],
     gpx: '2026/camp/02-zitronen-pass-xilibre-tollos.gpx',
-    alternative: {
-      title: 'Zitronen-Pass und Tollos',
-      teaser: 'Alternative für Tag 2: Über den Zitronen-Pass und direkt nach Tollos, ohne den Abstecher über Xilibre.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Zitronen-Pass', 'Meer', 'Tollos'],
       gpx: '2026/camp/02-zitronen-pass-tollos-ohne-xilibre.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-15',
@@ -56,13 +47,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Montdúver', 'Vall de la Gallinera'],
     gpx: '2026/camp/03-montduver-vall-de-la-gallinera.gpx',
-    alternative: {
-      title: 'Montdúver (Alternative)',
-      teaser: 'Alternative für Tag 3 mit Fokus auf den Montdúver.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Montdúver'],
       gpx: '2026/camp/03-montduver.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-16',
@@ -71,13 +59,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Costa Blanca'],
     gpx: '2026/camp/04-ruhetag-costa-blanca.gpx',
-    alternative: {
-      title: 'Vall d’Ebo, Lago de Beniarrés und Monument Valley',
-      teaser: 'Alternative für Tag 4: Die verlängerte Ruhetagsrunde über den Lago de Beniarrés und Monument Valley.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Vall d’Ebo', 'Lago de Beniarrés', 'Monument Valley'],
       gpx: '2026/camp/04-val-d-ebo-lago-beniarres-monument-valley.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-17',
@@ -86,13 +71,10 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Port de Confrides', 'Coll de Rates'],
     gpx: '2026/camp/05-port-de-confrides-coll-de-rates.gpx',
-    alternative: {
-      title: 'Port de Tudons und Coll de Rates',
-      teaser: 'Alternative für Tag 5 über den Port de Tudons und Coll de Rates.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Port de Tudons', 'Coll de Rates'],
       gpx: '2026/camp/05-port-de-tudons-coll-de-rates.gpx',
-    },
+    }],
   },
   {
     id: '2026-04-18',
@@ -101,12 +83,9 @@ export const tours: Tour[] = [
     ...MEETING,
     stations: ['Coll de Rates', 'Sa Creueta', 'Vall d’Ebo'],
     gpx: '2026/camp/06-coll-de-rates-sa-creueta-vall-d-ebo.gpx',
-    alternative: {
-      title: 'Coll de Rates, Sa Creueta und Vall d’Ebo (Alternative)',
-      teaser: 'Alternative für Tag 6 zum Abschluss des Camps.',
-      ...MEETING,
+    additionalRoutes: [{
       stations: ['Coll de Rates', 'Sa Creueta', 'Vall d’Ebo'],
       gpx: '2026/camp/06-coll-de-rates-sa-creueta-vall-d-ebo-alternative.gpx',
-    },
+    }],
   },
 ];

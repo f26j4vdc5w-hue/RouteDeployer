@@ -1,10 +1,10 @@
 import type { Tour } from '../../domain/tour';
 
-export function eventRouteCount(tour: Tour): number {
+export function tourRouteCount(tour: Tour): number {
   return tour.gpx ? 1 + (tour.additionalRoutes?.length ?? 0) : 1;
 }
 
-export function eventRouteAt(tour: Tour, index: number): Tour {
+export function tourRouteAt(tour: Tour, index: number): Tour {
   const route = index > 0 ? tour.additionalRoutes?.[index - 1] : undefined;
   return route ? { ...tour, ...route, durationMin: route.durationMin } : tour;
 }
