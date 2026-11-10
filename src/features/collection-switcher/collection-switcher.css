@@ -1,5 +1,5 @@
 .collection-switcher {
-  --switcher-bg: color-mix(in srgb, var(--ink), var(--bg) 94%);
+  --switcher-bg: var(--surface-muted);
   position: relative;
   isolation: isolate;
   justify-self: start;
