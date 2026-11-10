@@ -154,11 +154,12 @@ export default function App() {
     community.member?.status === 'approved' && community.member.email_confirmed_at
       ? community.session?.user.id ?? null
       : null;
+  const organizerUserId = isAdmin ? community.session?.user.id ?? null : approvedUserId;
 
   useEffect(() => {
     let active = true;
     if (!authReady) return;
-    if (!supabase || isAdmin || !approvedUserId) {
+    if (!supabase || !organizerUserId) {
       setManagedCollections([]);
       setOrganizersError(null);
       setOrganizersLoading(false);
@@ -172,7 +173,7 @@ export default function App() {
         const { data, error: queryError } = await supabase
           .from('collection_organizers')
           .select('season_slug, collection_slug')
-          .eq('user_id', approvedUserId);
+          .eq('user_id', organizerUserId);
         if (!active) return;
         if (queryError) setOrganizersError(queryError.message);
         else setManagedCollections(data ?? []);
@@ -188,7 +189,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [approvedUserId, authReady, isAdmin]);
+  }, [authReady, organizerUserId]);
 
   useEffect(() => {
     let active = true;
@@ -353,7 +354,7 @@ function Roadbook({
       : null;
   const editorMemberId = memberId ?? (isAdmin ? community.session?.user.id ?? null : null);
   const isCollectionOrganizer = Boolean(
-    memberId && managedCollections.some(
+    (memberId || isAdmin) && managedCollections.some(
       (entry) => entry.season_slug === season.slug && entry.collection_slug === collection.slug,
     ),
   );
