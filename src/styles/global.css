@@ -26,6 +26,18 @@ body {
 .backend-state p {
   color: var(--muted);
 }
+.access-required {
+  justify-items: start;
+}
+.access-required .nav__account-button {
+  width: auto;
+  height: 40px;
+  padding: 0 16px;
+  display: flex;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
 
 body {
   margin: 0;

@@ -14,6 +14,7 @@ interface Props {
   loading: boolean;
   error: string | null;
   onRefresh: () => void;
+  accessRequired?: boolean;
 }
 
 type Mode = 'signin' | 'signup';
@@ -24,8 +25,16 @@ function germanToIso(value: string): string | null {
   return iso && new Date(`${iso}T00:00:00Z`).getTime() <= Date.now() ? iso : null;
 }
 
-export function CommunityAccount({ email, member, isAdmin, loading, error, onRefresh }: Props) {
-  const [open, setOpen] = useState(false);
+export function CommunityAccount({
+  email,
+  member,
+  isAdmin,
+  loading,
+  error,
+  onRefresh,
+  accessRequired = false,
+}: Props) {
+  const [open, setOpen] = useState(accessRequired);
   const pendingCount = usePendingMemberCount(isAdmin, open);
   const [mode, setMode] = useState<Mode>('signin');
   const [displayName, setDisplayName] = useState('');
@@ -262,6 +271,7 @@ export function CommunityAccount({ email, member, isAdmin, loading, error, onRef
         onClick={() => setOpen(true)}
       >
         <UserRound size={19} aria-hidden="true" />
+        {accessRequired && <span>Anmelden oder registrieren</span>}
         {pendingCount > 0 && (
           <span className="nav__account-badge" aria-hidden="true">{pendingCount > 99 ? '99+' : pendingCount}</span>
         )}
