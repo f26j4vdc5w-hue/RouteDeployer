@@ -204,7 +204,7 @@ select {
 .tour {
   display: flex;
   gap: 0;
-  padding: 0 12px 24px 80px;
+  padding: 0 12px 24px 76px;
   align-items: flex-start;
 }
 
