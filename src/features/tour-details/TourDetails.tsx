@@ -43,6 +43,7 @@ interface Props {
   seasonSlug: string;
   collectionSlug: string;
   memberId: string | null;
+  isAdmin: boolean;
   member?: CommunityMember | null;
   position: number;
   count: number;
@@ -68,6 +69,7 @@ export function TourDetails({
   seasonSlug,
   collectionSlug,
   memberId,
+  isAdmin,
   member,
   position,
   count,
@@ -85,6 +87,7 @@ export function TourDetails({
 }: Props) {
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
+  const canEdit = Boolean(onEditEvent) && (isOrganizer || (isAdmin && collectionSlug === 'after-work'));
   const requiredFields = tour.requiredPersonalFields ?? [];
   const missingFields = member ? missingPersonalFields(requiredFields, member) : requiredFields;
   const [consentOpen, setConsentOpen] = useState(false);
@@ -355,7 +358,7 @@ export function TourDetails({
         </div>
       </header>
 
-      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer) && (
+      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer || canEdit) && (
         <div className={`meeting${isEvent ? ' meeting--event' : ''}`}>
           {(tour.meetingTime || tour.meetingPlace) && (
             <span className="meeting__location">
@@ -369,7 +372,7 @@ export function TourDetails({
               <button type="button" onClick={retryChat}>Erneut laden</button>
             </p>
           )}
-          {(attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer) && (
+          {(attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer || canEdit) && (
             <div className="meeting__actions">
               {isOrganizer && (
                 <>
@@ -383,16 +386,18 @@ export function TourDetails({
                   >
                     <IdCard size={16} aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    className="attendance__people events__organizer-action"
-                    onClick={onEditEvent}
-                    aria-label="Event bearbeiten"
-                    title="Event bearbeiten"
-                  >
-                    <Pencil size={16} aria-hidden="true" />
-                  </button>
                 </>
+              )}
+              {canEdit && (
+                <button
+                  type="button"
+                  className="attendance__people events__organizer-action"
+                  onClick={onEditEvent}
+                  aria-label={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
+                  title={isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}
+                >
+                  <Pencil size={16} aria-hidden="true" />
+                </button>
               )}
               {eventRouteCount > 1 && (
                 <div className="events__route-navigation" role="group" aria-label="Eventrouten">
