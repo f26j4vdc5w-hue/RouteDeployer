@@ -916,6 +916,25 @@ a.attendance__chat {
 .meeting__actions .attendance__people {
   margin-left: 0;
 }
+.details__share-toast {
+  position: fixed;
+  z-index: 50;
+  top: max(16px, env(safe-area-inset-top));
+  left: 50%;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 12px 18px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 8px 28px rgb(18 16 22 / 20%);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.details__share-toast--error {
+  color: #b3261e;
+}
 
 @media (max-width: 480px) {
   .meeting__actions {

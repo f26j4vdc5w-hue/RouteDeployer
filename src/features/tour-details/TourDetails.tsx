@@ -15,6 +15,7 @@ import {
   Pencil,
   Plus,
   Route as RouteIcon,
+  Share,
   Timer,
   UsersRound,
   Check,
@@ -93,7 +94,13 @@ export function TourDetails({
   const [consentOpen, setConsentOpen] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
   const [participantsOpen, setParticipantsOpen] = useState(false);
+  const [shareStatus, setShareStatus] = useState<'shared' | 'copied' | 'error' | null>(null);
   const closeParticipants = useCallback(() => setParticipantsOpen(false), []);
+  useEffect(() => {
+    if (!shareStatus) return;
+    const timeout = window.setTimeout(() => setShareStatus(null), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [shareStatus]);
   const teaserContainerRef = useRef<HTMLDivElement>(null);
   const teaserRef = useRef<HTMLParagraphElement>(null);
   const teaserMeasureRef = useRef<HTMLSpanElement>(null);
@@ -131,6 +138,32 @@ export function TourDetails({
     userId: memberId,
     isPast,
   });
+  async function shareTour() {
+    const url = new URL(
+      `${import.meta.env.BASE_URL}${seasonSlug}/${collectionSlug}/`,
+      window.location.origin,
+    );
+    url.searchParams.set('tour', tour.id);
+    if (variant === 'B') url.searchParams.set('variant', variant);
+
+    setShareStatus(null);
+    try {
+      if (typeof navigator.share === 'function') {
+        await navigator.share({ title: tour.title, text: tour.teaser, url: url.href });
+        setShareStatus('shared');
+        return;
+      }
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url.href);
+      setShareStatus('copied');
+    } catch {
+      setShareStatus('error');
+    }
+  }
   const attendanceButton = attendance.canAttend ? (
     <button
       type="button"
@@ -304,6 +337,18 @@ export function TourDetails({
 
   return (
     <article className="details">
+      {shareStatus && (
+        <div
+          className={`details__share-toast${shareStatus === 'error' ? ' details__share-toast--error' : ''}`}
+          role={shareStatus === 'error' ? 'alert' : 'status'}
+        >
+          {shareStatus === 'shared'
+            ? 'Geteilt'
+            : shareStatus === 'copied'
+            ? 'Link kopiert'
+            : 'Der Link konnte nicht geteilt oder kopiert werden.'}
+        </div>
+      )}
       <header className="details__head">
         <div className="details__status">
           <span className="badge">
@@ -358,8 +403,7 @@ export function TourDetails({
         </div>
       </header>
 
-      {((tour.meetingTime || tour.meetingPlace) || attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer || canEdit) && (
-        <div className={`meeting${isEvent ? ' meeting--event' : ''}`}>
+      <div className={`meeting${isEvent ? ' meeting--event' : ''}`}>
           {(tour.meetingTime || tour.meetingPlace) && (
             <span className="meeting__location">
               <MapPin size={16} />
@@ -372,8 +416,16 @@ export function TourDetails({
               <button type="button" onClick={retryChat}>Erneut laden</button>
             </p>
           )}
-          {(attendance.canAttend || chatUrl || eventRouteCount > 1 || (isEvent && tour.eventUrl) || isOrganizer || canEdit) && (
-            <div className="meeting__actions">
+          <div className="meeting__actions">
+              <button
+                type="button"
+                className="attendance__people"
+                onClick={() => void shareTour()}
+                aria-label="Tourenlink teilen"
+                title="Tourenlink teilen"
+              >
+                <Share size={16} aria-hidden="true" />
+              </button>
               {isOrganizer && (
                 <>
                   <button
@@ -454,10 +506,8 @@ export function TourDetails({
                   <span>{attendance.attendees.length}</span>
                 </button>
               )}
-            </div>
-          )}
+          </div>
         </div>
-      )}
 
       {isOrganizer && participantsOpen && (
         <EventParticipantData
