@@ -3,15 +3,32 @@ import type { Session } from '@supabase/supabase-js';
 import { Check, LogOut, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { RouteStats } from '../../domain/route';
-import type { Tour, TourRoute } from '../../domain/tour';
-import { deleteStoredRoutes, deleteTour, fetchRoadbook } from '../../data/backend';
+import type { AdditionalRoute, Tour, TourRoute } from '../../domain/tour';
+import { deleteStoredRoutes, deleteTour, fetchRoadbook, type StoredAdditionalRoute } from '../../data/backend';
 import { requireSupabase, supabase } from '../../lib/supabase';
 import { analyzeGpx } from './analyzeGpx';
 import { generateTourDates, WEEKDAYS, type TourCadence } from './generateTourDates';
 import './admin.css';
 
 function errorText(error: unknown) {
+  if (
+    error && typeof error === 'object' &&
+    'message' in error && String(error.message).includes('tours_additional_routes_check')
+  ) {
+    return 'Zusätzliche Camp-Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611130001_camp_additional_routes.sql anwenden.';
+  }
   return error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten.';
+}
+
+function additionalRouteDraft(route?: AdditionalRoute): AdditionalRouteDraft {
+  return {
+    ...emptyRoute(),
+    key: crypto.randomUUID(),
+    stations: route?.stations.join(', ') ?? '',
+    durationMin: route?.durationMin?.toString() ?? '',
+    gpxKey: route?.gpxKey ?? '',
+    routeStats: route?.routeStats ?? null,
+  };
 }
 
 function AdminAppContent() {
@@ -312,6 +329,10 @@ interface RouteDraft {
   file: File | null;
 }
 
+interface AdditionalRouteDraft extends RouteDraft {
+  key: string;
+}
+
 const emptyRoute = (): RouteDraft => ({
   title: '',
   teaser: '',
@@ -530,7 +551,11 @@ function AdminDashboard({ session }: { session: Session }) {
       const { error: deleteError } = await client.from('seasons').delete().eq('slug', selectedSeason.slug);
       if (deleteError) throw deleteError;
       const keys = selectedSeason.collections.flatMap((collection) =>
-        collection.tours.flatMap((tour) => [tour.gpxKey, tour.alternative?.gpxKey]),
+        collection.tours.flatMap((tour) => [
+          tour.gpxKey,
+          tour.alternative?.gpxKey,
+          ...(tour.additionalRoutes ?? []).map((route) => route.gpxKey),
+        ]),
       ).filter((key): key is string => key != null);
       setSelectedSeasonSlug('');
       await reload();
@@ -676,6 +701,7 @@ function AdminDashboard({ session }: { session: Session }) {
       const keys = selectedCollection.tours.flatMap((tour) => [
         tour.gpxKey,
         tour.alternative?.gpxKey,
+        ...(tour.additionalRoutes ?? []).map((route) => route.gpxKey),
       ]).filter((key): key is string => key != null);
       setSelectedCollectionSlug('');
       await reload();
@@ -1101,7 +1127,12 @@ function AdminDashboard({ session }: { session: Session }) {
                 <div>
                   <time dateTime={tour.id}>{tour.id}</time>
                   <h3>{tour.title}</h3>
-                  <p>{tour.gpx ? 'GPX vorhanden' : 'Ohne GPX'}{tour.alternative ? ' · Alternative' : ''}</p>
+                  <p>
+                    {tour.gpx ? 'GPX vorhanden' : 'Ohne GPX'}
+                    {tour.additionalRoutes?.length
+                      ? ` · ${tour.additionalRoutes.length} weitere Routen`
+                      : tour.alternative ? ' · Alternative' : ''}
+                  </p>
                 </div>
                 <div className="admin-actions">
                   <button className="admin-button" onClick={() => { setEditingTour(tour); setShowTourForm(true); }}>
@@ -1142,13 +1173,21 @@ function TourEditor({
   onError: (cause: unknown) => void;
 }) {
   const [id, setId] = useState(tour?.id ?? '');
+  const isCamp = collection.slug === 'camp';
   const [primary, setPrimary] = useState(() => routeDraft(tour ?? undefined));
   const [hasAlternative, setHasAlternative] = useState(Boolean(tour?.alternative));
   const [alternative, setAlternative] = useState(() => routeDraft(tour?.alternative));
+  const [additionalRouteDrafts, setAdditionalRouteDrafts] = useState<AdditionalRouteDraft[]>(
+    () => tour?.additionalRoutes?.length
+      ? tour.additionalRoutes.map(additionalRouteDraft)
+      : isCamp && tour?.alternative
+      ? [additionalRouteDraft(tour.alternative)]
+      : [],
+  );
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  async function prepareRoute(draft: RouteDraft, variant: 'A' | 'B', uploaded: string[]) {
+  async function prepareRoute(draft: RouteDraft, variant: string, uploaded: string[]) {
     let gpxKey = draft.gpxKey;
     let routeStats = draft.routeStats;
     if (draft.file) {
@@ -1173,15 +1212,47 @@ function TourEditor({
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    for (const [index, route] of additionalRouteDrafts.entries()) {
+      const duration = route.durationMin.trim() ? Number(route.durationMin) : null;
+      if (duration !== null && (!Number.isSafeInteger(duration) || duration <= 0 || duration > 2147483647)) {
+        setLocalError(`Die Dauer von Route ${index + 2} muss eine positive Zahl (Minuten) sein.`);
+        return;
+      }
+      if (!route.file && (!route.gpxKey || !route.routeStats)) {
+        setLocalError(`Bitte für Route ${index + 2} eine GPX-Datei auswählen.`);
+        return;
+      }
+    }
+    if (isCamp && additionalRouteDrafts.length > 0 && !primary.file && (!primary.gpxKey || !primary.routeStats)) {
+      setLocalError('Bitte für die Hauptroute eine GPX-Datei auswählen.');
+      return;
+    }
     setBusy(true);
     setLocalError(null);
     const uploaded: string[] = [];
     let persisted = false;
     try {
       const primaryGpx = await prepareRoute(primary, 'A', uploaded);
-      const alternativeGpx = hasAlternative
+      const alternativeGpx = !isCamp && hasAlternative
         ? await prepareRoute(alternative, 'B', uploaded)
         : null;
+      const preparedAdditionalRoutes = isCamp
+        ? await Promise.all(additionalRouteDrafts.map((route, index) =>
+            prepareRoute(route, `R${index + 2}`, uploaded),
+          ))
+        : [];
+      const storedAdditionalRoutes = preparedAdditionalRoutes.map((route, index): StoredAdditionalRoute => {
+        if (!route.gpxKey || !route.routeStats) {
+          throw new Error(`Route ${index + 2} enthält keine gültigen GPX-Daten.`);
+        }
+        const draft = additionalRouteDrafts[index];
+        return {
+          gpxKey: route.gpxKey,
+          routeStats: route.routeStats,
+          stations: draft.stations.split(',').map((station) => station.trim()).filter(Boolean),
+          durationMin: draft.durationMin.trim() ? Number(draft.durationMin) : null,
+        };
+      });
       const client = requireSupabase();
       const values = {
         id,
@@ -1211,6 +1282,7 @@ function TourEditor({
               routeStats: alternativeGpx.routeStats,
             }
           : null,
+        ...(isCamp ? { additional_routes: storedAdditionalRoutes } : {}),
       };
       let saveError;
       if (tour) {
@@ -1231,10 +1303,21 @@ function TourEditor({
       if (saveError) throw saveError;
       persisted = true;
 
-      const previousKeys = [tour?.gpxKey, tour?.alternative?.gpxKey].filter(
+      const previousKeys = [
+        tour?.gpxKey,
+        tour?.alternative?.gpxKey,
+        ...(tour?.additionalRoutes ?? []).map((route) => route.gpxKey),
+      ].filter(
         (key): key is string => key != null,
       );
-      const retainedKeys = new Set([values.gpx_key, alternativeGpx?.gpxKey].filter(Boolean));
+      const retainedAdditionalKeys = isCamp
+        ? storedAdditionalRoutes.map((route) => route.gpxKey)
+        : (tour?.additionalRoutes ?? []).map((route) => route.gpxKey);
+      const retainedKeys = new Set([
+        values.gpx_key,
+        alternativeGpx?.gpxKey,
+        ...retainedAdditionalKeys,
+      ].filter((key): key is string => Boolean(key)));
       const removedKeys = previousKeys.filter((key) => !retainedKeys.has(key));
       if (removedKeys.length > 0) {
         const { error: removeError } = await client.storage.from('routes').remove(removedKeys);
@@ -1265,20 +1348,49 @@ function TourEditor({
         <input type="date" value={id} onChange={(event) => setId(event.target.value)} required disabled={Boolean(tour)} />
       </label>
       <RouteFields label="Hauptroute" value={primary} onChange={(patch) => setPrimary({ ...primary, ...patch })} />
-      <label className="admin-checkbox">
-        <input
-          type="checkbox"
-          checked={hasAlternative}
-          onChange={(event) => setHasAlternative(event.target.checked)}
-        />
-        Alternative Route anbieten
-      </label>
-      {hasAlternative && (
-        <RouteFields
-          label="Alternative Route"
-          value={alternative}
-          onChange={(patch) => setAlternative({ ...alternative, ...patch })}
-        />
+      {isCamp ? (
+        <>
+          {additionalRouteDrafts.map((route, index) => (
+            <AdditionalRouteFields
+              key={route.key}
+              label={`Route ${index + 2}`}
+              value={route}
+              onChange={(patch) =>
+                setAdditionalRouteDrafts((current) =>
+                  current.map((entry) => entry.key === route.key ? { ...entry, ...patch } : entry),
+                )
+              }
+              onRemove={() =>
+                setAdditionalRouteDrafts((current) => current.filter((entry) => entry.key !== route.key))
+              }
+            />
+          ))}
+          <button
+            type="button"
+            className="admin-button"
+            onClick={() => setAdditionalRouteDrafts((current) => [...current, additionalRouteDraft()])}
+          >
+            <Plus size={16} /> Weitere Route hinzufügen
+          </button>
+        </>
+      ) : (
+        <>
+          <label className="admin-checkbox">
+            <input
+              type="checkbox"
+              checked={hasAlternative}
+              onChange={(event) => setHasAlternative(event.target.checked)}
+            />
+            Alternative Route anbieten
+          </label>
+          {hasAlternative && (
+            <RouteFields
+              label="Alternative Route"
+              value={alternative}
+              onChange={(patch) => setAlternative({ ...alternative, ...patch })}
+            />
+          )}
+        </>
       )}
       {localError && <p className="admin-error" role="alert">{localError}</p>}
       <div className="admin-actions">
@@ -1288,6 +1400,53 @@ function TourEditor({
         <button type="button" className="admin-button" onClick={onCancel} disabled={busy}>Abbrechen</button>
       </div>
     </form>
+  );
+}
+
+function AdditionalRouteFields({
+  label,
+  value,
+  onChange,
+  onRemove,
+}: {
+  label: string;
+  value: AdditionalRouteDraft;
+  onChange: (patch: Partial<RouteDraft>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <fieldset className="admin-route-fields">
+      <legend>{label}</legend>
+      <label>
+        Orte entlang der Strecke (mit Komma getrennt)
+        <input value={value.stations} onChange={(event) => onChange({ stations: event.target.value })} />
+      </label>
+      <label>
+        Dauer in Minuten (optional)
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={value.durationMin}
+          onChange={(event) => onChange({ durationMin: event.target.value })}
+        />
+      </label>
+      <label className="admin-file">
+        GPX-Datei (max. 10 MB)
+        <span className="admin-file__status">
+          <Upload size={16} />
+          {value.file?.name ?? (value.gpxKey ? 'Vorhandene Datei bleibt erhalten' : 'Datei auswählen')}
+        </span>
+        <input
+          type="file"
+          accept=".gpx,application/gpx+xml,application/xml,text/xml"
+          onChange={(event) => onChange({ file: event.target.files?.[0] ?? null })}
+        />
+      </label>
+      <button type="button" className="admin-button" onClick={onRemove}>
+        <X size={16} /> Route entfernen
+      </button>
+    </fieldset>
   );
 }
 

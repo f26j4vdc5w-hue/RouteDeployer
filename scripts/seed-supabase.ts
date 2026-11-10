@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { loadEnv } from 'vite';
 import { seasons } from '../src/data/catalog';
 import type { RouteStats } from '../src/domain/route';
-import type { TourRoute } from '../src/domain/tour';
+import type { AdditionalRoute, TourRoute } from '../src/domain/tour';
 
 const env = { ...loadEnv('development', process.cwd(), ''), ...process.env };
 const supabaseUrl = env.VITE_SUPABASE_URL ?? env.SUPABASE_URL;
@@ -85,6 +85,17 @@ const tourRows = seasons.flatMap((season) =>
         gpxKey: route.gpx ?? null,
         routeStats: route.gpx ? routes[route.gpx] ?? null : null,
       });
+      const additionalRouteRecords = (tour.additionalRoutes ?? []).map((route: AdditionalRoute) => {
+        if (!route.gpx) throw new Error(`Zusätzliche Route in ${tour.id} hat keine GPX-Datei.`);
+        const routeStats = routes[route.gpx];
+        if (!routeStats) throw new Error(`Routendaten für ${route.gpx} fehlen. Bitte zuerst npm run routes ausführen.`);
+        return {
+          gpxKey: route.gpx,
+          routeStats,
+          durationMin: route.durationMin ?? null,
+          stations: route.stations,
+        };
+      });
       const primary = routeRecord(tour);
       return {
         id: tour.id,
@@ -101,6 +112,7 @@ const tourRows = seasons.flatMap((season) =>
         gpx_key: primary.gpxKey,
         route_stats: primary.routeStats,
         alternative: tour.alternative ? routeRecord(tour.alternative) : null,
+        additional_routes: additionalRouteRecords,
       };
     }),
   ),

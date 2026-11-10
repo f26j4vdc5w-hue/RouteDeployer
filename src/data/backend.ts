@@ -1,6 +1,6 @@
 import type { Collection, Season } from '../domain/catalog';
 import type { RouteStats } from '../domain/route';
-import type { EventRoute, Tour, TourRoute } from '../domain/tour';
+import type { AdditionalRoute, Tour, TourRoute } from '../domain/tour';
 import { requireSupabase } from '../lib/supabase';
 import type { PersonalField } from '../shared/personalData';
 
@@ -38,18 +38,18 @@ interface TourRow {
   organizer_id: string | null;
   event_url?: string | null;
   end_date?: string | null;
-  additional_routes?: StoredEventRoute[];
+  additional_routes?: StoredAdditionalRoute[];
   required_personal_fields?: PersonalField[] | null;
 }
 
-export interface StoredEventRoute {
+export interface StoredAdditionalRoute {
   gpxKey: string;
   routeStats: RouteStats;
   durationMin: number | null;
   stations: string[];
 }
 
-function toEventRoute(route: StoredEventRoute): EventRoute {
+function toAdditionalRoute(route: StoredAdditionalRoute): AdditionalRoute {
   return {
     gpxKey: route.gpxKey,
     gpx: requireSupabase().storage.from('routes').getPublicUrl(route.gpxKey, { download: true }).data.publicUrl,
@@ -129,7 +129,7 @@ export async function fetchRoadbook(onProgress?: (fraction: number) => void): Pr
         throw new Error('Das Event-Enddatum ist noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611100001_event_end_date.sql anwenden.');
       }
       if (withEventUrl.error?.code === '42703' && withEventUrl.error.message.includes('additional_routes')) {
-        throw new Error('Zusätzliche Eventrouten sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611110001_event_additional_routes.sql anwenden.');
+        throw new Error('Zusätzliche Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611110001_event_additional_routes.sql anwenden.');
       }
       if (!withEventUrl.error || !isMissingEventUrlColumn(withEventUrl.error)) {
         return withEventUrl;
@@ -187,8 +187,7 @@ export async function fetchRoadbook(onProgress?: (fraction: number) => void): Pr
               row.collection_slug === 'events' ? row.event_url ?? undefined : undefined,
             endDate:
               row.collection_slug === 'events' ? row.end_date ?? undefined : undefined,
-            additionalRoutes:
-              row.collection_slug === 'events' ? row.additional_routes?.map(toEventRoute) : undefined,
+            additionalRoutes: row.additional_routes?.map(toAdditionalRoute),
             requiredPersonalFields:
               row.collection_slug === 'events'
                 ? row.required_personal_fields ?? ['full_name', 'address', 'birth_date']

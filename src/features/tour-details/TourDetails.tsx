@@ -32,7 +32,7 @@ import { useTourAttendance } from '../community/useTourAttendance';
 import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
 import { useEventChatUrl } from '../events/useEventChatUrl';
-import { eventRouteAt, routeDragOffset, swipedRouteIndex } from '../events/eventRoutes';
+import { tourRouteAt, routeDragOffset, swipedRouteIndex } from '../events/tourRoutes';
 import type { CommunityMember } from '../community/useCommunityAuth';
 import { missingPersonalFields, personalFieldLabel } from '../../shared/personalData';
 import { createAscentProfile, getAscentUntilDistance, type AscentProfile } from '../../shared/ascentProfile';
@@ -59,10 +59,10 @@ interface Props {
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
   onEditEvent?: () => void;
-  eventRefreshKey?: Tour;
-  eventRouteIndex?: number;
-  eventRouteCount?: number;
-  onEventRouteChange?: (index: number) => void;
+  routeRefreshKey?: Tour;
+  routeIndex?: number;
+  routeCount?: number;
+  onRouteChange?: (index: number) => void;
 }
 
 export function TourDetails({
@@ -81,10 +81,10 @@ export function TourDetails({
   variant,
   onVariantChange,
   onEditEvent,
-  eventRefreshKey,
-  eventRouteIndex = 0,
-  eventRouteCount = 1,
-  onEventRouteChange,
+  routeRefreshKey,
+  routeIndex = 0,
+  routeCount = 1,
+  onRouteChange,
 }: Props) {
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
@@ -190,28 +190,28 @@ export function TourDetails({
     collectionSlug,
     tour.id,
     isEvent && (attendance.isAttending || isOrganizer),
-    eventRefreshKey,
+    routeRefreshKey,
   );
   const eventKey = `${seasonSlug}/${collectionSlug}/${tour.id}`;
-  const activeTransition = routeTransition?.eventKey === eventKey && routeTransition.targetIndex === eventRouteIndex
+  const activeTransition = routeTransition?.eventKey === eventKey && routeTransition.targetIndex === routeIndex
     ? routeTransition
     : null;
 
-  const activeDrag = routeDrag?.eventKey === eventKey && routeDrag.index === eventRouteIndex ? routeDrag : null;
+  const activeDrag = routeDrag?.eventKey === eventKey && routeDrag.index === routeIndex ? routeDrag : null;
 
-  function changeEventRoute(index: number, startOffset = 0) {
-    if (!onEventRouteChange || index === eventRouteIndex || index < 0 || index >= eventRouteCount) return;
+  function changeRoute(index: number, startOffset = 0) {
+    if (!onRouteChange || index === routeIndex || index < 0 || index >= routeCount) return;
     touchStartRef.current = null;
     setRouteDrag(null);
     setRouteTransition({
       eventKey,
       targetIndex: index,
-      direction: index > eventRouteIndex ? 'next' : 'previous',
+      direction: index > routeIndex ? 'next' : 'previous',
       previousRoute: route,
       previousDistanceKm: activeDistanceKm,
       startOffset,
     });
-    onEventRouteChange(index);
+    onRouteChange(index);
   }
 
   useEffect(() => {
@@ -459,19 +459,19 @@ export function TourDetails({
               >
                 <Share size={16} aria-hidden="true" />
               </button>
-              {eventRouteCount > 1 && (
-                <div className="events__route-navigation" role="group" aria-label="Eventrouten">
-                  <button type="button" aria-label="Vorherige Route" disabled={eventRouteIndex === 0}
-                    onClick={() => changeEventRoute(eventRouteIndex - 1)}>
+              {routeCount > 1 && (
+                <div className="events__route-navigation" role="group" aria-label="Routen">
+                  <button type="button" aria-label="Vorherige Route" disabled={routeIndex === 0}
+                    onClick={() => changeRoute(routeIndex - 1)}>
                     <ChevronLeft size={16} aria-hidden="true" />
                   </button>
                   <span aria-live="polite">
-                    <span className="events__route-number">{eventRouteIndex + 1}</span>
+                    <span className="events__route-number">{routeIndex + 1}</span>
                     {' von '}
-                    <span className="events__route-number">{eventRouteCount}</span>
+                    <span className="events__route-number">{routeCount}</span>
                   </span>
-                  <button type="button" aria-label="Nächste Route" disabled={eventRouteIndex === eventRouteCount - 1}
-                    onClick={() => changeEventRoute(eventRouteIndex + 1)}>
+                  <button type="button" aria-label="Nächste Route" disabled={routeIndex === routeCount - 1}
+                    onClick={() => changeRoute(routeIndex + 1)}>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
                 </div>
@@ -597,11 +597,11 @@ export function TourDetails({
 
       {tour.gpx ? (
         <>
-          <div className={eventRouteCount > 1 ? 'events__route-container' : undefined}>
+          <div className={routeCount > 1 ? 'events__route-container' : undefined}>
             <div
-              className={eventRouteCount > 1 ? 'events__route-swipe' : undefined}
+              className={routeCount > 1 ? 'events__route-swipe' : undefined}
               onTouchStart={(event) => {
-                if (eventRouteCount < 2 || !eventRefreshKey || !onEventRouteChange || event.touches.length !== 1) {
+                if (routeCount < 2 || !routeRefreshKey || !onRouteChange || event.touches.length !== 1) {
                   touchStartRef.current = null;
                   setRouteDrag((current) => current ? { ...current, returning: true } : null);
                   return;
@@ -629,8 +629,8 @@ export function TourDetails({
                   start.direction = Math.abs(dx) > Math.abs(dy) * 1.5 ? 'horizontal' : 'vertical';
                 }
                 if (start.direction !== 'horizontal') return;
-                start.offset = routeDragOffset(eventRouteIndex, eventRouteCount, dx, event.currentTarget.clientWidth);
-                setRouteDrag(start.offset ? { eventKey, index: eventRouteIndex, offset: start.offset, returning: false } : null);
+                start.offset = routeDragOffset(routeIndex, routeCount, dx, event.currentTarget.clientWidth);
+                setRouteDrag(start.offset ? { eventKey, index: routeIndex, offset: start.offset, returning: false } : null);
               }}
               onTouchEnd={(event) => {
                 const start = touchStartRef.current;
@@ -639,9 +639,9 @@ export function TourDetails({
                 touchStartRef.current = null;
                 if (start.direction !== 'horizontal' || !start.offset) return;
                 const dy = touch.clientY - start.y;
-                const next = swipedRouteIndex(eventRouteIndex, eventRouteCount, start.offset, dy);
-                if (next !== null) changeEventRoute(next, start.offset);
-                else setRouteDrag({ eventKey, index: eventRouteIndex, offset: start.offset, returning: true });
+                const next = swipedRouteIndex(routeIndex, routeCount, start.offset, dy);
+                if (next !== null) changeRoute(next, start.offset);
+                else setRouteDrag({ eventKey, index: routeIndex, offset: start.offset, returning: true });
               }}
               onTouchCancel={() => {
                 touchStartRef.current = null;
@@ -649,7 +649,7 @@ export function TourDetails({
               }}
             >
               <div
-                key={`${eventKey}-${eventRouteIndex}`}
+                key={`${eventKey}-${routeIndex}`}
                 className={activeDrag?.returning ? 'events__route-return' : activeTransition ? `events__route-enter events__route-enter--${activeTransition.direction}` : undefined}
                 style={activeDrag
                   ? activeDrag.returning
@@ -660,9 +660,9 @@ export function TourDetails({
                     : undefined}
                 onAnimationEnd={activeDrag?.returning ? () => setRouteDrag(null) : undefined}
               >
-                <RouteMap route={route} activeDistanceKm={activeDistanceKm} showLegend={eventRouteCount <= 1} />
+                <RouteMap route={route} activeDistanceKm={activeDistanceKm} showLegend={routeCount <= 1} />
               </div>
-              {activeDrag && eventRefreshKey && (
+              {activeDrag && routeRefreshKey && (
                 <div
                   className={`events__route-neighbor${activeDrag.returning ? ' events__route-return' : ''}`}
                   aria-hidden="true"
@@ -673,13 +673,13 @@ export function TourDetails({
                       } as CSSProperties
                     : { transform: `translateX(calc(${activeDrag.offset < 0 ? '100% + 12px' : '-100% - 12px'} + ${activeDrag.offset}px))` }}
                 >
-                  <RouteMap route={eventRouteAt(eventRefreshKey, eventRouteIndex + (activeDrag.offset < 0 ? 1 : -1)).routeStats}
+                  <RouteMap route={tourRouteAt(routeRefreshKey, routeIndex + (activeDrag.offset < 0 ? 1 : -1)).routeStats}
                     activeDistanceKm={null} showLegend={false} />
                 </div>
               )}
               {activeTransition && (
                 <div
-                  key={`${eventKey}-${eventRouteIndex}-out`}
+                  key={`${eventKey}-${routeIndex}-out`}
                   className={`events__route-exit events__route-exit--${activeTransition.direction}`}
                   style={activeTransition.startOffset
                     ? { '--route-slide-from': `${activeTransition.startOffset}px` } as CSSProperties
@@ -691,7 +691,7 @@ export function TourDetails({
                 </div>
               )}
             </div>
-            {eventRouteCount > 1 && <RouteMapLegend route={route} />}
+            {routeCount > 1 && <RouteMapLegend route={route} />}
           </div>
           <div className={`stats${isPartialStats ? ' stats--partial' : ''}`}>
             {stats.map((s) => (

@@ -84,6 +84,9 @@ einer leeren oder veralteten Tourenansicht.
    Die Migration [`202611120001`](supabase/migrations/202611120001_restore_event_chat_url_function.sql)
    stellt den geschützten Abruf von WhatsApp-Chat-Links wieder her, falls die
    Datenbankfunktion fehlt.
+   Die Migration [`202611130001`](supabase/migrations/202611130001_camp_additional_routes.sql)
+   erlaubt zusätzliche GPX-Routen für Camps und überführt bestehende Camp-
+   Alternativen in die neue Routenliste.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`

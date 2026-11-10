@@ -41,8 +41,12 @@ werden soll.
    Höhenprofil. Ein distanzbasiertes 450-m-Medianfilter glättet kurzfristige
    Höhenzacken vor der Anstiegsberechnung. Eine bestehende Datei bleibt
    erhalten, wenn keine neue Datei ausgewählt wird.
-5. Für Variante B aktiviere **Alternative Route anbieten** und pflege deren
-   Daten separat.
+5. In der Camp-Kollektion kannst du mit **Weitere Route hinzufügen** beliebig
+   viele GPX-Routen ergänzen. Für jede Zusatzroute lassen sich Orte und eine
+   optionale Dauer angeben; die Haupttour liefert weiterhin Titel und
+   Beschreibung. Auf der Website kann zwischen den Routen gewechselt werden.
+   In anderen Kollektionen kannst du weiterhin **Alternative Route anbieten**
+   aktivieren und deren Daten separat pflegen.
 6. Speichere die Tour. Änderungen stehen anschließend direkt auf der
    öffentlichen Website bereit; ein neuer Frontend-Build ist nicht erforderlich.
 

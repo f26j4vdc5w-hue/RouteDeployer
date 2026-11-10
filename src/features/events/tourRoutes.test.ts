@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import type { Tour } from '../../domain/tour';
-import { eventRouteAt, eventRouteCount, routeDragOffset, swipedRouteIndex } from './eventRoutes';
+import { tourRouteAt, tourRouteCount, routeDragOffset, swipedRouteIndex } from './tourRoutes';
 
 const routeStats = {
   distanceKm: 20, ascentM: 300, isLoop: false,
@@ -19,9 +19,9 @@ const event: Tour = {
 };
 
 test('switches route-specific fields without changing event identity or consent', () => {
-  assert.equal(eventRouteCount(event), 2);
-  assert.equal(eventRouteAt(event, 0), event);
-  const second = eventRouteAt(event, 1);
+  assert.equal(tourRouteCount(event), 2);
+  assert.equal(tourRouteAt(event, 0), event);
+  const second = tourRouteAt(event, 1);
   assert.equal(second.gpxKey, 'second.gpx');
   assert.equal(second.routeStats, routeStats);
   assert.equal(second.durationMin, 120);
@@ -30,8 +30,8 @@ test('switches route-specific fields without changing event identity or consent'
   assert.equal(second.title, event.title);
   assert.equal(second.organizerId, event.organizerId);
   assert.deepEqual(second.requiredPersonalFields, event.requiredPersonalFields);
-  assert.equal(eventRouteAt(event, 3), event);
-  assert.equal(eventRouteCount({ ...event, gpx: undefined, additionalRoutes: [] }), 1);
+  assert.equal(tourRouteAt(event, 3), event);
+  assert.equal(tourRouteCount({ ...event, gpx: undefined, additionalRoutes: [] }), 1);
 });
 
 test('does not inherit the primary route duration when an additional route has none', () => {
@@ -43,7 +43,31 @@ test('does not inherit the primary route duration when an additional route has n
     ],
   };
 
-  assert.equal(eventRouteAt(eventWithPrimaryDuration, 1).durationMin, undefined);
+  assert.equal(tourRouteAt(eventWithPrimaryDuration, 1).durationMin, undefined);
+});
+
+test('supports additional routes in the Camp collection', () => {
+  const camp: Tour = {
+    id: '2028-07-01',
+    collectionSlug: 'camp',
+    title: 'Camp-Etappe',
+    teaser: 'Beschreibung',
+    meetingTime: '09:00',
+    meetingPlace: 'Unterkunft',
+    stations: ['A'],
+    gpx: 'https://example.test/first.gpx',
+    additionalRoutes: [{
+      gpx: 'https://example.test/second.gpx',
+      gpxKey: 'second.gpx',
+      routeStats,
+      stations: ['B'],
+    }],
+  };
+
+  assert.equal(tourRouteCount(camp), 2);
+  assert.equal(tourRouteAt(camp, 1).collectionSlug, 'camp');
+  assert.equal(tourRouteAt(camp, 1).gpxKey, 'second.gpx');
+  assert.deepEqual(tourRouteAt(camp, 1).stations, ['B']);
 });
 
 test('only horizontal swipes within route bounds change selection', () => {

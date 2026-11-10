@@ -10,7 +10,7 @@ import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
 import { EventEditor } from '../features/events/EventEditor';
-import { eventRouteAt, eventRouteCount as countEventRoutes } from '../features/events/eventRoutes';
+import { tourRouteAt, tourRouteCount } from '../features/events/tourRoutes';
 import { useCommunityAuth } from '../features/community/useCommunityAuth';
 import { todayIso, tourEndDate } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
@@ -279,7 +279,7 @@ function Roadbook({
   );
   const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [eventRouteSelection, setEventRouteSelection] = useState({ key: '', index: 0 });
+  const [routeSelection, setRouteSelection] = useState({ key: '', index: 0 });
   const [editor, setEditor] = useState<
     { mode: 'create' } | { mode: 'edit'; tour: Tour } | null
   >(null);
@@ -306,13 +306,13 @@ function Roadbook({
   const selected =
     sorted.find((t) => t.id === tourId) ?? sorted.find((t) => tourEndDate(t) >= today) ?? sorted.at(-1);
   const selectionKey = `${season.slug}/${collection.slug}/${selected?.id ?? ''}`;
-  const eventRouteCount = collection.slug === 'events' && selected ? countEventRoutes(selected) : 1;
-  const eventRouteIndex = eventRouteSelection.key === selectionKey
-    ? Math.min(eventRouteSelection.index, eventRouteCount - 1)
+  const routeCount = selected ? tourRouteCount(selected) : 1;
+  const routeIndex = routeSelection.key === selectionKey
+    ? Math.min(routeSelection.index, routeCount - 1)
     : 0;
   const displayedTour: Tour | undefined =
-    selected && collection.slug === 'events'
-      ? eventRouteAt(selected, eventRouteIndex)
+    selected && routeCount > 1
+      ? tourRouteAt(selected, routeIndex)
       : selected && variant === 'B' && selected.alternative
       ? { ...selected.alternative, id: selected.id, endDate: selected.endDate }
       : selected;
@@ -418,10 +418,10 @@ function Roadbook({
                 : undefined
             }
             onEditEvent={() => setEditor({ mode: 'edit', tour: selected })}
-            eventRefreshKey={selected}
-            eventRouteIndex={eventRouteIndex}
-            eventRouteCount={eventRouteCount}
-            onEventRouteChange={(index) => setEventRouteSelection({ key: selectionKey, index })}
+            routeRefreshKey={selected}
+            routeIndex={routeIndex}
+            routeCount={routeCount}
+            onRouteChange={(index) => setRouteSelection({ key: selectionKey, index })}
           />
         </main>
       ) : (
