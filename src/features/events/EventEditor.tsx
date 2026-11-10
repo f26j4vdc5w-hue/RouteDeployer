@@ -22,6 +22,7 @@ interface Props {
   seasonSlug: string;
   collectionSlug: string;
   memberId: string;
+  isCollectionOrganizer?: boolean;
   tour?: Tour;
   onClose: () => void;
   onSaved: (tourId: string) => void;
@@ -99,6 +100,7 @@ export function EventEditor({
   seasonSlug,
   collectionSlug,
   memberId,
+  isCollectionOrganizer = false,
   tour,
   onClose,
   onSaved,
@@ -201,7 +203,9 @@ export function EventEditor({
         if (route.file) {
           routeStats = await analyzeGpx(route.file);
           const name = route.file.name.toLowerCase().replace(/[^a-z0-9.-]+/g, '-').replace(/^-|-$/g, '');
-          gpxKey = `member-events/${memberId}/${crypto.randomUUID()}-${name}`;
+          gpxKey = isCollectionOrganizer
+            ? `${seasonSlug}/${collectionSlug}/${id}/${crypto.randomUUID()}-${name}`
+            : `member-events/${memberId}/${crypto.randomUUID()}-${name}`;
           const { error: uploadError } = await client.storage.from('routes').upload(gpxKey, route.file, {
             cacheControl: '3600',
             contentType: 'application/gpx+xml',
@@ -304,7 +308,7 @@ export function EventEditor({
     setBusy(true);
     setError(null);
     try {
-      await deleteTour(tour);
+      await deleteTour(tour, { cleanupRoutesBeforeDelete: isCollectionOrganizer });
       onDeleted();
     } catch (cause) {
       setError(errorText(cause));
@@ -495,7 +499,7 @@ export function EventEditor({
             <button className="community__submit" type="submit" disabled={busy}>
               {busy ? 'Wird gespeichert …' : tour ? 'Speichern' : 'Event anlegen'}
             </button>
-            {tour && collectionSlug === 'events' && (
+            {tour && collectionSlug === 'events' && (isCollectionOrganizer || tour.organizerId === memberId) && (
               <button
                 className="community__submit events__delete"
                 type="button"

@@ -377,6 +377,17 @@ function slugify(value: string) {
 
 function AdminDashboard({ session }: { session: Session }) {
   const [seasons, setSeasons] = useState<Season[]>([]);
+  const [approvedMembers, setApprovedMembers] = useState<{
+    user_id: string;
+    email: string;
+    display_name: string;
+  }[]>([]);
+  const [collectionOrganizers, setCollectionOrganizers] = useState<{ user_id: string }[]>([]);
+  const [organizerToAdd, setOrganizerToAdd] = useState('');
+  const [approvedMembersLoading, setApprovedMembersLoading] = useState(true);
+  const [approvedMembersError, setApprovedMembersError] = useState<string | null>(null);
+  const [collectionOrganizersLoading, setCollectionOrganizersLoading] = useState(true);
+  const [collectionOrganizersError, setCollectionOrganizersError] = useState<string | null>(null);
   const [pendingMembers, setPendingMembers] = useState<{
     user_id: string;
     email: string;
@@ -467,6 +478,31 @@ function AdminDashboard({ session }: { session: Session }) {
     };
   }, [client]);
 
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const { data, error: queryError } = await client
+        .from('community_members')
+        .select('user_id, email, display_name')
+        .eq('status', 'approved')
+        .not('email_confirmed_at', 'is', null)
+        .order('display_name');
+      if (!active) return;
+      if (queryError) {
+        setApprovedMembersError(queryError.message);
+      } else {
+        setApprovedMembers(data ?? []);
+      }
+    })().catch((cause: unknown) => {
+      if (active) setApprovedMembersError(errorText(cause));
+    }).finally(() => {
+      if (active) setApprovedMembersLoading(false);
+    });
+    return () => {
+      active = false;
+    };
+  }, [client]);
+
   const selectedSeason = seasons.find((season) => season.slug === selectedSeasonSlug);
   const selectedCollection = selectedSeason?.collections.find(
     (collection) => collection.slug === selectedCollectionSlug,
@@ -503,6 +539,39 @@ function AdminDashboard({ session }: { session: Session }) {
     });
   }, [selectedCollection]);
 
+  useEffect(() => {
+    let active = true;
+    setCollectionOrganizersLoading(true);
+    setCollectionOrganizersError(null);
+    setOrganizerToAdd('');
+    if (!selectedSeason || !selectedCollection) {
+      setCollectionOrganizers([]);
+      setCollectionOrganizersLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+    void (async () => {
+      try {
+        const { data, error: queryError } = await client
+          .from('collection_organizers')
+          .select('user_id')
+          .eq('season_slug', selectedSeason.slug)
+          .eq('collection_slug', selectedCollection.slug);
+        if (!active) return;
+        if (queryError) setCollectionOrganizersError(queryError.message);
+        else setCollectionOrganizers(data ?? []);
+      } catch (cause) {
+        if (active) setCollectionOrganizersError(errorText(cause));
+      } finally {
+        if (active) setCollectionOrganizersLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [client, selectedSeason, selectedCollection]);
+
   if (dataLoading) return <AdminMessage>Touren und Saisons werden geladen …</AdminMessage>;
   if (error && seasons.length === 0) {
     return <AdminMessage>Tourendaten konnten nicht geladen werden: {error}</AdminMessage>;
@@ -511,6 +580,46 @@ function AdminDashboard({ session }: { session: Session }) {
   function reportFailure(cause: unknown) {
     setNotice(null);
     setError(errorText(cause));
+  }
+
+  async function assignCollectionOrganizer() {
+    if (!selectedSeason || !selectedCollection || !organizerToAdd) return;
+    setCollectionOrganizersError(null);
+    setBusy(true);
+    try {
+      const { error: insertError } = await client.from('collection_organizers').insert({
+        season_slug: selectedSeason.slug,
+        collection_slug: selectedCollection.slug,
+        user_id: organizerToAdd,
+      });
+      if (insertError) throw insertError;
+      setCollectionOrganizers((current) => [...current, { user_id: organizerToAdd }]);
+      setOrganizerToAdd('');
+    } catch (cause) {
+      setCollectionOrganizersError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCollectionOrganizer(userId: string) {
+    if (!selectedSeason || !selectedCollection) return;
+    setCollectionOrganizersError(null);
+    setBusy(true);
+    try {
+      const { error: deleteError } = await client
+        .from('collection_organizers')
+        .delete()
+        .eq('season_slug', selectedSeason.slug)
+        .eq('collection_slug', selectedCollection.slug)
+        .eq('user_id', userId);
+      if (deleteError) throw deleteError;
+      setCollectionOrganizers((current) => current.filter((entry) => entry.user_id !== userId));
+    } catch (cause) {
+      setCollectionOrganizersError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveSeason(event: FormEvent<HTMLFormElement>) {
@@ -881,6 +990,71 @@ function AdminDashboard({ session }: { session: Session }) {
             </label>
           </div>
 
+          <section className="admin-organizers" aria-labelledby="collection-organizers-title">
+            <div>
+              <h3 id="collection-organizers-title">Organisatoren der Kollektion</h3>
+              <p>Freigegebene Mitglieder können Touren in dieser Kollektion verwalten, aber nicht den Admin-Bereich öffnen.</p>
+            </div>
+            {approvedMembersError && <p className="admin-error" role="alert">Mitglieder konnten nicht geladen werden: {approvedMembersError}</p>}
+            {collectionOrganizersError && <p className="admin-error" role="alert">{collectionOrganizersError}</p>}
+            {approvedMembersLoading || collectionOrganizersLoading ? (
+              <p className="admin-muted" role="status">Organisatoren werden geladen …</p>
+            ) : (
+              <>
+                <div className="admin-organizers__add">
+                  <label>
+                    Mitglied hinzufügen
+                    <select
+                      value={organizerToAdd}
+                      onChange={(event) => setOrganizerToAdd(event.target.value)}
+                      disabled={busy || approvedMembers.length === collectionOrganizers.length}
+                    >
+                      <option value="">Mitglied auswählen</option>
+                      {approvedMembers
+                        .filter((member) => !collectionOrganizers.some((entry) => entry.user_id === member.user_id))
+                        .map((member) => (
+                          <option value={member.user_id} key={member.user_id}>
+                            {member.display_name} · {member.email}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="admin-button"
+                    onClick={() => void assignCollectionOrganizer()}
+                    disabled={busy || !organizerToAdd}
+                  >
+                    <Plus size={16} /> Hinzufügen
+                  </button>
+                </div>
+                {collectionOrganizers.length > 0 ? (
+                  <ul className="admin-organizers__list">
+                    {collectionOrganizers.map(({ user_id }) => {
+                      const member = approvedMembers.find((entry) => entry.user_id === user_id);
+                      return (
+                        <li key={user_id}>
+                          <span>{member ? `${member.display_name} · ${member.email}` : user_id}</span>
+                          <button
+                            type="button"
+                            className="admin-button admin-button--danger"
+                            onClick={() => void removeCollectionOrganizer(user_id)}
+                            disabled={busy}
+                            aria-label={`${member?.display_name ?? 'Organisator'} entfernen`}
+                          >
+                            <X size={16} /> Entfernen
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p className="admin-muted">Noch keine Organisatoren zugewiesen.</p>
+                )}
+              </>
+            )}
+          </section>
+
           <div className="admin-management">
             <form className="admin-form admin-form--inline" onSubmit={saveSeason}>
               <div className="admin-form__heading">
@@ -1157,7 +1331,7 @@ function AdminDashboard({ session }: { session: Session }) {
   );
 }
 
-function TourEditor({
+export function TourEditor({
   season,
   collection,
   tour,

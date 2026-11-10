@@ -198,11 +198,19 @@ export async function fetchRoadbook(onProgress?: (fraction: number) => void): Pr
   return seasons;
 }
 
-export async function deleteTour(tour: Tour) {
+export async function deleteTour(
+  tour: Tour,
+  options: { cleanupRoutesBeforeDelete?: boolean } = {},
+) {
   const client = requireSupabase();
   if (!tour.seasonSlug || !tour.collectionSlug) {
     throw new Error('Bei der Tour fehlen Saison- oder Kollektion-Zuordnung.');
   }
+  const keys = [tour.gpxKey, tour.alternative?.gpxKey, ...(tour.additionalRoutes ?? []).map((route) => route.gpxKey)].filter(
+    (key): key is string => key != null,
+  );
+  if (options.cleanupRoutesBeforeDelete) await deleteStoredRoutes(keys);
+
   const { error } = await client
     .from('tours')
     .delete()
@@ -211,10 +219,7 @@ export async function deleteTour(tour: Tour) {
     .eq('collection_slug', tour.collectionSlug);
   if (error) throw error;
 
-  const keys = [tour.gpxKey, tour.alternative?.gpxKey, ...(tour.additionalRoutes ?? []).map((route) => route.gpxKey)].filter(
-    (key): key is string => key != null,
-  );
-  await deleteStoredRoutes(keys);
+  if (!options.cleanupRoutesBeforeDelete) await deleteStoredRoutes(keys);
 }
 
 export async function deleteStoredRoutes(keys: string[]) {

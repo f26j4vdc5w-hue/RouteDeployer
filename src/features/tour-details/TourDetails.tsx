@@ -16,6 +16,7 @@ import {
   Plus,
   Route as RouteIcon,
   Share,
+  Trash2,
   Timer,
   UsersRound,
   Check,
@@ -45,6 +46,7 @@ interface Props {
   collectionSlug: string;
   memberId: string | null;
   isAdmin: boolean;
+  isCollectionOrganizer?: boolean;
   member?: CommunityMember | null;
   position: number;
   count: number;
@@ -59,6 +61,7 @@ interface Props {
   variant: 'A' | 'B';
   onVariantChange?: (variant: 'A' | 'B') => void;
   onEditEvent?: () => void;
+  onDeleteTour?: () => void;
   routeRefreshKey?: Tour;
   routeIndex?: number;
   routeCount?: number;
@@ -71,6 +74,7 @@ export function TourDetails({
   collectionSlug,
   memberId,
   isAdmin,
+  isCollectionOrganizer = false,
   member,
   position,
   count,
@@ -81,6 +85,7 @@ export function TourDetails({
   variant,
   onVariantChange,
   onEditEvent,
+  onDeleteTour,
   routeRefreshKey,
   routeIndex = 0,
   routeCount = 1,
@@ -88,7 +93,8 @@ export function TourDetails({
 }: Props) {
   const isEvent = collectionSlug === 'events';
   const isOrganizer = isEvent && Boolean(memberId) && tour.organizerId === memberId;
-  const canEdit = Boolean(onEditEvent) && (isOrganizer || (isAdmin && collectionSlug === 'after-work'));
+  const canEdit = Boolean(onEditEvent) &&
+    (isOrganizer || isCollectionOrganizer || (isAdmin && collectionSlug === 'after-work'));
   const hasOrganizerActions = isOrganizer || canEdit;
   const requiredFields = tour.requiredPersonalFields ?? [];
   const missingFields = member ? missingPersonalFields(requiredFields, member) : requiredFields;
@@ -448,6 +454,18 @@ export function TourDetails({
                   >
                     <Pencil size={16} aria-hidden="true" />
                     <strong>{isEvent ? 'Event bearbeiten' : 'Tour bearbeiten'}</strong>
+                  </button>
+                )}
+                {isCollectionOrganizer && onDeleteTour && (
+                  <button
+                    type="button"
+                    className="attendance__people events__organizer-action"
+                    onClick={onDeleteTour}
+                    aria-label={`${isEvent ? 'Event' : 'Tour'} löschen`}
+                    title={`${isEvent ? 'Event' : 'Tour'} löschen`}
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                    <strong>{isEvent ? 'Event löschen' : 'Tour löschen'}</strong>
                   </button>
                 )}
               </div>

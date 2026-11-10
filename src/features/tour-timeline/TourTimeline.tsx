@@ -13,6 +13,7 @@ interface Props {
   endLabel: string;
   onOpenCalendar?: () => void;
   onAddEvent?: () => void;
+  onAddTour?: () => void;
 }
 
 export function TourTimeline({
@@ -25,6 +26,7 @@ export function TourTimeline({
   endLabel,
   onOpenCalendar,
   onAddEvent,
+  onAddTour,
 }: Props) {
   const timelineRef = useRef<HTMLElement>(null);
   const selectedRef = useRef<HTMLButtonElement>(null);
@@ -123,13 +125,13 @@ export function TourTimeline({
             );
           })}
         </ol>
-        {onAddEvent && (
+        {(onAddEvent || onAddTour) && (
           <button
             type="button"
             className="timeline__add"
-            onClick={onAddEvent}
-            aria-label="Event anlegen"
-            title="Event anlegen"
+            onClick={onAddEvent ?? onAddTour}
+            aria-label={onAddEvent ? 'Event anlegen' : 'Tour anlegen'}
+            title={onAddEvent ? 'Event anlegen' : 'Tour anlegen'}
           >
             <Plus size={20} aria-hidden="true" />
           </button>
