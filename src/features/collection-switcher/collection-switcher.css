@@ -1,5 +1,5 @@
 .collection-switcher {
-  --switcher-bg: var(--surface-muted);
+  --switcher-bg: var(--tint);
   position: relative;
   isolation: isolate;
   justify-self: start;
@@ -79,8 +79,8 @@
   line-height: var(--label-height);
   text-align: center;
   border-radius: calc(var(--label-height) / 2);
-  background: var(--tint);
-  color: var(--accent-strong);
+  background: var(--accent);
+  color: var(--on-accent);
   box-shadow: 0 0 0 2px var(--switcher-bg);
   font-size: 13px;
   font-weight: 700;
