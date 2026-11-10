@@ -272,6 +272,21 @@ export default function App() {
 
 const PUBLIC_COLLECTION = 'after-work';
 
+function hasRequestedPrivateCollection(seasons: Season[]): boolean {
+  const [seasonSlug, collectionSlug] = window.location.pathname
+    .slice(BASE.length)
+    .split('/')
+    .filter(Boolean);
+  return seasons.some(
+    (season) =>
+      season.slug === seasonSlug &&
+      season.collections.some(
+        (collection) =>
+          collection.slug === collectionSlug && collection.slug !== PUBLIC_COLLECTION,
+      ),
+  );
+}
+
 function RoadbookGate({
   seasons,
   dataVersion,
@@ -301,6 +316,27 @@ function RoadbookGate({
           })),
     [loggedIn, seasons],
   );
+
+  if (!loggedIn && hasRequestedPrivateCollection(seasons)) {
+    return (
+      <main className="backend-state access-required">
+        <h1>Tour nur für Mitglieder</h1>
+        <p>
+          Diese Tour ist nur mit einem freigeschalteten Community-Konto sichtbar. Bitte melde dich
+          an oder registriere dich, um sie anzusehen.
+        </p>
+        <CommunityAccount
+          email={community.session?.user.email ?? null}
+          member={community.member}
+          isAdmin={isAdmin}
+          loading={community.loading}
+          error={community.error}
+          onRefresh={community.refresh}
+          accessRequired
+        />
+      </main>
+    );
+  }
 
   if (!visibleSeasons.some((season) => season.collections.length > 0)) {
     return <main className="backend-state">Es sind noch keine Touren veröffentlicht.</main>;
