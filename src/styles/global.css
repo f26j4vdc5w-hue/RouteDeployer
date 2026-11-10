@@ -596,7 +596,8 @@ select {
 }
 .meeting {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   font-size: 12px;
 }
@@ -955,8 +956,7 @@ a.attendance__chat {
   text-decoration: none;
 }
 .meeting__actions {
-  flex: 0 1 auto;
-  min-width: 0;
+  flex: 0 0 auto;
   margin-left: auto;
   display: flex;
   align-items: center;
