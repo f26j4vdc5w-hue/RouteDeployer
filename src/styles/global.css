@@ -906,6 +906,9 @@ select {
   align-items: center;
   gap: 10px;
 }
+.download__actions > .attendance__toggle {
+  margin-left: auto;
+}
 .download__button {
   min-width: 0;
   flex: 1;

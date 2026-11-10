@@ -12,6 +12,10 @@ interface CalendarEntry {
   tour: Tour;
 }
 
+interface RangeCalendarEntry extends CalendarEntry {
+  campRange?: boolean;
+}
+
 interface Month {
   key: string;
   year: number;
@@ -86,6 +90,35 @@ function isoDate(month: Month, day: number) {
   return `${month.key}-${String(day).padStart(2, '0')}`;
 }
 
+function createRangeEntries(entries: CalendarEntry[]): RangeCalendarEntry[] {
+  const ranges: RangeCalendarEntry[] = entries
+    .filter(({ tour }) => tourEndDate(tour) > tour.id.slice(0, 10));
+  const campCollections = new Map<string, CalendarEntry[]>();
+
+  for (const entry of entries) {
+    if (entry.collection.slug !== 'camp') continue;
+    const key = `${entry.season.slug}/${entry.collection.slug}`;
+    const collectionEntries = campCollections.get(key) ?? [];
+    collectionEntries.push(entry);
+    campCollections.set(key, collectionEntries);
+  }
+
+  for (const collectionEntries of campCollections.values()) {
+    const sortedEntries = collectionEntries.slice().sort((a, b) => a.tour.id.localeCompare(b.tour.id));
+    const first = sortedEntries[0];
+    const last = sortedEntries.at(-1);
+    if (!first || !last || first.tour.id.slice(0, 10) === last.tour.id.slice(0, 10)) continue;
+
+    ranges.push({
+      ...first,
+      tour: { ...first.tour, endDate: last.tour.id.slice(0, 10) },
+      campRange: true,
+    });
+  }
+
+  return ranges;
+}
+
 export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selectedCollectionSlug, onSelect, onClose }: Props) {
   const today = todayIso();
   const entries = useMemo(
@@ -96,6 +129,12 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
         ),
       ),
     [seasons],
+  );
+  const rangeEntries = useMemo(() => createRangeEntries(entries), [entries]);
+  const campRangeKeys = useMemo(
+    () => new Set(rangeEntries.filter((entry) => entry.campRange)
+      .map(({ season, collection }) => `${season.slug}/${collection.slug}`)),
+    [rangeEntries],
   );
   const months = useMemo(() => createMonths(entries, today), [entries, today]);
   const selectedTour = entries.find(({ season, collection, tour }) =>
@@ -203,7 +242,7 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
               index % 7 === 0
                 ? weeklyRangeMarkers(
                     days.slice(index, index + 7).map((day) => day === null ? null : isoDate(month, day)),
-                    entries,
+                    rangeEntries,
                   )
                 : [],
             );
@@ -230,7 +269,10 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
                     }
                     const date = isoDate(month, day);
                     const dateEntries = entries.filter(({ tour }) => tourIncludesDate(tour, date));
-                    const singleDayEntries = dateEntries.filter(({ tour }) => tourEndDate(tour) === tour.id.slice(0, 10));
+                    const singleDayEntries = dateEntries.filter(({ season, collection, tour }) =>
+                      tourEndDate(tour) === tour.id.slice(0, 10)
+                      && !campRangeKeys.has(`${season.slug}/${collection.slug}`),
+                    );
                     const isToday = date === today;
                     const isSelected = selectedTour ? tourIncludesDate(selectedTour, date) : date === selectedId.slice(0, 10);
                     return (
@@ -243,17 +285,28 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
                         <span className="tour-calendar__day-number">{day}</span>
                         {rangeMarkers[index].length > 0 && (
                           <div className="tour-calendar__ranges">
-                            {rangeMarkers[index].map((entry, lane) => entry ? (
-                              <button
-                                type="button"
-                                className={`tour-calendar__range${date === entry.tour.id.slice(0, 10) ? ' tour-calendar__range--start' : ''}${date === tourEndDate(entry.tour) ? ' tour-calendar__range--end' : ''}`}
-                                style={{ '--marker-color': entry.collection.color } as React.CSSProperties}
-                                key={`${entry.season.slug}-${entry.collection.slug}-${entry.tour.id}`}
-                                aria-label={`${entry.collection.label}, ${date}: ${entry.tour.title}`}
-                                title={`${entry.season.label} · ${entry.collection.label}: ${entry.tour.title}`}
-                                onClick={() => onSelect(entry.season, entry.collection, entry.tour.id)}
-                              />
-                            ) : <span className="tour-calendar__range-empty" key={`empty-${lane}`} />)}
+                            {rangeMarkers[index].map((entry, lane) => {
+                              if (!entry) {
+                                return <span className="tour-calendar__range-empty" key={`empty-${lane}`} />;
+                              }
+                              const dayEntry = entry.campRange
+                                ? dateEntries.find(({ season, collection }) =>
+                                  season.slug === entry.season.slug && collection.slug === entry.collection.slug,
+                                )
+                                : undefined;
+                              const selectedEntry = dayEntry ?? entry;
+                              return (
+                                <button
+                                  type="button"
+                                  className={`tour-calendar__range${date === entry.tour.id.slice(0, 10) ? ' tour-calendar__range--start' : ''}${date === tourEndDate(entry.tour) ? ' tour-calendar__range--end' : ''}`}
+                                  style={{ '--marker-color': entry.collection.color } as React.CSSProperties}
+                                  key={`${entry.season.slug}-${entry.collection.slug}-${entry.tour.id}`}
+                                  aria-label={`${selectedEntry.collection.label}, ${date}: ${selectedEntry.tour.title}`}
+                                  title={`${selectedEntry.season.label} · ${selectedEntry.collection.label}: ${selectedEntry.tour.title}`}
+                                  onClick={() => onSelect(selectedEntry.season, selectedEntry.collection, selectedEntry.tour.id)}
+                                />
+                              );
+                            })}
                           </div>
                         )}
                         {singleDayEntries.length > 0 && (
