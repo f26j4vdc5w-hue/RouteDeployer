@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
-import { fetchRoadbook } from '../data/backend';
+import { deleteTour, fetchRoadbook } from '../data/backend';
 import { LoadingScreen } from './LoadingScreen';
 import { supabase } from '../lib/supabase';
 import { TourCalendar } from '../features/calendar/TourCalendar';
@@ -16,6 +17,9 @@ import { todayIso, tourEndDate } from '../shared/format/date';
 import { estimateDurationMin } from '../shared/format/number';
 
 const BASE = import.meta.env.BASE_URL;
+const CollectionTourEditor = lazy(() =>
+  import('../features/admin/AdminApp').then((module) => ({ default: module.TourEditor })),
+);
 const CHEMNITZ_WEATHER_LOCATION = {
   place: 'Chemnitz',
   latitude: 50.8278,
@@ -139,10 +143,52 @@ export default function App() {
   const [loadProgress, setLoadProgress] = useState(0);
   const community = useCommunityAuth();
   const isAdmin = community.session?.user.app_metadata.role === 'admin';
+  const [managedCollections, setManagedCollections] = useState<{ season_slug: string; collection_slug: string }[]>([]);
+  const [organizersLoading, setOrganizersLoading] = useState(false);
+  const [organizersError, setOrganizersError] = useState<string | null>(null);
   const loggedIn =
     isAdmin ||
     (community.member?.status === 'approved' && Boolean(community.member.email_confirmed_at));
   const authReady = community.authReady;
+  const approvedUserId =
+    community.member?.status === 'approved' && community.member.email_confirmed_at
+      ? community.session?.user.id ?? null
+      : null;
+
+  useEffect(() => {
+    let active = true;
+    if (!authReady) return;
+    if (!supabase || isAdmin || !approvedUserId) {
+      setManagedCollections([]);
+      setOrganizersError(null);
+      setOrganizersLoading(false);
+      return;
+    }
+
+    setOrganizersLoading(true);
+    setOrganizersError(null);
+    void (async () => {
+      try {
+        const { data, error: queryError } = await supabase
+          .from('collection_organizers')
+          .select('season_slug, collection_slug')
+          .eq('user_id', approvedUserId);
+        if (!active) return;
+        if (queryError) setOrganizersError(queryError.message);
+        else setManagedCollections(data ?? []);
+      } catch (cause) {
+        if (active) {
+          setOrganizersError(cause instanceof Error ? cause.message : 'Kollektion-Berechtigungen konnten nicht geladen werden.');
+        }
+      } finally {
+        if (active) setOrganizersLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [approvedUserId, authReady, isAdmin]);
 
   useEffect(() => {
     let active = true;
@@ -190,6 +236,16 @@ export default function App() {
       </main>
     );
   }
+  if (organizersError) {
+    return (
+      <main className="backend-state" role="alert">
+        <h1>Berechtigungen nicht verfügbar</h1>
+        <p>Die Kollektion-Berechtigungen konnten nicht geladen werden: {organizersError}</p>
+        <p>Bitte prüfe, ob die Supabase-Migration 202611140001_collection_organizers.sql angewendet wurde.</p>
+      </main>
+    );
+  }
+  if (organizersLoading) return <LoadingScreen progress={0.5} />;
   if (!seasons || !authReady) {
     return <LoadingScreen progress={authReady ? 0.15 + 0.85 * loadProgress : 0.05} />;
   }
@@ -208,6 +264,7 @@ export default function App() {
       community={community}
       loggedIn={loggedIn}
       isAdmin={isAdmin}
+      managedCollections={managedCollections}
     />
   );
 }
@@ -220,6 +277,7 @@ function RoadbookGate({
   community,
   loggedIn,
   isAdmin,
+  managedCollections,
   onReload,
 }: {
   seasons: Season[];
@@ -227,6 +285,7 @@ function RoadbookGate({
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
   isAdmin: boolean;
+  managedCollections: { season_slug: string; collection_slug: string }[];
   onReload: () => void;
 }) {
   const visibleSeasons = useMemo(
@@ -254,6 +313,7 @@ function RoadbookGate({
       community={community}
       loggedIn={loggedIn}
       isAdmin={isAdmin}
+      managedCollections={managedCollections}
       onReload={onReload}
     />
   );
@@ -264,12 +324,14 @@ function Roadbook({
   community,
   loggedIn,
   isAdmin,
+  managedCollections,
   onReload,
 }: {
   seasons: Season[];
   community: ReturnType<typeof useCommunityAuth>;
   loggedIn: boolean;
   isAdmin: boolean;
+  managedCollections: { season_slug: string; collection_slug: string }[];
   onReload: () => void;
 }) {
   const today = todayIso(new Date());
@@ -283,11 +345,18 @@ function Roadbook({
   const [editor, setEditor] = useState<
     { mode: 'create' } | { mode: 'edit'; tour: Tour } | null
   >(null);
+  const [collectionTourEditor, setCollectionTourEditor] = useState<Tour | null | undefined>(undefined);
+  const [collectionTourError, setCollectionTourError] = useState<string | null>(null);
   const memberId =
     community.member?.status === 'approved' && community.member.email_confirmed_at
       ? community.session?.user.id ?? null
       : null;
   const editorMemberId = memberId ?? (isAdmin ? community.session?.user.id ?? null : null);
+  const isCollectionOrganizer = Boolean(
+    memberId && managedCollections.some(
+      (entry) => entry.season_slug === season.slug && entry.collection_slug === collection.slug,
+    ),
+  );
 
   useEffect(() => {
     document.documentElement.style.setProperty('--collection-color', collection.color);
@@ -397,6 +466,14 @@ function Roadbook({
                 ? () => setEditor({ mode: 'create' })
                 : undefined
             }
+            onAddTour={
+              isCollectionOrganizer && collection.slug !== 'events'
+                ? () => {
+                    setCollectionTourError(null);
+                    setCollectionTourEditor(null);
+                  }
+                : undefined
+            }
           />
           <TourDetails
             tour={displayedTour ?? selected}
@@ -404,6 +481,7 @@ function Roadbook({
             collectionSlug={collection.slug}
             memberId={memberId}
             isAdmin={isAdmin}
+            isCollectionOrganizer={isCollectionOrganizer}
             member={community.member}
             position={sorted.indexOf(selected) + 1}
             count={sorted.length}
@@ -417,7 +495,25 @@ function Roadbook({
                 ? (nextVariant) => go(season, collection, selected.id, nextVariant)
                 : undefined
             }
-            onEditEvent={() => setEditor({ mode: 'edit', tour: selected })}
+            onEditEvent={() => {
+              if (isCollectionOrganizer && collection.slug !== 'events') {
+                setCollectionTourError(null);
+                setCollectionTourEditor(selected);
+              } else {
+                setEditor({ mode: 'edit', tour: selected });
+              }
+            }}
+            onDeleteTour={isCollectionOrganizer ? () => {
+              if (!window.confirm(`„${selected.title}“ wirklich löschen?`)) return;
+              void deleteTour(selected, {
+                cleanupRoutesBeforeDelete: collection.slug === 'events',
+              }).then(() => {
+                go(season, collection, null);
+                onReload();
+              }).catch((cause: unknown) => {
+                window.alert(cause instanceof Error ? cause.message : 'Die Tour konnte nicht gelöscht werden.');
+              });
+            } : undefined}
             routeRefreshKey={selected}
             routeIndex={routeIndex}
             routeCount={routeCount}
@@ -437,6 +533,19 @@ function Roadbook({
               +
             </button>
           )}
+          {isCollectionOrganizer && collection.slug !== 'events' && (
+            <button
+              type="button"
+              className="timeline__add"
+              onClick={() => {
+                setCollectionTourError(null);
+                setCollectionTourEditor(null);
+              }}
+              aria-label="Tour anlegen"
+            >
+              +
+            </button>
+          )}
         </main>
       )}
       {editor && editorMemberId && (
@@ -444,6 +553,7 @@ function Roadbook({
           seasonSlug={season.slug}
           collectionSlug={collection.slug}
           memberId={editorMemberId}
+          isCollectionOrganizer={isCollectionOrganizer}
           tour={editor.mode === 'edit' ? editor.tour : undefined}
           onClose={() => setEditor(null)}
           onSaved={(id) => {
@@ -457,6 +567,40 @@ function Roadbook({
             onReload();
           }}
         />
+      )}
+      {collectionTourEditor !== undefined && createPortal(
+        <div className="community__overlay" role="dialog" aria-modal="true" aria-labelledby="collection-tour-editor-title">
+          <button
+            className="community__backdrop"
+            type="button"
+            aria-label="Schließen"
+            onClick={() => setCollectionTourEditor(undefined)}
+          />
+          <section className="community__panel community__panel--collection-tour">
+            <header className="community__header">
+              <h2 id="collection-tour-editor-title">{collectionTourEditor ? 'Tour bearbeiten' : 'Tour anlegen'}</h2>
+            </header>
+            <div className="community__content">
+              {collectionTourError && <p className="community__message community__message--error" role="alert">{collectionTourError}</p>}
+              <Suspense fallback={<p role="status">Tour-Editor wird geladen …</p>}>
+                <CollectionTourEditor
+                  season={season}
+                  collection={collection}
+                  tour={collectionTourEditor}
+                  onCancel={() => setCollectionTourEditor(undefined)}
+                  onSaved={async () => {
+                    setCollectionTourEditor(undefined);
+                    onReload();
+                  }}
+                  onError={(cause: unknown) => {
+                    setCollectionTourError(cause instanceof Error ? cause.message : 'Die Tour konnte nicht gespeichert werden.');
+                  }}
+                />
+              </Suspense>
+            </div>
+          </section>
+        </div>,
+        document.body,
       )}
     </div>
   );

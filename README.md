@@ -6,10 +6,11 @@ Das Roadbook ist eine React-/Vite-Website mit getrenntem Frontend und Backend:
 - **Backend:** Supabase für PostgreSQL, Anmeldung und GPX-Dateispeicher
 - **Besucher:** können Touren, Karten und GPX-Downloads ohne Anmeldung ansehen.
 - **Community-Mitglieder:** können nach E-Mail-Bestätigung und Admin-Freigabe Touren-Zusagen verwalten und sehen, wer teilnimmt.
-- **Admin:** kann Touren verwalten, GPX-Dateien hochladen und Community-Mitgliedschaften freigeben.
+- **Kollektion-Organisatoren:** können Touren in zugewiesenen Saison-Kollektionen verwalten, ohne Zugriff auf den Admin-Bereich zu erhalten.
+- **Admin:** kann alle Touren verwalten, Kollektion-Organisatoren zuweisen, GPX-Dateien hochladen und Community-Mitgliedschaften freigeben.
 
 Touren und GPX-Dateien werden zur Laufzeit aus Supabase geladen. GPX-Kennzahlen,
-Kartenverlauf und Höhenprofil werden beim Upload im Admin-Bereich berechnet.
+Kartenverlauf und Höhenprofil werden beim Upload berechnet.
 Die Höhenmeter werden aus einem distanzbasiert geglätteten Höhenprofil berechnet;
 bei der Interaktion wird dieselbe GPX-Berechnung für die Positionswerte verwendet.
 Ein 450-m-Medianfilter auf 10-m-Stützstellen dämpft kurzfristige Höhenausschläge.
@@ -87,6 +88,9 @@ einer leeren oder veralteten Tourenansicht.
    Die Migration [`202611130001`](supabase/migrations/202611130001_camp_additional_routes.sql)
    erlaubt zusätzliche GPX-Routen für Camps und überführt bestehende Camp-
    Alternativen in die neue Routenliste.
+   Die Migration [`202611140001`](supabase/migrations/202611140001_collection_organizers.sql)
+   ermöglicht Admins, freigegebene Mitglieder als Organisatoren für einzelne
+   Saison-Kollektionen einzusetzen.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`
@@ -130,10 +134,11 @@ und Limits](https://supabase.com/pricing).
 
 ## Daten pflegen
 
-Änderungen an Touren, Saisons, Kollektionen und GPX-Dateien werden über den
-Admin-Bereich gespeichert und sind nach dem Speichern öffentlich sichtbar.
-GPX-Dateien sind auf 10 MB begrenzt. Die Datenbank prüft Schreibrechte
-unabhängig von der Oberfläche über Row Level Security.
+Änderungen an Saisons und Kollektionen werden über den Admin-Bereich gespeichert.
+Touren und GPX-Dateien können Admins sowie zugewiesene Kollektion-Organisatoren
+verwalten und sind nach dem Speichern öffentlich sichtbar. GPX-Dateien sind auf
+10 MB begrenzt. Die Datenbank prüft Schreibrechte unabhängig von der Oberfläche
+über Row Level Security.
 
 Eine Schritt-für-Schritt-Anleitung steht in [How2Use.md](How2Use.md).
 

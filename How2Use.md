@@ -13,6 +13,23 @@ Wenn du dein Passwort vergessen hast, gib deine E-Mail-Adresse ein und wähle
 „Passwort zurücksetzen“. Über den Link in der E-Mail kannst du ein neues Passwort
 festlegen.
 
+## Kollektion-Organisatoren zuweisen
+
+1. Wähle im Admin-Bereich Saison und Kollektion aus.
+2. Unter **Kollektion-Organisatoren** kannst du ein oder mehrere freigegebene,
+   per E-Mail bestätigte Community-Mitglieder hinzufügen oder entfernen.
+3. Zugewiesene Mitglieder können auf der Website Touren dieser Saison-Kollektion
+   anlegen, bearbeiten und löschen. Für Events gilt dasselbe für die Event-
+   Verwaltungsfelder; Teilnehmerdaten bleiben dem jeweiligen Event-Organisator
+   vorbehalten.
+4. Die Rolle gewährt keinen Zugang zu `/admin/` und keine Rechte an Saison- oder
+   Kollektionseinstellungen. Eine Zuweisung gilt nur für die gewählte Saison-
+   Kollektion.
+
+Die Supabase-Migration
+[`202611140001_collection_organizers.sql`](supabase/migrations/202611140001_collection_organizers.sql)
+muss angewendet sein. Sie wird nach dem Merge in `main` automatisch eingespielt.
+
 ## Saison oder Kollektion anlegen
 
 1. Wähle eine bestehende Saison oder lege unten im Saisonbereich eine neue an.
@@ -70,5 +87,5 @@ Repository.
   Trackpunkte (`trkpt`) oder Routenpunkte (`rtept`). Höhenmeter und Profil
   werden nur berechnet, wenn Höhenangaben (`ele`) vorhanden sind.
 - **Upload oder Speichern schlägt fehl:** Prüfe die Verbindung und die
-  Supabase-Policies. Nur Benutzer mit `app_metadata.role = "admin"` dürfen
-  Änderungen speichern.
+  Supabase-Policies. Änderungen können nur Admins sowie zugewiesene
+  Kollektion-Organisatoren speichern.

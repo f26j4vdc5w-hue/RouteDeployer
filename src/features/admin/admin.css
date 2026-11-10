@@ -163,6 +163,65 @@
   margin: 16px 0 22px;
 }
 
+.admin-organizers {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.admin-organizers h3,
+.admin-organizers p {
+  margin: 0;
+}
+
+.admin-organizers > div:first-child p {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-organizers__add {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.admin-organizers__add label {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.admin-organizers__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-organizers__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-organizers__list li > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .admin-management {
   padding-top: 20px;
   border-top: 1px solid var(--border);
@@ -227,7 +286,8 @@
 .admin-form input,
 .admin-form select,
 .admin-form textarea,
-.admin-selectors select {
+.admin-selectors select,
+.admin-organizers select {
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
@@ -358,6 +418,11 @@
   margin: 0;
 }
 
+.community__panel--collection-tour {
+  width: min(920px, 100%);
+  max-height: min(94vh, 860px);
+}
+
 .admin-date {
   max-width: 240px;
 }
@@ -437,6 +502,12 @@
   .admin-tour,
   .admin-member {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-organizers__add,
+  .admin-organizers__list li {
+    align-items: stretch;
     flex-direction: column;
   }
 
