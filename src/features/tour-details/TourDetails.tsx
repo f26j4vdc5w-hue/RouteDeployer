@@ -408,7 +408,11 @@ export function TourDetails({
           {(tour.meetingTime || tour.meetingPlace) && (
             <span className="meeting__location">
               <MapPin size={16} />
-              {[tour.meetingTime, tour.meetingPlace].filter(Boolean).join(' · ')}
+              <span className="meeting__location-details">
+                {tour.meetingTime}
+                {tour.meetingTime && tour.meetingPlace && <>{' · '}<wbr /></>}
+                {tour.meetingPlace}
+              </span>
             </span>
           )}
           {chatError && (
