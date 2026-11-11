@@ -23,6 +23,8 @@ interface Props {
 
 type Mode = 'signin' | 'signup';
 
+const STRAVA_PENDING_KEY = 'strava-oauth-pending';
+
 /** Wandelt TT.MM.JJJJ in ISO um; null bei ungültigem oder zukünftigem Datum. */
 function germanToIso(value: string): string | null {
   const iso = parseGermanDate(value);
@@ -57,6 +59,11 @@ export function CommunityAccount({
   const [passkeyBusy, setPasskeyBusy] = useState(false);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [passkeyNotice, setPasskeyNotice] = useState<string | null>(null);
+  const [stravaConnected, setStravaConnected] = useState(false);
+  const [stravaBusy, setStravaBusy] = useState(false);
+  const [stravaStatusLoading, setStravaStatusLoading] = useState(true);
+  const [stravaError, setStravaError] = useState<string | null>(null);
+  const [stravaNotice, setStravaNotice] = useState<string | null>(null);
   const passkeySupported = window.isSecureContext && typeof window.PublicKeyCredential !== 'undefined';
 
   useEffect(() => {
@@ -72,6 +79,108 @@ export function CommunityAccount({
     setPasskeyError(null);
     setPasskeyNotice(null);
   }, [email]);
+
+  useEffect(() => {
+    if (!open || !member || stravaBusy) {
+      if (!member) setStravaConnected(false);
+      return;
+    }
+    let active = true;
+    setStravaStatusLoading(true);
+    void (async () => {
+      try {
+        const { data, error: statusError } = await requireSupabase().rpc('get_my_strava_connection').maybeSingle();
+        if (statusError) throw statusError;
+        if (!active) return;
+        setStravaConnected(Boolean(data));
+        if (data) {
+          const { data: result, error: refreshError } = await requireSupabase().functions.invoke('strava', { body: { action: 'refresh' } });
+          if (refreshError || result?.error) throw refreshError ?? new Error(result.error);
+        }
+      } catch {
+        if (active) setStravaError('Der Strava-Status konnte nicht geladen oder aktualisiert werden. Bitte versuche es erneut.');
+      } finally {
+        if (active) setStravaStatusLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [open, member?.user_id, stravaBusy]);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('strava_callback') !== '1' || loading) return;
+    const saved = sessionStorage.getItem(STRAVA_PENDING_KEY);
+    sessionStorage.removeItem(STRAVA_PENDING_KEY);
+    let pending: { state: string; userId: string; savedAt: number; returnTo: string } | null = null;
+    try { pending = saved ? JSON.parse(saved) : null; } catch { pending = null; }
+    const code = url.searchParams.get('code');
+    const state = url.searchParams.get('state');
+    const scope = url.searchParams.get('scope')?.split(',') ?? [];
+    url.search = '';
+    const target = typeof pending?.returnTo === 'string' && pending.returnTo.startsWith('/')
+      ? new URL(pending.returnTo, window.location.origin) : null;
+    window.history.replaceState(null, '', target?.origin === window.location.origin ? `${target.pathname}${target.search}${target.hash}` : url.pathname);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    setOpen(true);
+    setStravaNotice(null);
+    if (!pending || !member || pending.userId !== member.user_id || !state || state !== pending.state ||
+        !Number.isFinite(pending.savedAt) || pending.savedAt > Date.now() || Date.now() - pending.savedAt > 10 * 60 * 1000) {
+      setStravaError('Die Strava-Anfrage ist ungültig oder abgelaufen. Bitte starte sie erneut.');
+      return;
+    }
+    if (!code || !scope.includes('activity:read_all')) {
+      setStravaError('Die Strava-Autorisierung wurde abgebrochen oder die erforderliche Berechtigung nicht erteilt.');
+      return;
+    }
+    setStravaBusy(true);
+    setStravaError(null);
+    void requireSupabase().functions.invoke('strava', { body: { action: 'connect', code } }).then(({ data, error: connectError }) => {
+      if (connectError || data?.error) {
+        setStravaError('Die Strava-Verbindung konnte nicht hergestellt werden. Bitte versuche es erneut.');
+      } else {
+        setStravaConnected(true);
+        setStravaNotice('Mit Strava verbunden.');
+      }
+    }).catch(() => setStravaError('Die Strava-Verbindung konnte nicht hergestellt werden. Bitte versuche es erneut.'))
+      .finally(() => setStravaBusy(false));
+  }, [loading, member]);
+
+  function connectStrava() {
+    const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
+    if (!clientId || !member) {
+      setStravaError('Strava ist noch nicht konfiguriert.');
+      return;
+    }
+    const state = Array.from(crypto.getRandomValues(new Uint8Array(32)), (byte) => byte.toString(16).padStart(2, '0')).join('');
+    sessionStorage.setItem(STRAVA_PENDING_KEY, JSON.stringify({
+      state, userId: member.user_id, savedAt: Date.now(),
+      returnTo: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    }));
+    const redirect = new URL(import.meta.env.BASE_URL, window.location.origin);
+    redirect.searchParams.set('strava_callback', '1');
+    const authorize = new URL('https://www.strava.com/oauth/authorize');
+    authorize.search = new URLSearchParams({
+      client_id: clientId, redirect_uri: redirect.href, response_type: 'code',
+      approval_prompt: 'auto', scope: 'activity:read_all', state,
+    }).toString();
+    window.location.assign(authorize.href);
+  }
+
+  async function disconnectStrava() {
+    setStravaBusy(true);
+    setStravaError(null);
+    setStravaNotice(null);
+    try {
+      const { error: disconnectError } = await requireSupabase().rpc('disconnect_my_strava');
+      if (disconnectError) throw disconnectError;
+      setStravaConnected(false);
+      setStravaNotice('Die Strava-Verbindung wurde gelöscht.');
+    } catch {
+      setStravaError('Die Strava-Verbindung konnte nicht gelöscht werden.');
+    } finally {
+      setStravaBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -390,6 +499,16 @@ export function CommunityAccount({
                     {busy ? 'Wird gespeichert …' : 'Profil speichern'}
                   </button>
                 </form>
+                <section className="community__section" aria-labelledby="strava-title">
+                  <h3 id="strava-title" className="community__section-title">Strava</h3>
+                  <p className="community__hint">Die Verbindung erlaubt Zugriff auf deine Strava-Aktivitäten, einschließlich privater Aktivitäten.</p>
+                  {stravaError && <p className="community__message community__message--error" role="alert">{stravaError}</p>}
+                  {stravaNotice && <p className="community__message" role="status">{stravaNotice}</p>}
+                  {stravaConnected && <p className="community__message" role="status">Mit Strava verbunden</p>}
+                  <button className="community__submit" type="button" disabled={stravaBusy || stravaStatusLoading || !member} onClick={stravaConnected ? disconnectStrava : connectStrava}>
+                    {stravaBusy ? 'Einen Moment …' : stravaConnected ? 'Strava-Verbindung trennen' : 'Mit Strava verbinden'}
+                  </button>
+                </section>
                 <section className="community__section" aria-labelledby="passkey-title">
                   <h3 id="passkey-title" className="community__section-title">Passkey</h3>
                   <p className="community__hint">

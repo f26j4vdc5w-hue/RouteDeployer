@@ -111,6 +111,44 @@ einen Passkey einrichten und sich danach über „Mit Passkey anmelden“ anmeld
 E-Mail/Passwort und Google bleiben verfügbar; die Community-Freigabe durch einen
 Admin ist weiterhin erforderlich.
 
+### Strava-Verbindung
+
+1. Erstelle unter [Strava API Settings](https://www.strava.com/settings/api) eine
+   Anwendung. Trage bei **Authorization Callback Domain** den Hostnamen der
+   Website ohne Protokoll und Pfad ein (z. B. `example.github.io` oder
+   `localhost`). Für lokale und produktive Hosts werden gegebenenfalls getrennte
+   Strava-Anwendungen benötigt. Die tatsächliche Redirect-URL ist die Basis-URL
+   der Website mit `?strava_callback=1`, z. B.
+   `https://example.github.io/RouteDeployer/?strava_callback=1`.
+2. Setze `VITE_STRAVA_CLIENT_ID` in `.env.local` bzw. in den GitHub-Repository-
+   Variables für das Pages-Deployment auf die Client-ID der Strava-Anwendung. Diese ID ist öffentlich;
+   das Client Secret darf **nicht** in eine `VITE_`-Variable oder ins Repository.
+3. Wende die Migration `202611150001_strava_connection.sql` an und deploye die
+   Edge Function mit `supabase functions deploy strava`. Konfiguriere deren
+   Secrets mit `supabase secrets set` oder im Supabase-Dashboard:
+   - `STRAVA_CLIENT_ID`: dieselbe Client-ID wie im Frontend.
+   - `STRAVA_CLIENT_SECRET`: das Secret der Strava-Anwendung.
+   - `STRAVA_APP_URL`: Basis-URL der Website, z. B.
+     `https://example.github.io/RouteDeployer/` (für CORS).
+   - `STRAVA_TOKEN_KEY`: ein zufälliger, Base64-kodierter 32-Byte-Schlüssel,
+     z. B. erzeugt mit `openssl rand -base64 32`.
+
+   Supabase stellt `SUPABASE_URL`, `SUPABASE_ANON_KEY` und
+   `SUPABASE_SERVICE_ROLE_KEY` für Edge Functions bereit. Den Verschlüsselungs-
+   schlüssel sicher sichern: Wird er geändert oder verloren, müssen Mitglieder
+   ihre Verbindung erneut herstellen. Secrets niemals veröffentlichen.
+4. Angemeldete Mitglieder können im Profil „Mit Strava verbinden“ wählen und
+   müssen `activity:read_all` bestätigen; dieser Zugriff umfasst auch private
+   Aktivitäten. Tokens werden serverseitig verschlüsselt gespeichert und bei
+   Bedarf beim Öffnen des Profils erneuert. Bei widerrufenen oder ungültigen
+   Tokens die Verbindung im Profil trennen und erneut herstellen. Das Trennen
+   löscht die lokalen Tokens; die App-Berechtigung kann zusätzlich in den
+   Strava-Einstellungen widerrufen werden.
+
+Die Verbindung allein erstellt noch keine Bestenlisten und synchronisiert keine
+Aktivitäten. Ein späterer Aktivitätsabruf muss Tokens serverseitig verwenden und
+vorher bei Bedarf erneuern.
+
 ## Datenbankmigrationen
 
 Das Repository ist über **Settings → Integrations → GitHub** mit dem Supabase-
