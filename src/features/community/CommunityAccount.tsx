@@ -117,7 +117,10 @@ export function CommunityAccount({
     const state = url.searchParams.get('state');
     const scope = url.searchParams.get('scope')?.split(',') ?? [];
     url.search = '';
-    window.history.replaceState(null, '', pending?.returnTo?.startsWith('/') && !pending.returnTo.startsWith('//') ? pending.returnTo : url.pathname);
+    const target = typeof pending?.returnTo === 'string' && pending.returnTo.startsWith('/')
+      ? new URL(pending.returnTo, window.location.origin) : null;
+    window.history.replaceState(null, '', target?.origin === window.location.origin ? `${target.pathname}${target.search}${target.hash}` : url.pathname);
+    window.dispatchEvent(new PopStateEvent('popstate'));
     setOpen(true);
     setStravaNotice(null);
     if (!pending || !member || pending.userId !== member.user_id || !state || state !== pending.state ||
