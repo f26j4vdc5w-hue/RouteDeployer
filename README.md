@@ -111,6 +111,36 @@ einen Passkey einrichten und sich danach über „Mit Passkey anmelden“ anmeld
 E-Mail/Passwort und Google bleiben verfügbar; die Community-Freigabe durch einen
 Admin ist weiterhin erforderlich.
 
+### Push-Mitteilungen für Admins
+
+Nach bestätigter E-Mail eines neuen Community-Mitglieds können Admins eine
+Push-Mitteilung erhalten. Auf dem iPhone ist mindestens iOS 16.4 erforderlich:
+Die Website über Safari zum Home-Bildschirm hinzufügen, von dort öffnen und im
+Admin-Bereich **Mitteilungen aktivieren** wählen. Die Freigabe erfolgt weiterhin
+im Admin-Bereich. Die Funktion kann dort auch wieder ausgeschaltet werden.
+
+Für den Betrieb:
+
+1. Die Migration `202611150001_admin_push_subscriptions.sql` anwenden.
+2. Ein VAPID-Schlüsselpaar z. B. mit `npx web-push generate-vapid-keys`
+   erzeugen. Den öffentlichen Schlüssel als GitHub-Actions-Repository-Variable
+   `VITE_VAPID_PUBLIC_KEY` hinterlegen. Für lokale Builds kann er in
+   `.env.local` stehen.
+3. In Supabase Edge Function Secrets `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`,
+   `VAPID_SUBJECT` (z. B. `mailto:kontakt@example.org`) und ein langes,
+   zufälliges `WEBHOOK_SECRET` einrichten. Private Schlüssel und Secrets
+   niemals ins Repository oder den Frontend-Build übernehmen.
+4. Die Funktion mit `supabase functions deploy notify-admin-new-member
+   --no-verify-jwt` veröffentlichen. Das prüft stattdessen den geheimen
+   Webhook-Header; die Funktion wird nicht durch Datenbankmigrationen deployt.
+5. Unter Database Webhooks einen POST-Webhook auf `public.community_members`
+   für INSERT und UPDATE zur Funktion einrichten. Unter HTTP Headers
+   `x-webhook-secret` mit demselben `WEBHOOK_SECRET` setzen.
+
+Bestehende Anfragen werden nicht nachträglich als Push verschickt. Beim
+Aktivieren speichert Supabase die Push-Adresse und Schlüssel des Geräts;
+der jeweilige Browser-Push-Dienst stellt die Mitteilungen zu.
+
 ## Datenbankmigrationen
 
 Das Repository ist über **Settings → Integrations → GitHub** mit dem Supabase-

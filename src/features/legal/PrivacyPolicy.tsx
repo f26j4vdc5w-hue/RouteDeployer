@@ -76,6 +76,12 @@ export default function PrivacyPolicy() {
         Konten und Profildaten werden bei Supabase gespeichert. Die Anmeldung mit Google erfolgt
         über Google.
       </p>
+      <p>
+        Wenn Admins Push-Mitteilungen aktivieren, speichern wir ihre Geräte-Push-Adresse und
+        die zugehörigen Schlüssel bei Supabase. Der Push-Dienst des Geräts stellt Mitteilungen
+        über bestätigte Community-Anfragen zu. Die Funktion lässt sich im Admin-Bereich
+        ausschalten.
+      </p>
 
       <h2>8. Speicherdauer</h2>
       <p>

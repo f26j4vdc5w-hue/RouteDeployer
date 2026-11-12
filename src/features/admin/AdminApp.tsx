@@ -6,6 +6,7 @@ import type { RouteStats } from '../../domain/route';
 import type { AdditionalRoute, Tour, TourRoute } from '../../domain/tour';
 import { deleteStoredRoutes, deleteTour, fetchRoadbook, type StoredAdditionalRoute } from '../../data/backend';
 import { requireSupabase, supabase } from '../../lib/supabase';
+import { AdminPushToggle } from './AdminPushToggle';
 import { analyzeGpx } from './analyzeGpx';
 import { generateTourDates, WEEKDAYS, type TourCadence } from './generateTourDates';
 import './admin.css';
@@ -891,6 +892,7 @@ function AdminDashboard({ session }: { session: Session }) {
           <div className="admin-account">
             <a className="admin-link" href={import.meta.env.BASE_URL}>Website ansehen</a>
             <span>{session.user.email}</span>
+            <AdminPushToggle userId={session.user.id} />
             <button className="admin-button" onClick={signOut}><LogOut size={16} /> Abmelden</button>
           </div>
         </header>
