@@ -1,0 +1,12 @@
+{
+  "name": "Roadbook · KLLKTV Weststraße",
+  "short_name": "Roadbook",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b0b0f",
+  "theme_color": "#0b0b0f",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
