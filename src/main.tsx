@@ -6,12 +6,19 @@ import '@fontsource/inter/800.css';
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './app/App';
+import { navigateFromPush } from './features/admin/adminPushNavigation';
 import './styles/tokens.css';
 import './styles/global.css';
 
 const AdminApp = lazy(() => import('./features/admin/AdminApp'));
 
 const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    navigateFromPush(event.data, window.location, import.meta.env.BASE_URL);
+  });
+}
 
 function Root() {
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
