@@ -14,9 +14,14 @@ self.addEventListener('notificationclick', (event) => {
   const target = new URL(event.notification.data.url, self.registration.scope).href;
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      const existing = windows.find((client) => 'focus' in client);
+      const appWindows = windows.filter((client) => client.url.startsWith(self.registration.scope));
+      const existing = appWindows.find((client) => client.focused)
+        || appWindows.find((client) => client.visibilityState === 'visible')
+        || appWindows[0];
       if (existing) {
-        return existing.navigate(target).then((client) => (client || existing).focus());
+        return existing.focus().then(() => {
+          existing.postMessage({ type: 'ROADBOOK_OPEN_NOTIFICATION', url: target });
+        });
       }
       return self.clients.openWindow(target);
     }),

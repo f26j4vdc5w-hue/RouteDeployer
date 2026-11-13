@@ -39,3 +39,38 @@ test('push opens the admin page relative to the deployed app scope', async () =>
   assert.equal(closed, true);
   assert.deepEqual(opened, ['https://example.test/roadbook/admin/']);
 });
+
+test('notification click focuses an open app and asks it to navigate to admin', async () => {
+  const handlers: Record<string, (event: unknown) => void> = {};
+  const messages: unknown[] = [];
+  let focused = false;
+  const app = {
+    url: 'https://example.test/roadbook/',
+    focused: false,
+    visibilityState: 'visible',
+    focus: async () => { focused = true; },
+    postMessage: (message: unknown) => { messages.push(message); },
+  };
+  let opened = false;
+  const self = {
+    addEventListener: (name: string, handler: (event: unknown) => void) => { handlers[name] = handler; },
+    registration: { scope: 'https://example.test/roadbook/' },
+    clients: {
+      matchAll: async () => [app],
+      openWindow: async () => { opened = true; },
+    },
+  };
+  runInNewContext(readFileSync('public/sw.js', 'utf8'), { self, URL });
+
+  let pending: Promise<unknown> = Promise.resolve();
+  handlers.notificationclick({
+    notification: { data: { url: 'admin/' }, close: () => {} },
+    waitUntil: (promise: Promise<unknown>) => { pending = promise; },
+  });
+  await pending;
+  assert.equal(focused, true);
+  assert.equal(opened, false);
+  assert.equal(messages.length, 1);
+  assert.equal((messages[0] as { type: string }).type, 'ROADBOOK_OPEN_NOTIFICATION');
+  assert.equal((messages[0] as { url: string }).url, 'https://example.test/roadbook/admin/');
+});
