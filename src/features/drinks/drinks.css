@@ -1,0 +1,17 @@
+.drinks .admin-dashboard > * {
+  min-width: 0;
+}
+
+.drinks .admin-header,
+.drinks .admin-member,
+.drinks .admin-actions {
+  flex-wrap: wrap;
+}
+
+.drinks .admin-card {
+  overflow-wrap: anywhere;
+}
+
+.drinks .payment-hint {
+  white-space: pre-wrap;
+}

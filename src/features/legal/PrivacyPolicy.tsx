@@ -43,6 +43,11 @@ export default function PrivacyPolicy() {
         Freigegebene Mitglieder sehen deinen Anzeigenamen bei den Touren, für die du zu- oder
         abgesagt hast. Deine E-Mail-Adresse ist für andere Mitglieder nicht sichtbar.
       </p>
+      <p>
+        In der Getränkekasse speichern wir deinen Anzeigenamen, Getränketag, Menge, Preis,
+        Abrechnungsbetrag und Zahlungsstatus. Diese Angaben sind für alle freigegebenen
+        Community-Mitglieder sichtbar. Kassenwarte verwalten die Abrechnungen.
+      </p>
 
       <h2>4. Anmeldung mit Google</h2>
       <p>
@@ -82,11 +87,18 @@ export default function PrivacyPolicy() {
         über bestätigte Community-Anfragen zu. Die Funktion lässt sich im Admin-Bereich
         ausschalten.
       </p>
+      <p>
+        Wenn du die Dienstagserinnerung aktivierst, speichern wir die Geräte-Push-Adresse und
+        Schlüssel bei Supabase. Der Push-Dienst des Geräts stellt die Erinnerung zu. Dafür prüfen
+        wir deine Tourzusagen und Getränkebuchungen des Tages. Du kannst die Erinnerung auf dem
+        jeweiligen Gerät wieder ausschalten.
+      </p>
 
       <h2>8. Speicherdauer</h2>
       <p>
-        Wir speichern deine Daten, solange dein Konto besteht. Auf Wunsch löschen wir dein Konto
-        samt aller Angaben.
+        Kontodaten speichern wir, solange dein Konto besteht. Getränkebuchungen und abgeschlossene
+        Abrechnungen bleiben auch nach einer Kontolöschung gespeichert. Für Anfragen zur
+        Berichtigung oder Löschung wende dich bitte an den oben genannten Verantwortlichen.
       </p>
 
       <h2>9. Deine Rechte</h2>
