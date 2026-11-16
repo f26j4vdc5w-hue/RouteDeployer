@@ -28,7 +28,6 @@ export default function DrinksApp() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [date, setDate] = useState(berlinDate);
   const [quantity, setQuantity] = useState(1);
   const [priceInput, setPriceInput] = useState('');
   const [hint, setHint] = useState('');
@@ -106,12 +105,12 @@ export default function DrinksApp() {
 
   const treasurer = Boolean(userId && snapshot?.treasurers.includes(userId));
   const openEntries = snapshot?.entries.filter((entry) => entry.period_id === null) ?? [];
-  const selectedPrice = snapshot?.prices.find((price) => price.valid_from <= date);
-  const openingDate = snapshot ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(snapshot.settings.opened_at)) : berlinDate();
+  const selectedPrice = snapshot?.prices.find((price) => price.valid_from <= berlinDate());
 
   function add(event: FormEvent) {
     event.preventDefault();
-    void action('add_drinks_entry', { p_date: date, p_quantity: quantity });
+    void action('add_drinks_entry', { p_date: berlinDate(), p_quantity: quantity });
+    setQuantity(1);
   }
 
   return (
@@ -131,10 +130,13 @@ export default function DrinksApp() {
           <p>Alle freigegebenen Mitglieder können Getränkemengen, Beträge und Zahlungsstatus sehen.</p>
           <section className="admin-card">
             <h2>Getränke eintragen</h2>
-            <p>Offener Zeitraum seit {dateTime(snapshot.settings.opened_at)} Uhr. Am Abschlusstag können Einträge zu verschiedenen Zeiträumen gehören.</p>
+            <p>Offener Zeitraum seit {dateTime(snapshot.settings.opened_at)} Uhr.</p>
             <form className="admin-form" onSubmit={add}>
-              <label>Getränketag <input type="date" min={openingDate} max={berlinDate()} value={date} onChange={(event) => setDate(event.target.value)} required /></label>
-              <label>Anzahl <input type="number" min="1" max="10000" value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} required /></label>
+              <div className="admin-drinks-counter">
+                <button type="button" className="admin-drinks-button" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={busy || quantity <= 1}>−</button>
+                <span className="admin-drinks-value">{quantity}</span>
+                <button type="button" className="admin-drinks-button" onClick={() => setQuantity(Math.min(10000, quantity + 1))} disabled={busy || quantity >= 10000}>+</button>
+              </div>
               <p>{selectedPrice ? `${money(selectedPrice.cents)} pro Getränk · ${money(selectedPrice.cents * quantity)} gesamt` : 'Kein Preis für diesen Tag verfügbar.'}</p>
               <button className="admin-button" disabled={busy || !selectedPrice}>Eintragen</button>
             </form>

@@ -15,3 +15,53 @@
 .drinks .payment-hint {
   white-space: pre-wrap;
 }
+
+.admin-drinks-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.admin-drinks-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: 2px solid currentColor;
+  border-radius: 0.5rem;
+  background: white;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.admin-drinks-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.admin-drinks-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.admin-drinks-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-drinks-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  min-width: 3rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
