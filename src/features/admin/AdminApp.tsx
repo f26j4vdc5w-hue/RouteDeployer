@@ -383,6 +383,10 @@ function AdminDashboard({ session }: { session: Session }) {
     email: string;
     display_name: string;
   }[]>([]);
+  const [drinksTeamers, setDrinksTeamers] = useState<string[]>([]);
+  const [drinksTeamersLoading, setDrinksTeamersLoading] = useState(true);
+  const [drinksTeamersError, setDrinksTeamersError] = useState<string | null>(null);
+  const [selectedDrinksTeamer, setSelectedDrinksTeamer] = useState('');
   const [collectionOrganizers, setCollectionOrganizers] = useState<{ user_id: string }[]>([]);
   const [organizerToAdd, setOrganizerToAdd] = useState('');
   const [approvedMembersLoading, setApprovedMembersLoading] = useState(true);
@@ -499,6 +503,31 @@ function AdminDashboard({ session }: { session: Session }) {
     }).finally(() => {
       if (active) setApprovedMembersLoading(false);
     });
+    return () => {
+      active = false;
+    };
+  }, [client]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const { data, error: queryError } = await client
+          .from('drinks_treasurers')
+          .select('user_id')
+          .order('user_id');
+        if (!active) return;
+        if (queryError) {
+          setDrinksTeamersError(queryError.message);
+        } else {
+          setDrinksTeamers(data?.map(item => item.user_id) ?? []);
+        }
+      } catch (cause) {
+        if (active) setDrinksTeamersError(errorText(cause));
+      } finally {
+        if (active) setDrinksTeamersLoading(false);
+      }
+    })();
     return () => {
       active = false;
     };
@@ -953,6 +982,76 @@ function AdminDashboard({ session }: { session: Session }) {
             </div>
           ) : (
             <p className="admin-muted">Keine ausstehenden Mitgliedsanträge.</p>
+          )}
+        </section>
+
+        <section className="admin-card">
+          <div className="admin-card__heading">
+            <div>
+              <h2>Getränkekasse-Kassenwarte</h2>
+              <p>Bestimme, welche freigegebenen Mitglieder Preis, Zahlungshinweis und Abschlüsse verwalten.</p>
+            </div>
+            {drinksTeamers.length > 0 && <span className="admin-pending-count">{drinksTeamers.length}</span>}
+          </div>
+          {drinksTeamersError ? (
+            <p className="admin-error" role="alert">Kassenwarte konnten nicht geladen werden: {drinksTeamersError}</p>
+          ) : drinksTeamersLoading ? (
+            <p className="admin-muted" role="status">Kassenwarte werden geladen …</p>
+          ) : (
+            <>
+              <form className="admin-form admin-form--inline" onSubmit={async (event) => {
+                event.preventDefault();
+                if (!selectedDrinksTeamer) return;
+                setBusy(true);
+                setError(null);
+                try {
+                  const { error: rpcError } = await client.rpc('set_drinks_treasurer', {
+                    p_user_id: selectedDrinksTeamer,
+                    p_enabled: !drinksTeamers.includes(selectedDrinksTeamer),
+                  });
+                  if (rpcError) throw rpcError;
+                  const { data, error: queryError } = await client
+                    .from('drinks_treasurers')
+                    .select('user_id')
+                    .order('user_id');
+                  if (queryError) throw queryError;
+                  setDrinksTeamers(data?.map(item => item.user_id) ?? []);
+                  setSelectedDrinksTeamer('');
+                  setNotice(`${approvedMembers.find(m => m.user_id === selectedDrinksTeamer)?.display_name ?? 'Mitglied'} wurde ${!drinksTeamers.includes(selectedDrinksTeamer) ? 'zum Kassenwart ernannt' : 'aus der Kassenwart-Rolle entfernt'}`);
+                } catch (cause) {
+                  setError(errorText(cause));
+                } finally {
+                  setBusy(false);
+                }
+              }}>
+                <label>
+                  Mitglied
+                  <select value={selectedDrinksTeamer} onChange={(event) => setSelectedDrinksTeamer(event.target.value)}>
+                    <option value="">Mitglied auswählen</option>
+                    {approvedMembers.map((member) => (
+                      <option key={member.user_id} value={member.user_id}>
+                        {member.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button className="admin-button" disabled={busy || !selectedDrinksTeamer}>
+                  {selectedDrinksTeamer && drinksTeamers.includes(selectedDrinksTeamer) ? 'Rolle entziehen' : 'Als Kassenwart einsetzen'}
+                </button>
+              </form>
+              {drinksTeamers.length > 0 && (
+                <div className="admin-member-list">
+                  {approvedMembers.filter(m => drinksTeamers.includes(m.user_id)).map((member) => (
+                    <article className="admin-member" key={member.user_id}>
+                      <div>
+                        <strong>{member.display_name}</strong>
+                        <span>{member.email}</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </section>
 
