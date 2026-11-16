@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Beer } from 'lucide-react';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
 import { deleteTour, fetchRoadbook } from '../data/backend';
@@ -512,7 +513,7 @@ function Roadbook({
           </a>
         </h2>
         <div className="nav__profile">
-          {loggedIn && <a className="nav__drinks" href={`${BASE}getraenke/`}>Getränke</a>}
+          {loggedIn && <a className="nav__drinks" href={`${BASE}getraenke/`} aria-label="Getränkekasse"><Beer size={20} aria-hidden="true" /></a>}
           <CommunityAccount
             email={community.session?.user.email ?? null}
             member={community.member}
