@@ -32,10 +32,10 @@
   height: 3rem;
   font-size: 1.5rem;
   font-weight: bold;
-  border: 2px solid currentColor;
+  border: 2px solid var(--accent);
   border-radius: 0.5rem;
   background: white;
-  color: inherit;
+  color: var(--accent);
   cursor: pointer;
   transition: all 0.2s ease;
   touch-action: manipulation;
@@ -44,11 +44,13 @@
 }
 
 .admin-drinks-button:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--tint);
   transform: scale(1.05);
 }
 
 .admin-drinks-button:active:not(:disabled) {
+  background: var(--accent);
+  color: var(--on-accent);
   transform: scale(0.95);
 }
 
