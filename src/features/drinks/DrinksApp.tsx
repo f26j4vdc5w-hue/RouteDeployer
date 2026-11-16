@@ -143,19 +143,72 @@ export default function DrinksApp() {
           </section>
           <section className="admin-card">
             <h2>Offene Strichliste</h2>
-            {openEntries.length === 0 ? <p>Noch keine Einträge.</p> : <div className="admin-member-list">{openEntries.map((entry) => (
-              <div className="admin-member" key={entry.id}>
-                <div><strong>{entry.display_name}</strong><span>{entry.drink_date} · {entry.quantity} × {money(entry.price_cents)} = {money(entry.quantity * entry.price_cents)}</span></div>
-                {entry.user_id === userId && <div className="admin-actions">
-                  <button className="admin-button" disabled={busy} onClick={() => {
-                    const value = window.prompt('Neue Anzahl', String(entry.quantity));
-                    if (value !== null && /^[1-9]\d*$/.test(value)) void action('change_drinks_entry', { p_id: entry.id, p_quantity: Number(value) });
-                    else if (value !== null) setError('Bitte eine positive ganze Anzahl eingeben.');
-                  }}>Ändern</button>
-                  <button className="admin-button" disabled={busy} onClick={() => { if (window.confirm('Eintrag wirklich löschen?')) void action('delete_drinks_entry', { p_id: entry.id }); }}>Löschen</button>
-                </div>}
-              </div>
-            ))}</div>}
+            {openEntries.length === 0 ? <p>Noch keine Einträge.</p> : (
+              <>
+                <div className="drinks-leaderboard">
+                  <h3>Bestenliste</h3>
+                  {(() => {
+                    const stats = new Map<string, { display_name: string; quantity: number; total_cents: number }>();
+                    openEntries.forEach((entry) => {
+                      const existing = stats.get(entry.user_id) ?? { display_name: entry.display_name, quantity: 0, total_cents: 0 };
+                      stats.set(entry.user_id, {
+                        display_name: existing.display_name,
+                        quantity: existing.quantity + entry.quantity,
+                        total_cents: existing.total_cents + entry.quantity * entry.price_cents,
+                      });
+                    });
+                    const sorted = Array.from(stats.entries())
+                      .map(([id, data]) => ({ id, ...data }))
+                      .sort((a, b) => b.quantity - a.quantity);
+                    const top3 = sorted.slice(0, 3);
+                    const userStats = userId ? sorted.find((s) => s.id === userId) : null;
+                    const userRank = userId ? sorted.findIndex((s) => s.id === userId) + 1 : null;
+
+                    return (
+                      <>
+                        {top3.map((user, index) => (
+                          <div key={user.id} className={`leaderboard-entry rank-${index + 1} ${user.id === userId ? 'is-current-user' : ''}`}>
+                            <div className="rank-badge">{index + 1}.</div>
+                            <div className="user-info">
+                              <strong>{user.display_name}</strong>
+                              <span>{user.quantity} Getränke · {money(user.total_cents)}</span>
+                            </div>
+                          </div>
+                        ))}
+                        {userStats && userRank && userRank > 3 && (
+                          <>
+                            <div className="leaderboard-separator">…</div>
+                            <div className="leaderboard-entry is-current-user highlight">
+                              <div className="rank-badge">{userRank}.</div>
+                              <div className="user-info">
+                                <strong>{userStats.display_name} (Du)</strong>
+                                <span>{userStats.quantity} Getränke · {money(userStats.total_cents)}</span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+                <div className="admin-member-list">
+                  <h3>Alle Einträge</h3>
+                  {openEntries.map((entry) => (
+                    <div className="admin-member" key={entry.id}>
+                      <div><strong>{entry.display_name}</strong><span>{entry.drink_date} · {entry.quantity} × {money(entry.price_cents)} = {money(entry.quantity * entry.price_cents)}</span></div>
+                      {entry.user_id === userId && <div className="admin-actions">
+                        <button className="admin-button" disabled={busy} onClick={() => {
+                          const value = window.prompt('Neue Anzahl', String(entry.quantity));
+                          if (value !== null && /^[1-9]\d*$/.test(value)) void action('change_drinks_entry', { p_id: entry.id, p_quantity: Number(value) });
+                          else if (value !== null) setError('Bitte eine positive ganze Anzahl eingeben.');
+                        }}>Ändern</button>
+                        <button className="admin-button" disabled={busy} onClick={() => { if (window.confirm('Eintrag wirklich löschen?')) void action('delete_drinks_entry', { p_id: entry.id }); }}>Löschen</button>
+                      </div>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
           {treasurer && <section className="admin-card">
             <h2>Kassenwart</h2>

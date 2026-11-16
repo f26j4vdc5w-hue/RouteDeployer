@@ -67,3 +67,81 @@
   font-variant-numeric: tabular-nums;
 }
 
+.drinks-leaderboard {
+  margin-bottom: 2rem;
+}
+
+.drinks-leaderboard h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--on-background);
+}
+
+.leaderboard-entry {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--outline);
+  transition: all 0.2s ease;
+}
+
+.leaderboard-entry.is-current-user {
+  background: var(--tint);
+  border-color: var(--accent);
+}
+
+.leaderboard-entry.is-current-user.highlight {
+  font-weight: 500;
+}
+
+.rank-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.leaderboard-entry.rank-1 .rank-badge {
+  font-size: 1.3rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-info strong {
+  display: block;
+  color: var(--on-surface);
+}
+
+.user-info span {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--on-surface-variant);
+}
+
+.leaderboard-separator {
+  text-align: center;
+  padding: 0.5rem 0;
+  color: var(--on-surface-variant);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+

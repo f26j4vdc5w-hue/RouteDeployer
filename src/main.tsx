@@ -26,6 +26,8 @@ function Root() {
   const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
   const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
+  const baseOnly = import.meta.env.BASE_URL.replace(/\/+$/, '');
+  
   if (currentPath === privacyPath) {
     return (
       <Suspense fallback={null}>
@@ -45,7 +47,7 @@ function Root() {
       <AdminApp />
     </Suspense>
   ) : (
-    <App />
+    <App isRootView={currentPath === baseOnly} />
   );
 }
 

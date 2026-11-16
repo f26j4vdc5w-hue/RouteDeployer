@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Beer } from 'lucide-react';
 import type { Collection, Season } from '../domain/catalog';
 import type { Tour } from '../domain/tour';
 import { deleteTour, fetchRoadbook } from '../data/backend';
@@ -69,7 +70,19 @@ function currentSeason(today: string, seasons: Season[]): Season {
 }
 
 /** Saison/Kollektion stecken im Pfad (<base>s27/after-work/), die Tour in ?tour=YYYY-MM-DD. */
-function readLocation(seasons: Season[]): Location {
+function readLocation(seasons: Season[], isRootView: boolean = false): Location {
+  if (isRootView) {
+    const season = currentSeason(todayIso(), seasons.filter((entry) => entry.collections.length > 0));
+    const collection = season.collections.find((collection) => collection.slug === 'after-work') ?? season.collections[0];
+    return {
+      season,
+      collection,
+      tourId: null,
+      variant: 'A',
+      isHome: true,
+    };
+  }
+  
   const isHome = window.location.pathname === BASE;
   const [seasonSlug, collectionSlug] = window.location.pathname.slice(BASE.length).split('/');
   const requestedSeason = seasons.find((s) => s.slug === seasonSlug);
@@ -90,11 +103,12 @@ function readLocation(seasons: Season[]): Location {
   };
 }
 
-function useLocation(seasons: Season[]) {
-  const [loc, setLoc] = useState(() => readLocation(seasons));
+function useLocation(seasons: Season[], isRootView: boolean = false) {
+  const [loc, setLoc] = useState(() => readLocation(seasons, isRootView));
 
   useEffect(() => {
     // Die Startseite bleibt für Homescreen-Verknüpfungen unter der Basis-URL.
+    if (loc.isHome && isRootView) return;
     if (loc.isHome) return;
 
     // Nicht (mehr) gültige Pfade auf die aufgelöste Saison/Kollektion normalisieren.
@@ -104,13 +118,13 @@ function useLocation(seasons: Season[]) {
       url.pathname = expected;
       window.history.replaceState(null, '', url);
     }
-  }, [loc.season, loc.collection, loc.isHome]);
+  }, [loc.season, loc.collection, loc.isHome, isRootView]);
 
   useEffect(() => {
-    const onPop = () => setLoc(readLocation(seasons));
+    const onPop = () => setLoc(readLocation(seasons, isRootView));
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [seasons]);
+  }, [seasons, isRootView]);
 
   const go = useCallback(
     (season: Season, collection: Collection, tourId: string | null, variant: 'A' | 'B' = 'A') => {
@@ -139,7 +153,7 @@ function isWithinNextSevenDays(date: string, today: string): boolean {
   return daysUntil >= 0 && daysUntil <= 7;
 }
 
-export default function App() {
+export default function App({ isRootView = false }: { isRootView?: boolean }) {
   const [seasons, setSeasons] = useState<Season[] | null>(null);
   const [dataVersion, setDataVersion] = useState(0);
   const [reloadVersion, setReloadVersion] = useState(0);
@@ -302,6 +316,7 @@ export default function App() {
       loggedIn={loggedIn}
       isAdmin={isAdmin}
       managedCollections={managedCollections}
+      isRootView={isRootView}
     />
   );
 }
@@ -326,6 +341,7 @@ function RoadbookGate({
   isAdmin,
   managedCollections,
   onReload,
+  isRootView = false,
 }: {
   seasons: Season[];
   dataVersion: number;
@@ -334,6 +350,7 @@ function RoadbookGate({
   isAdmin: boolean;
   managedCollections: { season_slug: string; collection_slug: string }[];
   onReload: () => void;
+  isRootView?: boolean;
 }) {
   const visibleSeasons = useMemo(
     () =>
@@ -383,6 +400,7 @@ function RoadbookGate({
       isAdmin={isAdmin}
       managedCollections={managedCollections}
       onReload={onReload}
+      isRootView={isRootView}
     />
   );
 }
@@ -394,6 +412,7 @@ function Roadbook({
   isAdmin,
   managedCollections,
   onReload,
+  isRootView = false,
 }: {
   seasons: Season[];
   community: ReturnType<typeof useCommunityAuth>;
@@ -401,13 +420,14 @@ function Roadbook({
   isAdmin: boolean;
   managedCollections: { season_slug: string; collection_slug: string }[];
   onReload: () => void;
+  isRootView?: boolean;
 }) {
   const today = todayIso(new Date());
   const availableSeasons = useMemo(
     () => seasons.filter((entry) => entry.collections.length > 0),
     [seasons],
   );
-  const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons);
+  const [{ season, collection, tourId, variant }, go] = useLocation(availableSeasons, isRootView);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [routeSelection, setRouteSelection] = useState({ key: '', index: 0 });
   const [editor, setEditor] = useState<
@@ -493,7 +513,7 @@ function Roadbook({
           </a>
         </h2>
         <div className="nav__profile">
-          {loggedIn && <a className="nav__drinks" href={`${BASE}getraenke/`}>Getränke</a>}
+          {loggedIn && <a className="nav__drinks" href={`${BASE}getraenke/`} aria-label="Getränkekasse"><Beer size={20} aria-hidden="true" /></a>}
           <CommunityAccount
             email={community.session?.user.email ?? null}
             member={community.member}
