@@ -12,8 +12,7 @@ type Price = { valid_from: string; cents: number };
 type Entry = { id: number; user_id: string; display_name: string; drink_date: string; quantity: number; price_cents: number; period_id: number | null };
 type Period = { id: number; opened_at: string; closed_at: string; payment_hint: string };
 type Bill = { id: number; period_id: number; user_id: string; display_name: string; quantity: number; total_cents: number; payment_status: 'open' | 'reported' | 'confirmed' };
-type Member = { user_id: string; display_name: string; status: string; email_confirmed_at: string | null };
-type Snapshot = { settings: Settings; prices: Price[]; entries: Entry[]; periods: Period[]; bills: Bill[]; treasurers: string[]; members: Member[] };
+type Snapshot = { settings: Settings; prices: Price[]; entries: Entry[]; periods: Period[]; bills: Bill[]; treasurers: string[] };
 
 const money = (cents: number) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(cents / 100);
 const berlinDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -33,7 +32,6 @@ export default function DrinksApp() {
   const [quantity, setQuantity] = useState(1);
   const [priceInput, setPriceInput] = useState('');
   const [hint, setHint] = useState('');
-  const [selectedMember, setSelectedMember] = useState('');
   const [requestId, setRequestId] = useState<string>(() => crypto.randomUUID());
 
   useEffect(() => {
@@ -65,13 +63,12 @@ export default function DrinksApp() {
         return { data: data as T[] | null, count };
       });
     }
-    const [prices, entries, periods, bills, treasurers, members] = await Promise.all([
+    const [prices, entries, periods, bills, treasurers] = await Promise.all([
       allRows<Price>('drinks_prices', '*', 'valid_from', false),
       allRows<Entry>('drinks_entries', '*', 'id', false),
       allRows<Period>('drinks_periods', '*', 'id', false),
       allRows<Bill>('drinks_bills', '*', 'id', false),
       allRows<{ user_id: string }>('drinks_treasurers', 'user_id', 'user_id'),
-      isAdmin ? allRows<Member>('community_members', 'user_id, display_name, status, email_confirmed_at', 'user_id', true, true) : Promise.resolve([]),
     ]);
     if (currentRequestId !== requestId) return;
     const last = await client.from('drinks_settings').select('*').single();
@@ -83,9 +80,8 @@ export default function DrinksApp() {
       settings: last.data as Settings,
       prices, entries, periods, bills,
       treasurers: treasurers.map((item) => item.user_id),
-      members,
     });
-  }, [approved, isAdmin, requestId]);
+  }, [approved, requestId]);
 
   useEffect(() => {
     let active = true;
@@ -191,11 +187,6 @@ export default function DrinksApp() {
             <p>Mit aktivierter Erinnerung erhältst du dienstags um 21 Uhr eine Mitteilung, wenn du für eine Tour zugesagt und für diesen Tag noch keine Getränke eingetragen hast.</p>
             {userId && <DrinksPushToggle userId={userId} />}
           </section>
-          {isAdmin && <section className="admin-card">
-            <h2>Kassenwarte verwalten</h2>
-            <label>Mitglied <select value={selectedMember} onChange={(event) => setSelectedMember(event.target.value)}><option value="">Mitglied auswählen</option>{snapshot.members.map((member) => <option key={member.user_id} value={member.user_id}>{member.display_name}</option>)}</select></label>
-            <button className="admin-button" disabled={busy || !selectedMember} onClick={() => void action('set_drinks_treasurer', { p_user_id: selectedMember, p_enabled: !snapshot.treasurers.includes(selectedMember) })}>{snapshot.treasurers.includes(selectedMember) ? 'Rolle entziehen' : 'Als Kassenwart einsetzen'}</button>
-          </section>}
           <section className="admin-card">
             <h2>Abrechnungen</h2>
             {snapshot.periods.length === 0 && <p>Noch keine Abrechnungen.</p>}
