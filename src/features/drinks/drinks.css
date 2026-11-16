@@ -34,7 +34,7 @@
   font-weight: bold;
   border: 2px solid var(--accent);
   border-radius: 0.5rem;
-  background: white;
+  background: var(--surface);
   color: var(--accent);
   cursor: pointer;
   transition: all 0.2s ease;
