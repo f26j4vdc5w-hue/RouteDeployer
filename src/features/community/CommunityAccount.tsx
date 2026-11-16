@@ -427,7 +427,7 @@ export function CommunityAccount({
                   </button>
                 )}
                 {isAdmin && (
-                  <a className="community__admin-link" href={`${import.meta.env.BASE_URL}admin/`}>
+                  <a className="community__admin-link" href={`${import.meta.env.BASE_URL}roadbook/admin/`}>
                     Zum Admin-Bereich
                   </a>
                 )}
@@ -483,7 +483,7 @@ export function CommunityAccount({
                 )}
                 <p className="community__hint">
                   Mehr dazu in der{' '}
-                  <a href={`${import.meta.env.BASE_URL}datenschutz/`}>Datenschutzerklärung</a>.
+                  <a href={`${import.meta.env.BASE_URL}roadbook/datenschutz/`}>Datenschutzerklärung</a>.
                 </p>
                 <p className="community__hint">oder mit E-Mail</p>
                 {mode === 'signup' && (
