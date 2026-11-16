@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Bell, BellOff } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
 import { keyToBytes } from '../admin/AdminPushToggle';
 
@@ -11,6 +12,9 @@ export function DrinksPushToggle({ userId }: { userId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && Boolean(publicKey);
+  const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
   useEffect(() => {
     if (!supported) return;
@@ -59,9 +63,12 @@ export function DrinksPushToggle({ userId }: { userId: string }) {
     } finally { setBusy(false); }
   }
 
-  if (!supported) return <p>Push-Erinnerungen sind auf diesem Gerät nicht verfügbar oder noch nicht eingerichtet. Auf dem iPhone muss die App zum Home-Bildschirm hinzugefügt und dort geöffnet werden.</p>;
+  if (!supported) return <p className="admin-muted">{isIos && !standalone ? 'Für Erinnerungen die App über „Teilen → Zum Home-Bildschirm" hinzufügen und von dort öffnen.' : 'Push-Erinnerungen sind auf diesem Gerät nicht verfügbar oder noch nicht eingerichtet.'}</p>;
   return <div>
-    <button className="admin-button" disabled={busy || !registration} onClick={() => void toggle()}>{enabled ? 'Erinnerung auf diesem Gerät ausschalten' : 'Erinnerung auf diesem Gerät aktivieren'}</button>
+    <button type="button" className="admin-button" disabled={busy || !registration} onClick={() => void toggle()}>
+      {enabled ? <BellOff size={16} aria-hidden="true" /> : <Bell size={16} aria-hidden="true" />}
+      {enabled ? 'Erinnerung auf diesem Gerät ausschalten' : 'Erinnerung auf diesem Gerät aktivieren'}
+    </button>
     {error && <p className="admin-error" role="alert">{error}</p>}
   </div>;
 }
