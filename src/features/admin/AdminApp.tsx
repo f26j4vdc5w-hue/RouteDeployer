@@ -407,6 +407,7 @@ function AdminDashboard({ session }: { session: Session }) {
     email: string;
     display_name: string;
     created_at: string;
+    status: 'rejected' | 'pending';
   }[]>([]);
   const [rejectedMembersLoading, setRejectedMembersLoading] = useState(true);
   const [rejectedMembersError, setRejectedMembersError] = useState<string | null>(null);
@@ -545,16 +546,26 @@ function AdminDashboard({ session }: { session: Session }) {
     let active = true;
     void (async () => {
       try {
-        const { data, error: queryError } = await client
+        const { data: rejectedData, error: rejectedError } = await client
           .from('community_members')
-          .select('user_id, email, display_name, created_at')
+          .select('user_id, email, display_name, created_at, status')
           .eq('status', 'rejected')
           .order('created_at', { ascending: false });
+        
+        const { data: pendingUnconfirmedData, error: pendingError } = await client
+          .from('community_members')
+          .select('user_id, email, display_name, created_at, status')
+          .eq('status', 'pending')
+          .is('email_confirmed_at', null)
+          .order('created_at', { ascending: false });
+        
         if (!active) return;
-        if (queryError) {
-          setRejectedMembersError(queryError.message);
+        const error = rejectedError || pendingError;
+        if (error) {
+          setRejectedMembersError(error.message);
         } else {
-          setRejectedMembers(data ?? []);
+          const combined = [...(rejectedData ?? []), ...(pendingUnconfirmedData ?? [])];
+          setRejectedMembers(combined);
         }
       } catch (cause) {
         if (active) setRejectedMembersError(errorText(cause));
@@ -1126,15 +1137,15 @@ function AdminDashboard({ session }: { session: Session }) {
         <section className="admin-card">
           <div className="admin-card__heading">
             <div>
-              <h2>Abgelehnte Mitglieder</h2>
-              <p>Mitglieder deren Registrierung abgelehnt wurde können hier vollständig gelöscht werden.</p>
+              <h2>Zu löschende Mitglieder</h2>
+              <p>Abgelehnte oder unbestätigte Mitglieder können hier vollständig gelöscht werden.</p>
             </div>
             {rejectedMembers.length > 0 && <span className="admin-pending-count">{rejectedMembers.length}</span>}
           </div>
           {rejectedMembersError ? (
-            <p className="admin-error" role="alert">Abgelehnte Mitglieder konnten nicht geladen werden: {rejectedMembersError}</p>
+            <p className="admin-error" role="alert">Mitglieder konnten nicht geladen werden: {rejectedMembersError}</p>
           ) : rejectedMembersLoading ? (
-            <p className="admin-muted" role="status">Abgelehnte Mitglieder werden geladen …</p>
+            <p className="admin-muted" role="status">Mitglieder werden geladen …</p>
           ) : rejectedMembers.length > 0 ? (
             <div className="admin-member-list">
               {rejectedMembers.map((member) => (
@@ -1142,7 +1153,9 @@ function AdminDashboard({ session }: { session: Session }) {
                   <div>
                     <strong>{member.display_name}</strong>
                     <span>{member.email}</span>
-                    <small>Abgelehnt {new Date(member.created_at).toLocaleDateString('de-DE')}</small>
+                    <small>
+                      {member.status === 'rejected' ? 'Abgelehnt' : 'E-Mail nicht bestätigt'} · {new Date(member.created_at).toLocaleDateString('de-DE')}
+                    </small>
                   </div>
                   <button
                     type="button"
@@ -1157,7 +1170,7 @@ function AdminDashboard({ session }: { session: Session }) {
               ))}
             </div>
           ) : (
-            <p className="admin-muted">Keine abgelehnte Mitglieder.</p>
+            <p className="admin-muted">Keine Mitglieder zum Löschen.</p>
           )}
         </section>
 
