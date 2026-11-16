@@ -402,6 +402,14 @@ function AdminDashboard({ session }: { session: Session }) {
   }[]>([]);
   const [membersLoading, setMembersLoading] = useState(true);
   const [membersError, setMembersError] = useState<string | null>(null);
+  const [rejectedMembers, setRejectedMembers] = useState<{
+    user_id: string;
+    email: string;
+    display_name: string;
+    created_at: string;
+  }[]>([]);
+  const [rejectedMembersLoading, setRejectedMembersLoading] = useState(true);
+  const [rejectedMembersError, setRejectedMembersError] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [selectedSeasonSlug, setSelectedSeasonSlug] = useState('');
   const [selectedCollectionSlug, setSelectedCollectionSlug] = useState('');
@@ -526,6 +534,32 @@ function AdminDashboard({ session }: { session: Session }) {
         if (active) setDrinksTeamersError(errorText(cause));
       } finally {
         if (active) setDrinksTeamersLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [client]);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const { data, error: queryError } = await client
+          .from('community_members')
+          .select('user_id, email, display_name, created_at')
+          .eq('status', 'rejected')
+          .order('created_at', { ascending: false });
+        if (!active) return;
+        if (queryError) {
+          setRejectedMembersError(queryError.message);
+        } else {
+          setRejectedMembers(data ?? []);
+        }
+      } catch (cause) {
+        if (active) setRejectedMembersError(errorText(cause));
+      } finally {
+        if (active) setRejectedMembersLoading(false);
       }
     })();
     return () => {
@@ -910,6 +944,23 @@ function AdminDashboard({ session }: { session: Session }) {
     }
   }
 
+  async function deleteRejectedMember(userId: string, displayName: string) {
+    if (!window.confirm(`${displayName} vollständig löschen?`)) return;
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const { error: deleteError } = await client.auth.admin.deleteUser(userId);
+      if (deleteError) throw deleteError;
+      setRejectedMembers((members) => members.filter((member) => member.user_id !== userId));
+      setNotice(`${displayName} wurde vollständig gelöscht.`);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="admin-shell">
       <div className="admin-dashboard">
@@ -1069,6 +1120,44 @@ function AdminDashboard({ session }: { session: Session }) {
                 </div>
               )}
             </>
+          )}
+        </section>
+
+        <section className="admin-card">
+          <div className="admin-card__heading">
+            <div>
+              <h2>Abgelehnte Mitglieder</h2>
+              <p>Mitglieder deren Registrierung abgelehnt wurde können hier vollständig gelöscht werden.</p>
+            </div>
+            {rejectedMembers.length > 0 && <span className="admin-pending-count">{rejectedMembers.length}</span>}
+          </div>
+          {rejectedMembersError ? (
+            <p className="admin-error" role="alert">Abgelehnte Mitglieder konnten nicht geladen werden: {rejectedMembersError}</p>
+          ) : rejectedMembersLoading ? (
+            <p className="admin-muted" role="status">Abgelehnte Mitglieder werden geladen …</p>
+          ) : rejectedMembers.length > 0 ? (
+            <div className="admin-member-list">
+              {rejectedMembers.map((member) => (
+                <article className="admin-member" key={member.user_id}>
+                  <div>
+                    <strong>{member.display_name}</strong>
+                    <span>{member.email}</span>
+                    <small>Abgelehnt {new Date(member.created_at).toLocaleDateString('de-DE')}</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-button admin-button--danger"
+                    disabled={busy}
+                    onClick={() => deleteRejectedMember(member.user_id, member.display_name)}
+                    aria-label={`${member.display_name} löschen`}
+                  >
+                    <X size={16} /> Löschen
+                  </button>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="admin-muted">Keine abgelehnte Mitglieder.</p>
           )}
         </section>
 
