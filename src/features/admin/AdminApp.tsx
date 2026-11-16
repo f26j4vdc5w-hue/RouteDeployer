@@ -1047,6 +1047,23 @@ function AdminDashboard({ session }: { session: Session }) {
                         <strong>{member.display_name}</strong>
                         <span>{member.email}</span>
                       </div>
+                      <button className="admin-button admin-button--danger" disabled={busy} onClick={async () => {
+                        setBusy(true);
+                        setError(null);
+                        try {
+                          const { error: rpcError } = await client.rpc('set_drinks_treasurer', {
+                            p_user_id: member.user_id,
+                            p_enabled: false,
+                          });
+                          if (rpcError) throw rpcError;
+                          setDrinksTeamers(drinksTeamers.filter(id => id !== member.user_id));
+                          setNotice(`${member.display_name} wurde aus der Kassenwart-Rolle entfernt`);
+                        } catch (cause) {
+                          setError(errorText(cause));
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}>Entfernen</button>
                     </article>
                   ))}
                 </div>
