@@ -13,6 +13,7 @@ import './styles/global.css';
 const AdminApp = lazy(() => import('./features/admin/AdminApp'));
 
 const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
+const DrinksApp = lazy(() => import('./features/drinks/DrinksApp'));
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
@@ -23,11 +24,19 @@ if ('serviceWorker' in navigator) {
 function Root() {
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
   const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
+  const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
   if (currentPath === privacyPath) {
     return (
       <Suspense fallback={null}>
         <PrivacyPolicy />
+      </Suspense>
+    );
+  }
+  if (currentPath === drinksPath) {
+    return (
+      <Suspense fallback={<main className="backend-state" aria-live="polite">Getränkekasse wird geladen …</main>}>
+        <DrinksApp />
       </Suspense>
     );
   }

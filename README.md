@@ -93,8 +93,9 @@ einer leeren oder veralteten Tourenansicht.
    Saison-Kollektionen einzusetzen.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
-   die aktuelle Website-URL und ihre Admin-URL sowie `http://localhost:5173/`
-   in den erlaubten Redirect-URLs. Hinweise zum Domainwechsel stehen unter
+   die aktuelle Website-URL, ihre Admin-URL und ihre Getränke-URL (`getraenke/`)
+   sowie `http://localhost:5173/` und `http://localhost:5173/getraenke/` in den
+   erlaubten Redirect-URLs. Hinweise zum Domainwechsel stehen unter
    [Eigene Domain](#eigene-domain).
 8. Registrierte Nutzer müssen ihre E-Mail bestätigen. Danach kann ein Admin
    ihren Antrag im Admin-Bereich unter **Community-Freigaben** freigeben oder
@@ -140,6 +141,50 @@ Für den Betrieb:
 Bestehende Anfragen werden nicht nachträglich als Push verschickt. Beim
 Aktivieren speichert Supabase die Push-Adresse und Schlüssel des Geräts;
 der jeweilige Browser-Push-Dienst stellt die Mitteilungen zu.
+
+### Getränkekasse
+
+Unter `getraenke/` können freigegebene Mitglieder Getränke selbst eintragen.
+Alle freigegebenen Mitglieder sehen Namen, Einträge, Beträge und Zahlungsstatus
+der gesamten Community. Einträge können bis zum Abschluss geändert oder
+gelöscht werden; Nachträge sind ab dem Beginn des offenen Zeitraums möglich.
+Liegt ein Abschluss im Laufe eines Tages, kann derselbe Getränketag in zwei
+Zeiträumen vorkommen.
+
+Admins weisen im Getränkebereich freigegebene Mitglieder als Kassenwarte zu.
+Diese können den Preis für den nächsten Tag ändern, einen Zahlungshinweis
+hinterlegen und alle offenen Einträge gemeinsam abrechnen. Der Preis des
+Getränketags wird beim Eintrag gespeichert und bleibt beim Ändern der Menge
+erhalten. Vor dem endgültigen Abschluss werden die Beträge angezeigt.
+Abschlüsse und bestätigte Zahlungseingänge können in der App nicht rückgängig
+gemacht werden. Mitglieder melden vollständige Zahlungen selbst und können
+die Meldung vor Bestätigung zurückziehen; Kassenwarte können eine Meldung
+zurückweisen oder den Eingang endgültig bestätigen. Zahlung und
+Zahlungsabgleich finden außerhalb der App statt.
+
+Für freiwillige Dienstagserinnerungen:
+
+1. Migrationen `202611170001_drinks.sql` und
+   `202611170002_drinks_reminders.sql` anwenden. Den VAPID-Schlüssel wie unter
+   Admin-Push beschrieben einrichten.
+2. In Supabase ein langes zufälliges `DRINKS_REMINDER_SECRET` als Edge Function
+   Secret und denselben Wert in GitHub Actions unter **Secrets** hinterlegen.
+3. Die Funktion mit `supabase functions deploy notify-drinks-reminders
+   --no-verify-jwt` deployen. Der geheime Header schützt den Aufruf.
+4. Der Workflow `Getränke-Erinnerung` wird dienstags um 19 und 20 Uhr UTC
+   angestoßen; nur der Lauf zwischen 21 und 22 Uhr in `Europe/Berlin` versendet.
+   `VITE_SUPABASE_URL` muss als Actions-Variable gesetzt sein.
+
+Mitglieder aktivieren Push auf jedem gewünschten Gerät selbst. Eine Erinnerung
+erhalten nur freigegebene Mitglieder mit einer Tourzusage für diesen Dienstag,
+die für diesen Getränketag noch keinen Eintrag haben. Mehrere Zusagen führen
+nicht zu mehrfachen Erinnerungen pro Gerät. Ein Eintrag vor 21 Uhr unterdrückt
+die Erinnerung auch dann, wenn später weitere Getränke genommen werden.
+GitHub Actions kann zeitverzögert laufen und Push-Zustellung ist nicht
+garantiert. Zur Vermeidung doppelter Nachrichten werden Versandversuche vor dem
+Versand registriert; fehlgeschlagene Versuche werden protokolliert, aber nicht
+automatisch wiederholt. Veraltete Geräteabonnements werden entfernt. Der
+verwendete Push-Endpunkt muss zu einem unterstützten Push-Dienst gehören.
 
 ## Datenbankmigrationen
 

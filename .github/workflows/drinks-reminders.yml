@@ -1,0 +1,22 @@
+name: Getränke-Erinnerung
+
+on:
+  schedule:
+    - cron: '0 19,20 * * 2'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send eligible reminders
+        env:
+          SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          REMINDER_SECRET: ${{ secrets.DRINKS_REMINDER_SECRET }}
+        run: |
+          test -n "$SUPABASE_URL" && test -n "$REMINDER_SECRET"
+          curl --fail --silent --show-error --max-time 120 \
+            -X POST -H "x-reminder-secret: $REMINDER_SECRET" \
+            "$SUPABASE_URL/functions/v1/notify-drinks-reminders"

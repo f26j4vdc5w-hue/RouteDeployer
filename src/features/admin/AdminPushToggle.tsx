@@ -4,7 +4,7 @@ import { requireSupabase } from '../../lib/supabase';
 
 const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
-function keyToBytes(base64Url: string) {
+export function keyToBytes(base64Url: string) {
   const base64 = (base64Url + '='.repeat((4 - (base64Url.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
   return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }
@@ -104,9 +104,6 @@ export function AdminPushToggle({ userId }: { userId: string }) {
           .delete()
           .eq('endpoint', subscription.endpoint);
         if (error) throw error;
-        if (!(await subscription.unsubscribe())) {
-          throw new Error('Das Gerät konnte das Push-Abonnement nicht entfernen.');
-        }
       }
       setDeviceSubscription(null);
       setEnabled(false);
