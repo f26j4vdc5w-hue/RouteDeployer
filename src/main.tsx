@@ -22,16 +22,11 @@ if ('serviceWorker' in navigator) {
 }
 
 function Root() {
-  const roadbookBase = `${import.meta.env.BASE_URL}roadbook`.replace(/\/+$/, '');
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
   const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
   const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
-  
-  if (currentPath === import.meta.env.BASE_URL.replace(/\/+$/, '')) {
-    window.location.replace(`${roadbookBase}/`);
-    return null;
-  }
+  const baseOnly = import.meta.env.BASE_URL.replace(/\/+$/, '');
   
   if (currentPath === privacyPath) {
     return (
@@ -52,7 +47,7 @@ function Root() {
       <AdminApp />
     </Suspense>
   ) : (
-    <App />
+    <App isRootView={currentPath === baseOnly} />
   );
 }
 
