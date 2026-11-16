@@ -183,7 +183,7 @@ export default function App() {
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (targetPath === currentPath) return;
 
-    if (target.pathname.replace(/\/+$/, '') === `${BASE}roadbook/getraenke`.replace(/\/+$/, '')) {
+    if (target.pathname.replace(/\/+$/, '') === `${BASE}getraenke`.replace(/\/+$/, '')) {
       window.location.replace(targetPath);
       return;
     }
@@ -493,7 +493,7 @@ function Roadbook({
           </a>
         </h2>
         <div className="nav__profile">
-          {loggedIn && <a className="nav__drinks" href={`${BASE}roadbook/getraenke/`}>Getränke</a>}
+          {loggedIn && <a className="nav__drinks" href={`${BASE}getraenke/`}>Getränke</a>}
           <CommunityAccount
             email={community.session?.user.email ?? null}
             member={community.member}

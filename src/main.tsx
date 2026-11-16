@@ -23,9 +23,9 @@ if ('serviceWorker' in navigator) {
 
 function Root() {
   const roadbookBase = `${import.meta.env.BASE_URL}roadbook`.replace(/\/+$/, '');
-  const adminPath = `${roadbookBase}/admin`.replace(/\/+$/, '');
-  const privacyPath = `${roadbookBase}/datenschutz`.replace(/\/+$/, '');
-  const drinksPath = `${roadbookBase}/getraenke`.replace(/\/+$/, '');
+  const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
+  const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
+  const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
   
   if (currentPath === import.meta.env.BASE_URL.replace(/\/+$/, '')) {

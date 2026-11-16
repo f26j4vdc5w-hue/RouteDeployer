@@ -40,7 +40,7 @@ export default function DrinksApp() {
     if (!returnTo?.startsWith('/') || returnTo.startsWith('//')) return;
     const target = new URL(returnTo, window.location.origin);
     if (target.origin === window.location.origin &&
-        target.pathname.replace(/\/+$/, '') === `${import.meta.env.BASE_URL}roadbook/getraenke`.replace(/\/+$/, '')) {
+        target.pathname.replace(/\/+$/, '') === `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '')) {
       sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_KEY);
       sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY);
     }
