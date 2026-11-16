@@ -195,8 +195,10 @@ begin
     returning id into v_period_id;
   update public.drinks_entries set period_id = v_period_id where period_id is null;
   insert into public.drinks_bills (period_id, user_id, display_name, quantity, total_cents)
-    select v_period_id, user_id, max(display_name), sum(quantity), sum(quantity::bigint * price_cents)
-    from public.drinks_entries where period_id = v_period_id group by user_id;
+    select v_period_id, entries.user_id, entries.display_name, sum(entries.quantity), sum(entries.quantity::bigint * entries.price_cents)
+    from public.drinks_entries entries
+    join (select user_id, max(id) as latest_id from public.drinks_entries where period_id = v_period_id group by user_id) latest on latest.latest_id = entries.id
+    group by entries.user_id, entries.display_name;
   update public.drinks_settings set opened_at = v_closed, revision = revision + 1 where id;
   return v_period_id;
 end;

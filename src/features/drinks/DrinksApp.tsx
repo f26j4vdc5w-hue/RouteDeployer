@@ -34,9 +34,11 @@ export default function DrinksApp() {
   const [priceInput, setPriceInput] = useState('');
   const [hint, setHint] = useState('');
   const [selectedMember, setSelectedMember] = useState('');
+  const [requestId, setRequestId] = useState<string>(() => crypto.randomUUID());
 
   useEffect(() => {
     if (!community.session) return;
+    setRequestId(crypto.randomUUID());
     const returnTo = sessionStorage.getItem(COMMUNITY_AUTH_RETURN_TO_KEY);
     if (!returnTo?.startsWith('/') || returnTo.startsWith('//')) return;
     const target = new URL(returnTo, window.location.origin);
@@ -50,8 +52,10 @@ export default function DrinksApp() {
   const load = useCallback(async () => {
     if (!approved) { setSnapshot(null); return; }
     const client = requireSupabase();
+    const currentRequestId = requestId;
     const first = await client.from('drinks_settings').select('*').single();
     if (first.error) throw first.error;
+    if (currentRequestId !== requestId) return;
     async function allRows<T>(table: string, columns: string, order: string, ascending = true, approvedMembers = false): Promise<T[]> {
       return readAllPages(async (from, to) => {
         let query = client.from(table).select(columns, { count: 'exact' }).order(order, { ascending }).range(from, to);
@@ -69,9 +73,11 @@ export default function DrinksApp() {
       allRows<{ user_id: string }>('drinks_treasurers', 'user_id', 'user_id'),
       isAdmin ? allRows<Member>('community_members', 'user_id, display_name, status, email_confirmed_at', 'user_id', true, true) : Promise.resolve([]),
     ]);
+    if (currentRequestId !== requestId) return;
     const last = await client.from('drinks_settings').select('*').single();
     if (last.error) throw last.error;
     if (first.data.revision !== last.data.revision) throw new Error('Die Daten haben sich geändert. Bitte erneut laden.');
+    if (currentRequestId !== requestId) return;
     setHint(last.data.payment_hint);
     setSnapshot({
       settings: last.data as Settings,
@@ -79,7 +85,7 @@ export default function DrinksApp() {
       treasurers: treasurers.map((item) => item.user_id),
       members,
     });
-  }, [approved, isAdmin]);
+  }, [approved, isAdmin, requestId]);
 
   useEffect(() => {
     let active = true;

@@ -28,6 +28,7 @@ Deno.serve(async (request) => {
           await webpush.sendNotification(
             { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
             JSON.stringify({ title: 'Getränkekasse', body: 'Denk daran, deine Getränke einzutragen.', url: 'getraenke/' }),
+            { ttl: 3600 },
           );
         },
         remove: async (endpoint) => {

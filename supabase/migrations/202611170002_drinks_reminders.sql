@@ -66,10 +66,16 @@ language sql security definer set search_path = '' as $$
         select 1 from public.drinks_entries entries
         where entries.user_id = subscriptions.user_id and entries.drink_date = p_date
       )
+  ), unclaimed as (
+    select endpoint, endpoint_hash from (
+      select endpoint, md5(endpoint) as endpoint_hash, row_number() over () as rn from eligible
+    ) ranked
+    where not exists (select 1 from public.drinks_push_attempts where send_date = p_date and endpoint_hash = ranked.endpoint_hash)
+    limit 500
   ), claimed as (
     insert into public.drinks_push_attempts (send_date, endpoint_hash)
-    select p_date, md5(eligible.endpoint) from eligible
-    on conflict do nothing returning drinks_push_attempts.endpoint_hash
+    select p_date, endpoint_hash from unclaimed
+    returning drinks_push_attempts.endpoint_hash
   )
   select eligible.endpoint, eligible.p256dh, eligible.auth
   from eligible join claimed on claimed.endpoint_hash = md5(eligible.endpoint);
