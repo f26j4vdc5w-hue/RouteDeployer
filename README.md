@@ -156,17 +156,20 @@ Diese können den Preis für den nächsten Tag ändern, einen Zahlungshinweis
 hinterlegen und alle offenen Einträge gemeinsam abrechnen. Der Preis des
 Getränketags wird beim Eintrag gespeichert und bleibt beim Ändern der Menge
 erhalten. Vor dem endgültigen Abschluss werden die Beträge angezeigt.
-Abschlüsse und bestätigte Zahlungseingänge können in der App nicht rückgängig
-gemacht werden. Mitglieder melden vollständige Zahlungen selbst und können
-die Meldung vor Bestätigung zurückziehen; Kassenwarte können eine Meldung
-zurückweisen oder den Eingang endgültig bestätigen. Zahlung und
-Zahlungsabgleich finden außerhalb der App statt.
+Die neueste Abrechnung kann ein Kassenwart zurücknehmen, solange noch kein
+Zahlungseingang bestätigt wurde. Dabei werden ihre Einträge wieder in die offene
+Strichliste verschoben. Abgeschlossene frühere Abrechnungen und bestätigte
+Zahlungseingänge können nicht rückgängig gemacht werden. Mitglieder melden
+vollständige Zahlungen selbst und können die Meldung vor Bestätigung
+zurückziehen; Kassenwarte können eine Meldung zurückweisen oder den Eingang
+endgültig bestätigen. Zahlung und Zahlungsabgleich finden außerhalb der App
+statt.
 
 Für freiwillige Dienstagserinnerungen:
 
-1. Migrationen `202611170001_drinks.sql` und
-   `202611170002_drinks_reminders.sql` anwenden. Den VAPID-Schlüssel wie unter
-   Admin-Push beschrieben einrichten.
+1. Migrationen `202611170001_drinks.sql`, `202611170002_drinks_reminders.sql`
+   und `202611180001_reopen_drinks_period.sql` anwenden. Den VAPID-Schlüssel wie
+   unter Admin-Push beschrieben einrichten.
 2. In Supabase ein langes zufälliges `DRINKS_REMINDER_SECRET` als Edge Function
    Secret und denselben Wert in GitHub Actions unter **Secrets** hinterlegen.
 3. Die Funktion mit `supabase functions deploy notify-drinks-reminders

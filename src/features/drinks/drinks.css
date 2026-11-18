@@ -16,6 +16,18 @@
   white-space: pre-wrap;
 }
 
+.drinks-period-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.drinks-period-heading h3 {
+  margin-bottom: 0;
+}
+
 .admin-drinks-counter {
   display: flex;
   align-items: center;

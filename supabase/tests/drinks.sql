@@ -102,6 +102,34 @@ begin
     if sqlerrm = 'closed entry was edited' then raise; end if;
   end;
 end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+do $$
+declare period_id bigint; rev bigint;
+begin
+  select id into period_id from public.drinks_periods order by id desc limit 1;
+  select revision into rev from public.drinks_settings;
+  begin
+    perform public.reopen_drinks_period(period_id, rev);
+    raise exception 'member reopened a period';
+  exception when raise_exception then
+    if sqlerrm = 'member reopened a period' then raise; end if;
+  end;
+end $$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+do $$
+declare period_id bigint; original_opened_at timestamptz;
+begin
+  select id, opened_at into period_id, original_opened_at
+    from public.drinks_periods order by id desc limit 1;
+  perform public.reopen_drinks_period(period_id, (select revision from public.drinks_settings));
+  assert not exists (select 1 from public.drinks_periods where id = period_id),
+    'reopened period still exists';
+  assert (select count(*) = 2 from public.drinks_entries where period_id is null),
+    'reopened entries must return to the open list';
+  assert (select opened_at = original_opened_at from public.drinks_settings),
+    'reopening must restore the original period start';
+  perform public.close_drinks_period((select revision from public.drinks_settings));
+end $$;
 select public.add_drinks_entry((now() at time zone 'Europe/Berlin')::date, 1);
 do $$
 begin
@@ -119,12 +147,20 @@ select public.transition_drinks_payment((select id from public.drinks_bills wher
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 select public.transition_drinks_payment((select id from public.drinks_bills where display_name = 'Mitglied'), 'confirm');
 do $$
+declare v_period_id bigint;
 begin
+  select period_id into v_period_id from public.drinks_bills where display_name = 'Mitglied';
   begin
     perform public.transition_drinks_payment((select id from public.drinks_bills where display_name = 'Mitglied'), 'reject');
     raise exception 'confirmed payment was reversed';
   exception when raise_exception then
     if sqlerrm = 'confirmed payment was reversed' then raise; end if;
+  end;
+  begin
+    perform public.reopen_drinks_period(v_period_id, (select revision from public.drinks_settings));
+    raise exception 'confirmed period was reopened';
+  exception when raise_exception then
+    if sqlerrm = 'confirmed period was reopened' then raise; end if;
   end;
 end $$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
