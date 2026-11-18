@@ -16,7 +16,12 @@ jobs:
           SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           REMINDER_SECRET: ${{ secrets.DRINKS_REMINDER_SECRET }}
         run: |
-          test -n "$SUPABASE_URL" && test -n "$REMINDER_SECRET"
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "::error::Repository variable VITE_SUPABASE_URL is not set"; exit 1
+          fi
+          if [ -z "$REMINDER_SECRET" ]; then
+            echo "::error::Repository secret DRINKS_REMINDER_SECRET is not set (Settings > Secrets and variables > Actions)"; exit 1
+          fi
           curl --fail --silent --show-error --max-time 120 \
             -X POST -H "x-reminder-secret: $REMINDER_SECRET" \
             "$SUPABASE_URL/functions/v1/notify-drinks-reminders"
