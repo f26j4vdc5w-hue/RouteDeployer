@@ -219,7 +219,7 @@ export default function DrinksApp() {
                 const items = openEntries.filter((entry) => entry.user_id === id);
                 return `${items[0].display_name}: ${items.reduce((sum, entry) => sum + entry.quantity, 0)} Getränke, ${money(items.reduce((sum, entry) => sum + entry.quantity * entry.price_cents, 0))}`;
               });
-              if (window.confirm(`Endgültig abschließen? Einträge und Beträge können danach nicht korrigiert werden.\n\n${lines.join('\n')}`)) void action('close_drinks_period', { p_revision: snapshot.settings.revision });
+              if (window.confirm(`Zeitraum abschließen? Die neueste Abrechnung kann bis zur ersten bestätigten Zahlung zurückgenommen werden.\n\n${lines.join('\n')}`)) void action('close_drinks_period', { p_revision: snapshot.settings.revision });
             }}>Zeitraum endgültig abschließen</button>
             <form className="admin-form" onSubmit={(event) => {
               event.preventDefault();
@@ -245,10 +245,21 @@ export default function DrinksApp() {
           <section className="admin-card">
             <h2>Abrechnungen</h2>
             {snapshot.periods.length === 0 && <p>Noch keine Abrechnungen.</p>}
-            {snapshot.periods.map((period) => <div key={period.id}>
-              <h3>{dateTime(period.opened_at)} – {dateTime(period.closed_at)} Uhr</h3>
+            {snapshot.periods.map((period) => {
+              const periodBills = snapshot.bills.filter((bill) => bill.period_id === period.id);
+              const canReopen = treasurer && period.id === snapshot.periods[0]?.id &&
+                !periodBills.some((bill) => bill.payment_status === 'confirmed');
+              return <div key={period.id}>
+              <div className="drinks-period-heading">
+                <h3>{dateTime(period.opened_at)} – {dateTime(period.closed_at)} Uhr</h3>
+                {canReopen && <button className="admin-button" disabled={busy} onClick={() => {
+                  if (window.confirm('Diese Abrechnung wirklich zurücknehmen? Die Einträge werden wieder in die offene Strichliste verschoben.')) {
+                    void action('reopen_drinks_period', { p_period_id: period.id, p_revision: snapshot.settings.revision });
+                  }
+                }}>Abrechnung zurücknehmen</button>}
+              </div>
               {period.payment_hint && <p className="payment-hint">Zahlungshinweis: {period.payment_hint}</p>}
-              <div className="admin-member-list">{snapshot.bills.filter((bill) => bill.period_id === period.id).map((bill) => <div className="admin-member" key={bill.id}>
+              <div className="admin-member-list">{periodBills.map((bill) => <div className="admin-member" key={bill.id}>
                 <div><strong>{bill.display_name}</strong><span>{bill.quantity} Getränke · {money(bill.total_cents)} · {bill.payment_status === 'open' ? 'Offen' : bill.payment_status === 'reported' ? 'Zahlung gemeldet' : 'Eingang bestätigt'}</span>
                   <small>{snapshot.entries.filter((entry) => entry.period_id === period.id && entry.user_id === bill.user_id).map((entry) => `${entry.quantity} × ${money(entry.price_cents)}`).join(' + ')}</small></div>
                 <div className="admin-actions">
@@ -257,7 +268,8 @@ export default function DrinksApp() {
                   {treasurer && bill.payment_status === 'reported' && <><button className="admin-button" disabled={busy} onClick={() => { if (window.confirm('Zahlungseingang endgültig bestätigen?')) void action('transition_drinks_payment', { p_bill_id: bill.id, p_action: 'confirm' }); }}>Eingang bestätigen</button><button className="admin-button" disabled={busy} onClick={() => void action('transition_drinks_payment', { p_bill_id: bill.id, p_action: 'reject' })}>Zurückweisen</button></>}
                 </div>
               </div>)}</div>
-            </div>)}
+            </div>;
+            })}
           </section>
         </>}
       </div>
