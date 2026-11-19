@@ -12,6 +12,7 @@ export interface CommunityMember {
   full_name: string | null;
   address: string | null;
   birth_date: string | null;
+  show_birthday_in_calendar: boolean;
   clothing_size: string | null;
   phone_number: string | null;
   status: 'pending' | 'approved' | 'rejected';
@@ -88,14 +89,15 @@ export function useCommunityAuth() {
           if (!active) return;
           if (detailsError) throw new Error(detailsError.message);
           const personal = details as
-            | Pick<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number'>
+            | Pick<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number' | 'show_birthday_in_calendar'>
             | null;
           setError(null);
           setMember({
-            ...(data as Omit<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number'>),
+            ...(data as Omit<CommunityMember, 'full_name' | 'address' | 'birth_date' | 'clothing_size' | 'phone_number' | 'show_birthday_in_calendar'>),
             full_name: personal?.full_name ?? null,
             address: personal?.address ?? null,
             birth_date: personal?.birth_date ?? null,
+            show_birthday_in_calendar: personal?.show_birthday_in_calendar ?? false,
             clothing_size: personal?.clothing_size ?? null,
             phone_number: personal?.phone_number ?? null,
           });

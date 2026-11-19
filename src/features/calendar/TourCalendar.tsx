@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarDays, X } from 'lucide-react';
+import { Cake, CalendarDays, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { Tour } from '../../domain/tour';
+import { supabase } from '../../lib/supabase';
 import { todayIso, tourEndDate, tourIncludesDate } from '../../shared/format/date';
 import { weeklyRangeMarkers } from './calendarMarkers';
 import './calendar.css';
@@ -23,11 +24,18 @@ interface Month {
   label: string;
 }
 
+interface Birthday {
+  birthday: string;
+  display_name: string;
+  age: number;
+}
+
 interface Props {
   seasons: Season[];
   selectedId: string;
   selectedSeasonSlug: string;
   selectedCollectionSlug: string;
+  memberId: string | null;
   onSelect: (season: Season, collection: Collection, tourId: string) => void;
   onClose: () => void;
 }
@@ -119,7 +127,7 @@ function createRangeEntries(entries: CalendarEntry[]): RangeCalendarEntry[] {
   return ranges;
 }
 
-export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selectedCollectionSlug, onSelect, onClose }: Props) {
+export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selectedCollectionSlug, memberId, onSelect, onClose }: Props) {
   const today = todayIso();
   const entries = useMemo(
     () =>
@@ -144,8 +152,54 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
     ? monthKey(selectedId)
     : monthKey(today);
   const [visibleMonth, setVisibleMonth] = useState(initialMonth);
+  const [birthdays, setBirthdays] = useState<Birthday[]>([]);
+  const [birthdayError, setBirthdayError] = useState<string | null>(null);
+  const [openBirthday, setOpenBirthday] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const monthRefs = useRef(new Map<string, HTMLElement>());
+  const firstYear = months[0].year;
+  const lastYear = months[months.length - 1].year;
+  const birthdaysByDate = useMemo(() => {
+    const result = new Map<string, Birthday[]>();
+    for (const birthday of birthdays) {
+      const entriesForDate = result.get(birthday.birthday) ?? [];
+      entriesForDate.push(birthday);
+      result.set(birthday.birthday, entriesForDate);
+    }
+    return result;
+  }, [birthdays]);
+
+  useEffect(() => {
+    let active = true;
+    setBirthdays([]);
+    setBirthdayError(null);
+    if (!supabase || !memberId) return () => { active = false; };
+
+    void (async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_calendar_birthdays', {
+          p_first_year: firstYear,
+          p_last_year: lastYear,
+        });
+        if (error) throw new Error(error.message);
+        if (active) setBirthdays(data as Birthday[]);
+      } catch (cause) {
+        if (active) setBirthdayError(cause instanceof Error ? cause.message : 'Geburtstage konnten nicht geladen werden.');
+      }
+    })();
+    return () => { active = false; };
+  }, [memberId, firstYear, lastYear]);
+
+  useEffect(() => {
+    if (!openBirthday) return;
+    function dismiss(event: PointerEvent) {
+      if (event.target instanceof Element && !event.target.closest('.tour-calendar__birthday')) {
+        setOpenBirthday(null);
+      }
+    }
+    document.addEventListener('pointerdown', dismiss);
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [openBirthday]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -229,6 +283,7 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
               </select>
             </label>
           </div>
+          {birthdayError && <p className="tour-calendar__error" role="alert">Geburtstage konnten nicht geladen werden: {birthdayError}</p>}
         </header>
         <div
           className="tour-calendar__scroll"
@@ -275,6 +330,7 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
                     );
                     const isToday = date === today;
                     const isSelected = selectedTour ? tourIncludesDate(selectedTour, date) : date === selectedId.slice(0, 10);
+                    const dateBirthdays = birthdaysByDate.get(date) ?? [];
                     return (
                       <div
                         className={`tour-calendar__day${isToday ? ' tour-calendar__day--today' : ''}${isSelected ? ' tour-calendar__day--selected' : ''}`}
@@ -322,6 +378,26 @@ export function TourCalendar({ seasons, selectedId, selectedSeasonSlug, selected
                                 onClick={() => onSelect(season, collection, tour.id)}
                               />
                             ))}
+                          </div>
+                        )}
+                        {dateBirthdays.length > 0 && (
+                          <div className={`tour-calendar__birthday${openBirthday === date ? ' tour-calendar__birthday--open' : ''}${index % 7 < 2 ? ' tour-calendar__birthday--left' : ''}${index % 7 > 4 ? ' tour-calendar__birthday--right' : ''}`}>
+                            <button
+                              type="button"
+                              className="tour-calendar__birthday-button"
+                              aria-label={`Geburtstage am ${day}. ${month.label}`}
+                              aria-describedby={`birthdays-${date}`}
+                              aria-expanded={openBirthday === date}
+                              onClick={() => setOpenBirthday((current) => current === date ? null : date)}
+                              onBlur={() => setOpenBirthday(null)}
+                            >
+                              <Cake size={16} aria-hidden="true" />
+                            </button>
+                            <div className="tour-calendar__birthday-tooltip" id={`birthdays-${date}`} role="tooltip">
+                              {dateBirthdays.map((birthday, birthdayIndex) => (
+                                <span key={birthdayIndex}>{birthday.display_name} wird {birthday.age} Jahre alt.</span>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>

@@ -65,6 +65,12 @@ export default function PrivacyPolicy() {
         findet nur wie unten beschrieben statt. Du kannst die Angaben jederzeit ändern oder
         löschen.
       </p>
+      <p>
+        Wenn du deinen Geburtstag im Profil ausdrücklich für den Kalender freigibst, sehen
+        freigegebene Mitglieder dort deinen Anzeigenamen, Geburtstag und das Alter, das du
+        erreichst. Die Freigabe ist freiwillig und kann im Profil jederzeit zurückgenommen werden.
+        Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+      </p>
 
       <h2>6. Events und Organisatoren</h2>
       <p>

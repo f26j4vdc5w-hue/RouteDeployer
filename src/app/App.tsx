@@ -530,6 +530,7 @@ function Roadbook({
           selectedId={selected?.id ?? today}
           selectedSeasonSlug={season.slug}
           selectedCollectionSlug={collection.slug}
+          memberId={memberId}
           onClose={() => setCalendarOpen(false)}
           onSelect={(targetSeason, targetCollection, id) => {
             setCalendarOpen(false);
