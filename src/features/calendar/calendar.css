@@ -100,6 +100,13 @@
   scroll-behavior: smooth;
 }
 
+.tour-calendar__error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #ff6575;
+  font-size: 13px;
+}
+
 .tour-calendar__month {
   padding: 0 20px 20px;
   scroll-margin-top: 0;
@@ -156,6 +163,82 @@
 
 .tour-calendar__day--selected {
   background: var(--tint);
+}
+
+.tour-calendar__day:focus-within,
+.tour-calendar__day:has(.tour-calendar__birthday--open) {
+  z-index: 3;
+}
+
+.tour-calendar__birthday {
+  position: relative;
+}
+
+.tour-calendar__birthday-button {
+  width: 26px;
+  height: 24px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.tour-calendar__birthday-button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.tour-calendar__birthday-tooltip {
+  position: absolute;
+  z-index: 4;
+  top: 100%;
+  left: 50%;
+  width: max-content;
+  max-width: min(210px, 70vw);
+  padding: 8px 10px;
+  display: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 20%);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  transform: translateX(-50%);
+}
+
+.tour-calendar__birthday-tooltip span {
+  display: block;
+}
+
+.tour-calendar__birthday--left .tour-calendar__birthday-tooltip {
+  left: 0;
+  transform: none;
+}
+
+.tour-calendar__birthday--right .tour-calendar__birthday-tooltip {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.tour-calendar__birthday--open .tour-calendar__birthday-tooltip,
+.tour-calendar__birthday-button:focus-visible + .tour-calendar__birthday-tooltip {
+  display: block;
+}
+
+@media (hover: hover) {
+  .tour-calendar__day:has(.tour-calendar__birthday:hover) {
+    z-index: 3;
+  }
+
+  .tour-calendar__birthday:hover .tour-calendar__birthday-tooltip {
+    display: block;
+  }
 }
 
 .tour-calendar__day-number {

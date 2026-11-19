@@ -191,6 +191,19 @@
   min-height: 42px;
 }
 
+.community__form .community__birthday-sharing {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.community__form .community__birthday-sharing input {
+  width: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 1px 0 0;
+}
+
 .community__form textarea {
   resize: vertical;
 }

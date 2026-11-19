@@ -46,6 +46,7 @@ export function CommunityAccount({
   const [address, setAddress] = useState('');
   const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [showBirthday, setShowBirthday] = useState(false);
   const [clothingSize, setClothingSize] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [formEmail, setFormEmail] = useState('');
@@ -64,6 +65,7 @@ export function CommunityAccount({
     setAddress(member?.address ?? '');
     setFullName(member?.full_name ?? '');
     setBirthDate(isoToGerman(member?.birth_date ?? null));
+    setShowBirthday(member?.show_birthday_in_calendar ?? false);
     setClothingSize(member?.clothing_size ?? '');
     setPhoneNumber(member?.phone_number ?? '');
   }, [member]);
@@ -244,6 +246,10 @@ export function CommunityAccount({
       setFormError('Bitte gib ein gültiges Geburtsdatum im Format TT.MM.JJJJ ein.');
       return;
     }
+    if (showBirthday && !birthDateIso) {
+      setFormError('Bitte gib für die Geburtstagsfreigabe ein Geburtsdatum ein.');
+      return;
+    }
 
     setBusy(true);
     try {
@@ -254,6 +260,7 @@ export function CommunityAccount({
         p_birth_date: birthDateIso,
         p_clothing_size: clothingSize.trim() || null,
         p_phone_number: phoneNumber.trim() || null,
+        p_show_birthday_in_calendar: showBirthday,
       });
       if (updateError) throw new Error(updateError.message);
       onRefresh();
@@ -360,6 +367,17 @@ export function CommunityAccount({
                         value={birthDate}
                         onChange={(event) => setBirthDate(formatGermanDateInput(event.target.value))}
                       />
+                    </label>
+                    <label className="community__birthday-sharing">
+                      <input
+                        type="checkbox"
+                        checked={showBirthday}
+                        onChange={(event) => setShowBirthday(event.target.checked)}
+                      />
+                      <span>
+                        Geburtstag und Alter im Kalender für freigegebene Mitglieder anzeigen.
+                        Die Freigabe kann jederzeit zurückgenommen werden.
+                      </span>
                     </label>
                     <label>
                       Kleidergröße

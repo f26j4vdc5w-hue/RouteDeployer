@@ -6,6 +6,7 @@ Das Roadbook ist eine React-/Vite-Website mit getrenntem Frontend und Backend:
 - **Backend:** Supabase für PostgreSQL, Anmeldung und GPX-Dateispeicher
 - **Besucher:** können Touren, Karten und GPX-Downloads ohne Anmeldung ansehen.
 - **Community-Mitglieder:** können nach E-Mail-Bestätigung und Admin-Freigabe Touren-Zusagen verwalten und sehen, wer teilnimmt.
+- **Geburtstage:** Mitglieder können ihren Geburtstag und das erreichte Alter freiwillig im Profil für den Kalender freigeben; sichtbar sind sie nur für freigegebene Mitglieder.
 - **Kollektion-Organisatoren:** können Touren in zugewiesenen Saison-Kollektionen verwalten, ohne Zugriff auf den Admin-Bereich zu erhalten.
 - **Admin:** kann alle Touren verwalten, Kollektion-Organisatoren zuweisen, GPX-Dateien hochladen und Community-Mitgliedschaften freigeben.
 
@@ -91,6 +92,8 @@ einer leeren oder veralteten Tourenansicht.
    Die Migration [`202611140001`](supabase/migrations/202611140001_collection_organizers.sql)
    ermöglicht Admins, freigegebene Mitglieder als Organisatoren für einzelne
    Saison-Kollektionen einzusetzen.
+   Die Migration [`202611190001`](supabase/migrations/202611190001_calendar_birthdays.sql)
+   ergänzt die freiwillige Geburtstagsfreigabe und den geschützten Kalenderabruf.
 7. Aktiviere danach in Supabase unter **Authentication → Settings** die
    Registrierung und die E-Mail-Bestätigung. Ergänze unter **URL Configuration**
    die aktuelle Website-URL, ihre Admin-URL und ihre Getränke-URL (`getraenke/`)
