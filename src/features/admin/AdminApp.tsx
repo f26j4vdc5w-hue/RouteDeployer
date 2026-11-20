@@ -3,7 +3,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Check, LogOut, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { RouteStats } from '../../domain/route';
-import type { AdditionalRoute, Tour, TourRoute } from '../../domain/tour';
+import { getEditableAdditionalRoutes, type AdditionalRoute, type Tour, type TourRoute } from '../../domain/tour';
 import { deleteStoredRoutes, deleteTour, fetchRoadbook, type StoredAdditionalRoute } from '../../data/backend';
 import { requireSupabase, supabase } from '../../lib/supabase';
 import { AdminPushToggle } from './AdminPushToggle';
@@ -14,9 +14,11 @@ import './admin.css';
 function errorText(error: unknown) {
   if (
     error && typeof error === 'object' &&
-    'message' in error && String(error.message).includes('tours_additional_routes_check')
+    'message' in error &&
+    (String(error.message).includes('tours_additional_routes_check') ||
+      String(error.message).includes('additional_routes'))
   ) {
-    return 'Zusätzliche Camp-Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611130001_camp_additional_routes.sql anwenden.';
+    return 'Zusätzliche Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611210001_additional_routes_for_all_collections.sql anwenden.';
   }
   return error instanceof Error ? error.message : 'Ein unbekannter Fehler ist aufgetreten.';
 }
@@ -1523,9 +1525,9 @@ function AdminDashboard({ session }: { session: Session }) {
                   <h3>{tour.title}</h3>
                   <p>
                     {tour.gpx ? 'GPX vorhanden' : 'Ohne GPX'}
-                    {tour.additionalRoutes?.length
-                      ? ` · ${tour.additionalRoutes.length} weitere Routen`
-                      : tour.alternative ? ' · Alternative' : ''}
+                    {(tour.additionalRoutes?.length ?? 0) + Number(Boolean(tour.alternative)) > 0
+                      ? ` · ${(tour.additionalRoutes?.length ?? 0) + Number(Boolean(tour.alternative))} weitere Routen`
+                      : ''}
                   </p>
                 </div>
                 <div className="admin-actions">
@@ -1567,16 +1569,9 @@ export function TourEditor({
   onError: (cause: unknown) => void;
 }) {
   const [id, setId] = useState(tour?.id ?? '');
-  const isCamp = collection.slug === 'camp';
   const [primary, setPrimary] = useState(() => routeDraft(tour ?? undefined));
-  const [hasAlternative, setHasAlternative] = useState(Boolean(tour?.alternative));
-  const [alternative, setAlternative] = useState(() => routeDraft(tour?.alternative));
   const [additionalRouteDrafts, setAdditionalRouteDrafts] = useState<AdditionalRouteDraft[]>(
-    () => tour?.additionalRoutes?.length
-      ? tour.additionalRoutes.map(additionalRouteDraft)
-      : isCamp && tour?.alternative
-      ? [additionalRouteDraft(tour.alternative)]
-      : [],
+    () => getEditableAdditionalRoutes(tour ?? {}).map(additionalRouteDraft),
   );
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -1617,7 +1612,7 @@ export function TourEditor({
         return;
       }
     }
-    if (isCamp && additionalRouteDrafts.length > 0 && !primary.file && (!primary.gpxKey || !primary.routeStats)) {
+    if (additionalRouteDrafts.length > 0 && !primary.file && (!primary.gpxKey || !primary.routeStats)) {
       setLocalError('Bitte für die Hauptroute eine GPX-Datei auswählen.');
       return;
     }
@@ -1627,14 +1622,9 @@ export function TourEditor({
     let persisted = false;
     try {
       const primaryGpx = await prepareRoute(primary, 'A', uploaded);
-      const alternativeGpx = !isCamp && hasAlternative
-        ? await prepareRoute(alternative, 'B', uploaded)
-        : null;
-      const preparedAdditionalRoutes = isCamp
-        ? await Promise.all(additionalRouteDrafts.map((route, index) =>
-            prepareRoute(route, `R${index + 2}`, uploaded),
-          ))
-        : [];
+      const preparedAdditionalRoutes = await Promise.all(additionalRouteDrafts.map((route, index) =>
+        prepareRoute(route, `R${index + 2}`, uploaded),
+      ));
       const storedAdditionalRoutes = preparedAdditionalRoutes.map((route, index): StoredAdditionalRoute => {
         if (!route.gpxKey || !route.routeStats) {
           throw new Error(`Route ${index + 2} enthält keine gültigen GPX-Daten.`);
@@ -1662,21 +1652,8 @@ export function TourEditor({
         duration_min: primary.durationMin ? Number(primary.durationMin) : null,
         gpx_key: primaryGpx.gpxKey,
         route_stats: primaryGpx.routeStats,
-        alternative: alternativeGpx
-          ? {
-              title: alternative.title.trim(),
-              teaser: alternative.teaser.trim(),
-              plannedBy: alternative.plannedBy.trim() || null,
-              meetingTime: alternative.meetingTime,
-              meetingPlace: alternative.meetingPlace.trim(),
-              stations: alternative.stations.split(',').map((station) => station.trim()).filter(Boolean),
-              highlight: alternative.highlight,
-              durationMin: alternative.durationMin ? Number(alternative.durationMin) : null,
-              gpxKey: alternativeGpx.gpxKey,
-              routeStats: alternativeGpx.routeStats,
-            }
-          : null,
-        ...(isCamp ? { additional_routes: storedAdditionalRoutes } : {}),
+        alternative: null,
+        additional_routes: storedAdditionalRoutes,
       };
       let saveError;
       if (tour) {
@@ -1704,13 +1681,9 @@ export function TourEditor({
       ].filter(
         (key): key is string => key != null,
       );
-      const retainedAdditionalKeys = isCamp
-        ? storedAdditionalRoutes.map((route) => route.gpxKey)
-        : (tour?.additionalRoutes ?? []).map((route) => route.gpxKey);
       const retainedKeys = new Set([
         values.gpx_key,
-        alternativeGpx?.gpxKey,
-        ...retainedAdditionalKeys,
+        ...storedAdditionalRoutes.map((route) => route.gpxKey),
       ].filter((key): key is string => Boolean(key)));
       const removedKeys = previousKeys.filter((key) => !retainedKeys.has(key));
       if (removedKeys.length > 0) {
@@ -1742,50 +1715,28 @@ export function TourEditor({
         <input type="date" value={id} onChange={(event) => setId(event.target.value)} required disabled={Boolean(tour)} />
       </label>
       <RouteFields label="Hauptroute" value={primary} onChange={(patch) => setPrimary({ ...primary, ...patch })} />
-      {isCamp ? (
-        <>
-          {additionalRouteDrafts.map((route, index) => (
-            <AdditionalRouteFields
-              key={route.key}
-              label={`Route ${index + 2}`}
-              value={route}
-              onChange={(patch) =>
-                setAdditionalRouteDrafts((current) =>
-                  current.map((entry) => entry.key === route.key ? { ...entry, ...patch } : entry),
-                )
-              }
-              onRemove={() =>
-                setAdditionalRouteDrafts((current) => current.filter((entry) => entry.key !== route.key))
-              }
-            />
-          ))}
-          <button
-            type="button"
-            className="admin-button"
-            onClick={() => setAdditionalRouteDrafts((current) => [...current, additionalRouteDraft()])}
-          >
-            <Plus size={16} /> Weitere Route hinzufügen
-          </button>
-        </>
-      ) : (
-        <>
-          <label className="admin-checkbox">
-            <input
-              type="checkbox"
-              checked={hasAlternative}
-              onChange={(event) => setHasAlternative(event.target.checked)}
-            />
-            Alternative Route anbieten
-          </label>
-          {hasAlternative && (
-            <RouteFields
-              label="Alternative Route"
-              value={alternative}
-              onChange={(patch) => setAlternative({ ...alternative, ...patch })}
-            />
-          )}
-        </>
-      )}
+      {additionalRouteDrafts.map((route, index) => (
+        <AdditionalRouteFields
+          key={route.key}
+          label={`Route ${index + 2}`}
+          value={route}
+          onChange={(patch) =>
+            setAdditionalRouteDrafts((current) =>
+              current.map((entry) => entry.key === route.key ? { ...entry, ...patch } : entry),
+            )
+          }
+          onRemove={() =>
+            setAdditionalRouteDrafts((current) => current.filter((entry) => entry.key !== route.key))
+          }
+        />
+      ))}
+      <button
+        type="button"
+        className="admin-button"
+        onClick={() => setAdditionalRouteDrafts((current) => [...current, additionalRouteDraft()])}
+      >
+        <Plus size={16} /> Weitere Route hinzufügen
+      </button>
       {localError && <p className="admin-error" role="alert">{localError}</p>}
       <div className="admin-actions">
         <button className="admin-button admin-button--primary" disabled={busy}>

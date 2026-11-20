@@ -1,7 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import type { Tour } from '../../domain/tour';
+import { getEditableAdditionalRoutes, type Tour } from '../../domain/tour';
 import { deleteStoredRoutes, deleteTour, type StoredAdditionalRoute } from '../../data/backend';
 import type { RouteStats } from '../../domain/route';
 import { requireSupabase } from '../../lib/supabase';
@@ -59,7 +59,7 @@ function errorText(cause: unknown) {
     (cause.code === '42703' || cause.code === 'PGRST204') &&
     'message' in cause && String(cause.message).includes('additional_routes')
   ) {
-    return 'Zusätzliche Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611110001_event_additional_routes.sql anwenden.';
+    return 'Zusätzliche Routen sind noch nicht verfügbar. Bitte zuerst die Supabase-Migration 202611210001_additional_routes_for_all_collections.sql anwenden.';
   }
   if (
     cause &&
@@ -127,7 +127,7 @@ export function EventEditor({
   );
   const [routes, setRoutes] = useState<RouteDraft[]>(() => [
     routeDraft(tour),
-    ...(tour?.additionalRoutes ?? []).map(routeDraft),
+    ...getEditableAdditionalRoutes(tour ?? {}).map(routeDraft),
   ]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -237,11 +237,12 @@ export function EventEditor({
         duration_min: primary.durationMin,
         gpx_key: primary.gpxKey,
         route_stats: primary.routeStats,
+        alternative: null,
+        additional_routes: additionalRoutes,
         ...(collectionSlug === 'events'
           ? {
               event_url: trimmedEventUrl || null,
               end_date: endIso,
-              additional_routes: additionalRoutes,
               ...(!tour || chatEdited ? { chat_url: trimmedChatUrl || null } : {}),
             }
           : {}),
@@ -278,7 +279,11 @@ export function EventEditor({
       }
       persisted = true;
 
-      const oldKeys = [tour?.gpxKey, ...(tour?.additionalRoutes ?? []).map((route) => route.gpxKey)]
+      const oldKeys = [
+        tour?.gpxKey,
+        tour?.alternative?.gpxKey,
+        ...(tour?.additionalRoutes ?? []).map((route) => route.gpxKey),
+      ]
         .filter((key): key is string => Boolean(key));
       const retainedKeys = new Set(preparedRoutes.map((route) => route.gpxKey));
       const obsoleteKeys = oldKeys.filter((key) => !retainedKeys.has(key));
@@ -488,13 +493,11 @@ export function EventEditor({
                 )}
               </fieldset>
             ))}
-            {collectionSlug === 'events' && (
-              <button type="button" className="events__route-add" onClick={() =>
-                setRoutes((current) => [...current, routeDraft()])
-              }>
-                <Plus size={16} aria-hidden="true" /> Weitere Route hinzufügen
-              </button>
-            )}
+            <button type="button" className="events__route-add" onClick={() =>
+              setRoutes((current) => [...current, routeDraft()])
+            }>
+              <Plus size={16} aria-hidden="true" /> Weitere Route hinzufügen
+            </button>
             {error && <p className="community__message community__message--error" role="alert">{error}</p>}
             <button className="community__submit" type="submit" disabled={busy}>
               {busy ? 'Wird gespeichert …' : tour ? 'Speichern' : 'Event anlegen'}

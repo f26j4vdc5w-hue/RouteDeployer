@@ -48,3 +48,19 @@ export interface Tour extends TourRoute {
   /** Optionale zweite Route für denselben Termin. */
   alternative?: TourRoute;
 }
+
+export function getEditableAdditionalRoutes(
+  tour: Pick<Tour, 'additionalRoutes' | 'alternative'>,
+): AdditionalRoute[] {
+  return [
+    ...(tour.additionalRoutes ?? []),
+    ...(tour.alternative
+      ? [{
+          gpxKey: tour.alternative.gpxKey,
+          routeStats: tour.alternative.routeStats,
+          durationMin: tour.alternative.durationMin,
+          stations: tour.alternative.stations,
+        }]
+      : []),
+  ];
+}
