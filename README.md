@@ -89,6 +89,8 @@ einer leeren oder veralteten Tourenansicht.
    Die Migration [`202611130001`](supabase/migrations/202611130001_camp_additional_routes.sql)
    erlaubt zusätzliche GPX-Routen für Camps und überführt bestehende Camp-
    Alternativen in die neue Routenliste.
+   Die Migration [`202611210001`](supabase/migrations/202611210001_additional_routes_for_all_collections.sql)
+   erlaubt zusätzliche GPX-Routen in allen Kollektionen.
    Die Migration [`202611140001`](supabase/migrations/202611140001_collection_organizers.sql)
    ermöglicht Admins, freigegebene Mitglieder als Organisatoren für einzelne
    Saison-Kollektionen einzusetzen.

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import type { Tour } from '../../domain/tour';
+import { getEditableAdditionalRoutes, type Tour } from '../../domain/tour';
 import { tourRouteAt, tourRouteCount, routeDragOffset, swipedRouteIndex } from './tourRoutes';
 
 const routeStats = {
@@ -68,6 +68,41 @@ test('supports additional routes in the Camp collection', () => {
   assert.equal(tourRouteAt(camp, 1).collectionSlug, 'camp');
   assert.equal(tourRouteAt(camp, 1).gpxKey, 'second.gpx');
   assert.deepEqual(tourRouteAt(camp, 1).stations, ['B']);
+});
+
+test('converts legacy alternatives to additional routes without dropping existing routes', () => {
+  const existing = {
+    gpxKey: 'existing.gpx',
+    routeStats,
+    stations: ['A'],
+    durationMin: 90,
+  };
+  const legacyAlternative = {
+    title: 'Alternative',
+    teaser: 'Gemeinsame Beschreibung',
+    meetingTime: '10:00',
+    meetingPlace: 'Start',
+    stations: ['B'],
+    gpxKey: 'alternative.gpx',
+    routeStats,
+    durationMin: 120,
+  };
+
+  assert.deepEqual(
+    getEditableAdditionalRoutes({
+      additionalRoutes: [existing],
+      alternative: legacyAlternative,
+    }),
+    [
+      existing,
+      {
+        gpxKey: 'alternative.gpx',
+        routeStats,
+        stations: ['B'],
+        durationMin: 120,
+      },
+    ],
+  );
 });
 
 test('only horizontal swipes within route bounds change selection', () => {
