@@ -6,12 +6,10 @@ import type { Tour } from '../domain/tour';
 import { deleteTour, fetchRoadbook } from '../data/backend';
 import { LoadingScreen } from './LoadingScreen';
 import { supabase } from '../lib/supabase';
-import { TourCalendar } from '../features/calendar/TourCalendar';
 import { CollectionSwitcher } from '../features/collection-switcher/CollectionSwitcher';
 import { TourDetails } from '../features/tour-details/TourDetails';
 import { TourTimeline } from '../features/tour-timeline/TourTimeline';
 import { CommunityAccount } from '../features/community/CommunityAccount';
-import { EventEditor } from '../features/events/EventEditor';
 import { tourRouteAt, tourRouteCount } from '../features/events/tourRoutes';
 import {
   COMMUNITY_AUTH_RETURN_TO_KEY,
@@ -24,6 +22,12 @@ import { estimateDurationMin } from '../shared/format/number';
 const BASE = import.meta.env.BASE_URL;
 const CollectionTourEditor = lazy(() =>
   import('../features/admin/AdminApp').then((module) => ({ default: module.TourEditor })),
+);
+const TourCalendar = lazy(() =>
+  import('../features/calendar/TourCalendar').then((module) => ({ default: module.TourCalendar })),
+);
+const EventEditor = lazy(() =>
+  import('../features/events/EventEditor').then((module) => ({ default: module.EventEditor })),
 );
 const CHEMNITZ_WEATHER_LOCATION = {
   place: 'Chemnitz',
@@ -525,18 +529,20 @@ function Roadbook({
         </div>
       </header>
       {loggedIn && calendarOpen && (
-        <TourCalendar
-          seasons={availableSeasons}
-          selectedId={selected?.id ?? today}
-          selectedSeasonSlug={season.slug}
-          selectedCollectionSlug={collection.slug}
-          memberId={memberId}
-          onClose={() => setCalendarOpen(false)}
-          onSelect={(targetSeason, targetCollection, id) => {
-            setCalendarOpen(false);
-            go(targetSeason, targetCollection, id);
-          }}
-        />
+        <Suspense fallback={<p role="status">Kalender wird geladen …</p>}>
+          <TourCalendar
+            seasons={availableSeasons}
+            selectedId={selected?.id ?? today}
+            selectedSeasonSlug={season.slug}
+            selectedCollectionSlug={collection.slug}
+            memberId={memberId}
+            onClose={() => setCalendarOpen(false)}
+            onSelect={(targetSeason, targetCollection, id) => {
+              setCalendarOpen(false);
+              go(targetSeason, targetCollection, id);
+            }}
+          />
+        </Suspense>
       )}
       {selected ? (
         <main className="tour">
@@ -639,24 +645,26 @@ function Roadbook({
         </main>
       )}
       {editor && editorMemberId && (
-        <EventEditor
-          seasonSlug={season.slug}
-          collectionSlug={collection.slug}
-          memberId={editorMemberId}
-          isCollectionOrganizer={isCollectionOrganizer}
-          tour={editor.mode === 'edit' ? editor.tour : undefined}
-          onClose={() => setEditor(null)}
-          onSaved={(id) => {
-            setEditor(null);
-            go(season, collection, id);
-            onReload();
-          }}
-          onDeleted={() => {
-            setEditor(null);
-            go(season, collection, null);
-            onReload();
-          }}
-        />
+        <Suspense fallback={<p role="status">Event-Editor wird geladen …</p>}>
+          <EventEditor
+            seasonSlug={season.slug}
+            collectionSlug={collection.slug}
+            memberId={editorMemberId}
+            isCollectionOrganizer={isCollectionOrganizer}
+            tour={editor.mode === 'edit' ? editor.tour : undefined}
+            onClose={() => setEditor(null)}
+            onSaved={(id) => {
+              setEditor(null);
+              go(season, collection, id);
+              onReload();
+            }}
+            onDeleted={() => {
+              setEditor(null);
+              go(season, collection, null);
+              onReload();
+            }}
+          />
+        </Suspense>
       )}
       {collectionTourEditor !== undefined && createPortal(
         <div className="community__overlay" role="dialog" aria-modal="true" aria-labelledby="collection-tour-editor-title">
