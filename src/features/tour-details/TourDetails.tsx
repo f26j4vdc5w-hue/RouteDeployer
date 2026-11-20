@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Bike,
   CalendarCheck,
@@ -30,7 +30,6 @@ import { GpxDownload } from '../gpx-download/GpxDownload';
 import { RouteMap, RouteMapLegend } from '../route-map/RouteMap';
 import { WeatherForecast } from '../weather-forecast/WeatherForecast';
 import { useTourAttendance } from '../community/useTourAttendance';
-import { EventParticipantData } from '../events/EventParticipantData';
 import { FinishFlag } from '../events/FinishFlag';
 import { useEventChatUrl } from '../events/useEventChatUrl';
 import { tourRouteAt, routeDragOffset, swipedRouteIndex } from '../events/tourRoutes';
@@ -39,6 +38,10 @@ import { missingPersonalFields, personalFieldLabel } from '../../shared/personal
 import { createAscentProfile, getAscentUntilDistance, type AscentProfile } from '../../shared/ascentProfile';
 import { parseGpxPoints } from '../../shared/gpx';
 import '../events/events.css';
+
+const EventParticipantData = lazy(() =>
+  import('../events/EventParticipantData').then((module) => ({ default: module.EventParticipantData })),
+);
 
 interface Props {
   tour: Tour;
@@ -540,13 +543,15 @@ export function TourDetails({
         </div>
 
       {isOrganizer && participantsOpen && (
-        <EventParticipantData
-          seasonSlug={seasonSlug}
-          collectionSlug={collectionSlug}
-          tourId={tour.id}
-          requiredFields={requiredFields}
-          onClose={closeParticipants}
-        />
+        <Suspense fallback={<p role="status">Teilnehmerdaten werden geladen …</p>}>
+          <EventParticipantData
+            seasonSlug={seasonSlug}
+            collectionSlug={collectionSlug}
+            tourId={tour.id}
+            requiredFields={requiredFields}
+            onClose={closeParticipants}
+          />
+        </Suspense>
       )}
 
       {isEvent && consentOpen && !attendance.isAttending && (
