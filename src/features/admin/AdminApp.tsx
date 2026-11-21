@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { Check, LogOut, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { Check, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import type { Collection, Season } from '../../domain/catalog';
 import type { RouteStats } from '../../domain/route';
 import { getEditableAdditionalRoutes, type AdditionalRoute, type Tour, type TourRoute } from '../../domain/tour';
 import { deleteStoredRoutes, deleteTour, fetchRoadbook, type StoredAdditionalRoute } from '../../data/backend';
 import { requireSupabase, supabase } from '../../lib/supabase';
 import { AdminPushToggle } from './AdminPushToggle';
+import { CommunityAccount } from '../community/CommunityAccount';
 import { analyzeGpx } from './analyzeGpx';
 import { generateTourDates, WEEKDAYS, type TourCadence } from './generateTourDates';
 import './admin.css';
@@ -302,17 +303,23 @@ function PasswordRecoveryForm() {
 }
 
 function AccessDenied({ email }: { email: string }) {
-  async function signOut() {
-    const { error } = await requireSupabase().auth.signOut();
-    if (error) window.alert(`Abmelden fehlgeschlagen: ${error.message}`);
-  }
   return (
     <main className="admin-shell">
       <section className="admin-panel">
-        <h1>Kein Admin-Zugriff</h1>
+        <header className="admin-header">
+          <h1>Kein Admin-Zugriff</h1>
+          <CommunityAccount
+            email={email}
+            member={null}
+            isAdmin={false}
+            loading={false}
+            error={null}
+            onRefresh={() => {}}
+            showDrinks
+          />
+        </header>
         <p>{email} ist angemeldet, hat aber keine Admin-Berechtigung.</p>
         <p>Setze in Supabase unter User → App Metadata die Rolle auf <code>admin</code>.</p>
-        <button className="admin-button" onClick={signOut}>Abmelden</button>
       </section>
     </main>
   );
@@ -925,12 +932,6 @@ function AdminDashboard({ session }: { session: Session }) {
     }
   }
 
-  async function signOut() {
-    setError(null);
-    const { error: signOutError } = await client.auth.signOut();
-    if (signOutError) setError(signOutError.message);
-  }
-
   async function reviewMember(userId: string, status: 'approved' | 'rejected') {
     setBusy(true);
     setError(null);
@@ -983,10 +984,17 @@ function AdminDashboard({ session }: { session: Session }) {
             <h1>Touren verwalten</h1>
           </div>
           <div className="admin-account">
-            <a className="admin-link" href={import.meta.env.BASE_URL}>Website ansehen</a>
             <span>{session.user.email}</span>
             <AdminPushToggle userId={session.user.id} />
-            <button className="admin-button" onClick={signOut}><LogOut size={16} /> Abmelden</button>
+            <CommunityAccount
+              email={session.user.email ?? null}
+              member={null}
+              isAdmin
+              loading={false}
+              error={null}
+              onRefresh={() => {}}
+              showDrinks
+            />
           </div>
         </header>
 

@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { KeyRound, LogOut, UserRound, X } from 'lucide-react';
+import { Beer, Check, KeyRound, LogOut, Map, Menu, ShieldCheck, UserRound, X } from 'lucide-react';
 import { requireSupabase } from '../../lib/supabase';
 import { formatGermanDateInput, isoToGerman, parseGermanDate } from '../../shared/format/germanInput';
 import {
@@ -19,6 +19,8 @@ interface Props {
   error: string | null;
   onRefresh: () => void;
   accessRequired?: boolean;
+  showDrinks?: boolean;
+  standalone?: boolean;
 }
 
 type Mode = 'signin' | 'signup';
@@ -37,9 +39,22 @@ export function CommunityAccount({
   error,
   onRefresh,
   accessRequired = false,
+  showDrinks = false,
+  standalone = false,
 }: Props) {
-  const [open, setOpen] = useState(accessRequired);
-  const pendingCount = usePendingMemberCount(isAdmin, open);
+  const [open, setOpen] = useState(accessRequired || standalone);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const pendingCount = usePendingMemberCount(isAdmin, open || menuOpen);
+  const currentPath = window.location.pathname.replace(/\/+$/, '');
+  const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
+  const drinksPath = `${basePath}/getraenke`.replace(/\/+$/, '');
+  const adminPath = `${basePath}/admin`.replace(/\/+$/, '');
+  const profilePath = `${basePath}/profil`.replace(/\/+$/, '');
+  const isProfile = currentPath === profilePath;
+  const isRoadbook = currentPath !== drinksPath && currentPath !== adminPath && currentPath !== profilePath;
+  const isDrinks = currentPath === drinksPath;
+  const isAdminPage = currentPath === adminPath;
   const [mode, setMode] = useState<Mode>('signin');
   const [displayName, setDisplayName] = useState('');
   const [profileName, setProfileName] = useState('');
@@ -83,6 +98,24 @@ export function CommunityAccount({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onPointerDown(event: PointerEvent) {
+      if (event.target instanceof Element && !menuRef.current?.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMenuOpen(false);
+    }
+    document.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
 
   function changeMode(nextMode: Mode) {
     setMode(nextMode);
@@ -274,27 +307,304 @@ export function CommunityAccount({
 
   return (
     <>
-      <button
-        className="nav__account-button"
-        type="button"
-        aria-label={
-          pendingCount > 0
-            ? `Konto anzeigen, ${pendingCount} offene Freigaben`
-            : email
-              ? 'Konto und Mitgliedsstatus anzeigen'
-              : 'Anmelden oder registrieren'
-        }
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => setOpen(true)}
-      >
-        <UserRound size={19} aria-hidden="true" />
-        {accessRequired && <span>Anmelden oder registrieren</span>}
-        {pendingCount > 0 && (
-          <span className="nav__account-badge" aria-hidden="true">{pendingCount > 99 ? '99+' : pendingCount}</span>
-        )}
-      </button>
+      {accessRequired ? (
+        <button
+          className="nav__account-button"
+          type="button"
+          aria-label="Anmelden oder registrieren"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          onClick={() => setOpen(true)}
+        >
+          <UserRound size={19} aria-hidden="true" />
+          <span>Anmelden oder registrieren</span>
+        </button>
+      ) : !standalone ? (
+        <div className="nav__menu" ref={menuRef}>
+          <button
+            className="nav__menu-button"
+            type="button"
+            aria-label="Navigationsmenü öffnen"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((current) => !current)}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                setMenuOpen(true);
+                window.requestAnimationFrame(() => {
+                  menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+                });
+              }
+            }}
+          >
+            <Menu size={21} aria-hidden="true" />
+            {pendingCount > 0 && (
+              <span className="nav__account-badge" aria-hidden="true">{pendingCount > 99 ? '99+' : pendingCount}</span>
+            )}
+          </button>
+          {menuOpen && (
+            <div
+              className="nav__menu-panel"
+              role="menu"
+              aria-label="Navigation"
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                event.preventDefault();
+                const items = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+                const index = items.indexOf(document.activeElement as HTMLElement);
+                const nextIndex = event.key === 'ArrowDown'
+                  ? (index + 1) % items.length
+                  : (index - 1 + items.length) % items.length;
+                items[nextIndex]?.focus();
+              }}
+            >
+              <a
+                className={`nav__menu-link${isRoadbook ? ' nav__menu-link--active' : ''}`}
+                href={import.meta.env.BASE_URL}
+                role="menuitem"
+                aria-current={isRoadbook ? 'page' : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Map size={17} aria-hidden="true" />
+                Roadbook
+                {isRoadbook && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+              </a>
+              {showDrinks && (
+                <a
+                  className={`nav__menu-link${isDrinks ? ' nav__menu-link--active' : ''}`}
+                  href={`${import.meta.env.BASE_URL}getraenke/`}
+                  role="menuitem"
+                  aria-current={isDrinks ? 'page' : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Beer size={17} aria-hidden="true" />
+                  Getränkekasse
+                  {isDrinks && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+                </a>
+              )}
+              <a
+                className={`nav__menu-link${isProfile ? ' nav__menu-link--active' : ''}`}
+                href={`${import.meta.env.BASE_URL}profil/`}
+                role="menuitem"
+                aria-current={isProfile ? 'page' : undefined}
+                onClick={() => setMenuOpen(false)}
+              >
+                <UserRound size={17} aria-hidden="true" />
+                {email ? 'Profil anzeigen' : 'Anmelden oder registrieren'}
+                {isProfile && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+              </a>
+              {isAdmin && (
+                <a
+                  className={`nav__menu-link${isAdminPage ? ' nav__menu-link--active' : ''}`}
+                  href={`${import.meta.env.BASE_URL}admin/`}
+                  role="menuitem"
+                  aria-current={isAdminPage ? 'page' : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <ShieldCheck size={17} aria-hidden="true" />
+                  Adminbereich
+                  {isAdminPage && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+                </a>
+              )}
+              {email && (
+                <button
+                  className="nav__menu-link nav__menu-link--danger"
+                  type="button"
+                  role="menuitem"
+                  disabled={busy}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    void signOut();
+                  }}
+                >
+                  <LogOut size={17} aria-hidden="true" />
+                  {busy ? 'Wird abgemeldet …' : 'Abmelden'}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
       {open && createPortal(
+        standalone ? (
+          <main className="admin-shell community-page">
+            <div className="admin-dashboard">
+              <header className="admin-header community__page-header">
+                <div>
+                  <p className="admin-kicker">KLLKTV Community</p>
+                  <h1 id="community-title">{email ? 'Community-Profil' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}</h1>
+                </div>
+                <div className="nav__menu" ref={menuRef}>
+                  <button
+                    className="nav__menu-button"
+                    type="button"
+                    aria-label="Navigationsmenü öffnen"
+                    aria-haspopup="menu"
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen((current) => !current)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        setMenuOpen(true);
+                        window.requestAnimationFrame(() => {
+                          menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+                        });
+                      }
+                    }}
+                  >
+                    <Menu size={21} aria-hidden="true" />
+                  </button>
+                  {menuOpen && (
+                    <div className="nav__menu-panel" role="menu" aria-label="Navigation">
+                      <a className={`nav__menu-link${isRoadbook ? ' nav__menu-link--active' : ''}`} href={import.meta.env.BASE_URL} role="menuitem" aria-current={isRoadbook ? 'page' : undefined}>
+                        <Map size={17} aria-hidden="true" /> Roadbook
+                        {isRoadbook && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+                      </a>
+                      {showDrinks && (
+                        <a className={`nav__menu-link${isDrinks ? ' nav__menu-link--active' : ''}`} href={`${import.meta.env.BASE_URL}getraenke/`} role="menuitem" aria-current={isDrinks ? 'page' : undefined}>
+                          <Beer size={17} aria-hidden="true" /> Getränkekasse
+                          {isDrinks && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+                        </a>
+                      )}
+                      <a className="nav__menu-link nav__menu-link--active" href={`${import.meta.env.BASE_URL}profil/`} role="menuitem" aria-current="page">
+                        <UserRound size={17} aria-hidden="true" /> Profil anzeigen
+                        <Check className="nav__menu-link-check" size={16} aria-hidden="true" />
+                      </a>
+                      {isAdmin && (
+                        <a className={`nav__menu-link${isAdminPage ? ' nav__menu-link--active' : ''}`} href={`${import.meta.env.BASE_URL}admin/`} role="menuitem" aria-current={isAdminPage ? 'page' : undefined}>
+                          <ShieldCheck size={17} aria-hidden="true" /> Adminbereich
+                        </a>
+                      )}
+                      {email && (
+                        <button className="nav__menu-link nav__menu-link--danger" type="button" role="menuitem" disabled={busy} onClick={() => void signOut()}>
+                          <LogOut size={17} aria-hidden="true" /> {busy ? 'Wird abgemeldet …' : 'Abmelden'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </header>
+              <section className="community__page-panel" aria-labelledby="community-title">
+              {loading ? (
+                <p className="community__loading" role="status">Mitgliedsstatus wird geladen …</p>
+              ) : email ? (
+                <div className="community__content">
+                  {error && <p className="community__message community__message--error" role="alert">{error}</p>}
+                  <section className="community-profile-card" aria-label="Konto">
+                    <p className="community__name">{member?.display_name ?? email}</p>
+                    <p className="community__email">{email}</p>
+                  </section>
+                  <section className="community-profile-card" aria-labelledby="profile-details-title">
+                    <h2 className="community-profile-card__title" id="profile-details-title">Profilangaben</h2>
+                    <form className="community__form" onSubmit={saveProfile}>
+                      <label>
+                        Anzeigename
+                        <input
+                          autoComplete="nickname"
+                          maxLength={60}
+                          value={profileName}
+                          onChange={(event) => setProfileName(event.target.value)}
+                          required
+                        />
+                      </label>
+                    <fieldset className="community__section">
+                      <legend>Persönliche Angaben (optional)</legend>
+                      <p className="community__hint">
+                        Bei Events erhält der Organisator nur die dort angeforderten Angaben,
+                        wenn du deiner Teilnahme und der Weitergabe zustimmst.
+                      </p>
+                      <label>
+                        Vollständiger Name
+                        <input autoComplete="name" maxLength={120} value={fullName} onChange={(event) => setFullName(event.target.value)} />
+                      </label>
+                      <label>
+                        Adresse
+                        <textarea autoComplete="street-address" maxLength={250} rows={2} value={address} onChange={(event) => setAddress(event.target.value)} />
+                      </label>
+                      <label>
+                        Geburtsdatum
+                        <input
+                          inputMode="numeric"
+                          autoComplete="bday"
+                          placeholder="TT.MM.JJJJ"
+                          maxLength={10}
+                          value={birthDate}
+                          onChange={(event) => setBirthDate(formatGermanDateInput(event.target.value))}
+                        />
+                      </label>
+                      <label className="community__birthday-sharing">
+                        <input type="checkbox" checked={showBirthday} onChange={(event) => setShowBirthday(event.target.checked)} />
+                        <span>Geburtstag und Alter im Kalender für freigegebene Mitglieder anzeigen. Die Freigabe kann jederzeit zurückgenommen werden.</span>
+                      </label>
+                      <label>
+                        Kleidergröße
+                        <input maxLength={40} placeholder="z. B. M oder 38" value={clothingSize} onChange={(event) => setClothingSize(event.target.value)} />
+                      </label>
+                      <label>
+                        Telefonnummer
+                        <input type="tel" autoComplete="tel" maxLength={40} value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} />
+                        <span className="community__hint">Für Eventzusagen mindestens fünf Ziffern; +, Leerzeichen, Klammern, Punkte, / und - sind erlaubt.</span>
+                      </label>
+                    </fieldset>
+                    {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
+                    {notice && <p className="community__message" role="status">{notice}</p>}
+                    <button className="community__submit" type="submit" disabled={busy || passkeyBusy || !member}>
+                      {busy ? 'Wird gespeichert …' : 'Profil speichern'}
+                    </button>
+                  </form>
+                  </section>
+                  <section className="community-profile-card" aria-labelledby="passkey-title">
+                    <h2 className="community__section-title" id="passkey-title">Passkey</h2>
+                    <p className="community__hint">Richte einen Passkey ein, um dich künftig ohne Passwort anzumelden.</p>
+                    {!passkeySupported && <p className="community__hint">Passkeys benötigen einen unterstützten Browser und eine sichere Verbindung.</p>}
+                    {passkeyError && <p className="community__message community__message--error" role="alert">{passkeyError}</p>}
+                    {passkeyNotice && <p className="community__message" role="status">{passkeyNotice}</p>}
+                    <button className="community__submit" type="button" onClick={registerPasskey} disabled={busy || passkeyBusy || !passkeySupported}>
+                      <KeyRound size={16} aria-hidden="true" /> {passkeyBusy ? 'Wird eingerichtet …' : 'Passkey einrichten'}
+                    </button>
+                  </section>
+                  <section className="community-profile-card" aria-label="Mitgliedschaft">
+                    {!error && member?.status === 'approved' && member.email_confirmed_at ? (
+                      <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
+                    ) : !error && member?.status === 'rejected' ? (
+                      <p className="community__message community__message--error" role="status">Deine Mitgliedschaft wurde nicht freigegeben. Bitte wende dich an einen Admin.</p>
+                    ) : !error && member?.email_confirmed_at ? (
+                      <p className="community__message" role="status">Deine E-Mail ist bestätigt. Ein Admin muss deine Mitgliedschaft noch freigeben.</p>
+                    ) : !error && member ? (
+                      <p className="community__message" role="status">Bitte bestätige den Link in deiner E-Mail. Danach kann ein Admin deine Mitgliedschaft freigeben.</p>
+                    ) : null}
+                    {member?.status === 'pending' && <button className="community__refresh" type="button" onClick={onRefresh}>Mitgliedsstatus aktualisieren</button>}
+                  </section>
+                </div>
+              ) : (
+                <div className="community__content">
+                  <div className="community__switch" role="group" aria-label="Kontoaktion">
+                    <button type="button" className={mode === 'signin' ? 'is-active' : ''} onClick={() => changeMode('signin')} disabled={passkeyBusy}>Anmelden</button>
+                    <button type="button" className={mode === 'signup' ? 'is-active' : ''} onClick={() => changeMode('signup')} disabled={passkeyBusy}>Registrieren</button>
+                  </div>
+                  <button type="button" className="community__google" onClick={signInWithGoogle} disabled={busy || passkeyBusy}>Mit Google {mode === 'signup' ? 'registrieren' : 'anmelden'}</button>
+                  {mode === 'signin' && (
+                    <button className="community__passkey" type="button" onClick={signInWithPasskey} disabled={busy || passkeyBusy || !passkeySupported}>
+                      <KeyRound size={18} aria-hidden="true" /> {passkeyBusy ? 'Anmeldung läuft …' : 'Mit Passkey anmelden'}
+                    </button>
+                  )}
+                  <p className="community__hint">Mehr dazu in der <a href={`${import.meta.env.BASE_URL}datenschutz/`}>Datenschutzerklärung</a>.</p>
+                  <form className="community__form" onSubmit={submit}>
+                    {mode === 'signup' && <label>Anzeigename<input autoComplete="nickname" maxLength={60} value={displayName} onChange={(event) => setDisplayName(event.target.value)} required /></label>}
+                    <label>E-Mail<input type="email" autoComplete="email" value={formEmail} onChange={(event) => setFormEmail(event.target.value)} required /></label>
+                    <label>Passwort<input type="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} minLength={mode === 'signup' ? 8 : undefined} value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+                    {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
+                    {notice && <p className="community__message" role="status">{notice}</p>}
+                    <button className="community__submit" type="submit" disabled={busy || passkeyBusy}>{busy ? 'Einen Moment …' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}</button>
+                  </form>
+                  {confirmationEmail && <button className="community__refresh" type="button" onClick={resendConfirmation} disabled={busy || passkeyBusy}>{busy ? 'Wird angefordert …' : 'Bestätigungsmail erneut senden'}</button>}
+                </div>
+              )}
+            </section>
+            </div>
+          </main>
+        ) : (
         <div className="community__overlay" role="dialog" aria-modal="true" aria-labelledby="community-title">
           <button
             className="community__backdrop"
@@ -444,11 +754,6 @@ export function CommunityAccount({
                     Mitgliedsstatus aktualisieren
                   </button>
                 )}
-                {isAdmin && (
-                  <a className="community__admin-link" href={`${import.meta.env.BASE_URL}admin/`}>
-                    Zum Admin-Bereich
-                  </a>
-                )}
                 <button className="community__submit" type="button" onClick={signOut} disabled={busy || passkeyBusy}>
                   <LogOut size={16} aria-hidden="true" />
                   {busy ? 'Wird abgemeldet …' : 'Abmelden'}
@@ -566,7 +871,8 @@ export function CommunityAccount({
               </div>
             )}
           </section>
-        </div>,
+        </div>
+        ),
         document.body,
       )}
     </>

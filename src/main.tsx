@@ -12,13 +12,32 @@ import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './app/App';
 import { navigateFromPush } from './features/admin/adminPushNavigation';
+import { CommunityAccount } from './features/community/CommunityAccount';
+import { useCommunityAuth } from './features/community/useCommunityAuth';
 import './styles/tokens.css';
 import './styles/global.css';
+import './features/admin/admin.css';
 
 const AdminApp = lazy(() => import('./features/admin/AdminApp'));
 
 const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
 const DrinksApp = lazy(() => import('./features/drinks/DrinksApp'));
+
+function ProfileApp() {
+  const community = useCommunityAuth();
+  return (
+    <CommunityAccount
+      email={community.session?.user.email ?? null}
+      member={community.member}
+      isAdmin={community.session?.user.app_metadata.role === 'admin'}
+      loading={!community.authReady || community.loading}
+      error={community.error}
+      onRefresh={community.refresh}
+      standalone
+      showDrinks={Boolean(community.session)}
+    />
+  );
+}
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
@@ -30,6 +49,7 @@ function Root() {
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
   const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
   const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
+  const profilePath = `${import.meta.env.BASE_URL}profil`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
   const baseOnly = import.meta.env.BASE_URL.replace(/\/+$/, '');
   
@@ -46,6 +66,9 @@ function Root() {
         <DrinksApp />
       </Suspense>
     );
+  }
+  if (currentPath === profilePath) {
+    return <ProfileApp />;
   }
   return currentPath === adminPath ? (
     <Suspense fallback={<main className="backend-state" aria-live="polite">Admin-Bereich wird geladen …</main>}>
