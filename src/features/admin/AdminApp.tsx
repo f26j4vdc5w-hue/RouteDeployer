@@ -386,6 +386,7 @@ function slugify(value: string) {
 }
 
 function AdminDashboard({ session }: { session: Session }) {
+  const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [approvedMembers, setApprovedMembers] = useState<{
     user_id: string;
@@ -986,7 +987,7 @@ function AdminDashboard({ session }: { session: Session }) {
             <h1>Touren verwalten</h1>
           </div>
           <div className="admin-account">
-            <AdminPushToggle userId={session.user.id} />
+            <AdminPushToggle userId={session.user.id} onStatusChange={setPushStatus} />
             <CommunityAccount
               email={session.user.email ?? null}
               member={null}
@@ -998,6 +999,12 @@ function AdminDashboard({ session }: { session: Session }) {
             />
           </div>
         </header>
+
+        {pushStatus && (
+          <p className="admin-muted" role="status">
+            {pushStatus}
+          </p>
+        )}
 
         {(error || notice) && (
           <p className={`admin-alert${error ? ' admin-alert--error' : ''}`} role={error ? 'alert' : 'status'}>

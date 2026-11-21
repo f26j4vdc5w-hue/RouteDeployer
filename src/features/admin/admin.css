@@ -368,6 +368,13 @@
   white-space: nowrap;
 }
 
+.admin-button__icon,
+.admin-button__label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .admin-button:disabled {
   opacity: 0.55;
   cursor: progress;
@@ -566,7 +573,16 @@
     align-content: center;
     gap: 0;
     line-height: 1;
-    font-size: 0;
+  }
+
+  .admin-dashboard__header .admin-account > .admin-button .admin-button__icon,
+  .admin-dashboard__header .admin-account > .admin-button .admin-button__icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .admin-dashboard__header .admin-account > .admin-button .admin-button__label {
+    display: none;
   }
 
   .admin-dashboard__header .admin-account > .admin-button svg {

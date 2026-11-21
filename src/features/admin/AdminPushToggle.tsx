@@ -14,7 +14,13 @@ async function currentSubscription() {
   return registration ? registration.pushManager.getSubscription() : null;
 }
 
-export function AdminPushToggle({ userId }: { userId: string }) {
+export function AdminPushToggle({
+  userId,
+  onStatusChange,
+}: {
+  userId: string;
+  onStatusChange?: (message: string | null) => void;
+}) {
   const [enabled, setEnabled] = useState(false);
   const [busy, setBusy] = useState(false);
   const [registration, setRegistration] = useState<ServiceWorkerRegistration | null>(null);
@@ -61,6 +67,19 @@ export function AdminPushToggle({ userId }: { userId: string }) {
     void initialize();
     return () => { active = false; };
   }, [supported, userId]);
+
+  useEffect(() => {
+    if (!onStatusChange) return;
+    if (!supported) {
+      onStatusChange(
+        isIos && !standalone
+          ? 'Für Mitteilungen die App über „Teilen → Zum Home-Bildschirm“ hinzufügen und von dort öffnen.'
+          : 'Mitteilungen sind auf diesem Gerät nicht verfügbar oder noch nicht eingerichtet.',
+      );
+      return;
+    }
+    onStatusChange(message);
+  }, [isIos, standalone, supported, message, onStatusChange]);
 
   async function enable() {
     setBusy(true);
@@ -115,22 +134,19 @@ export function AdminPushToggle({ userId }: { userId: string }) {
   }
 
   if (!supported) {
-    return isIos && !standalone ? (
-      <p className="admin-muted">
-        Für Mitteilungen die App über „Teilen → Zum Home-Bildschirm“ hinzufügen und von dort öffnen.
-      </p>
-    ) : (
-      <p className="admin-muted">Mitteilungen sind auf diesem Gerät nicht verfügbar oder noch nicht eingerichtet.</p>
-    );
+    return null;
   }
 
   return (
     <>
       <button type="button" className="admin-button" onClick={enabled ? disable : enable} disabled={busy || !registration}>
-        {enabled ? <BellOff size={16} aria-hidden="true" /> : <Bell size={16} aria-hidden="true" />}
-        {enabled ? 'Mitteilungen aus' : 'Mitteilungen aktivieren'}
+        <span className="admin-button__icon" aria-hidden="true">
+          {enabled ? <BellOff size={16} /> : <Bell size={16} />}
+        </span>
+        <span className="admin-button__label">
+          {enabled ? 'Mitteilungen aus' : 'Mitteilungen aktivieren'}
+        </span>
       </button>
-      {message && <p className="admin-error" role="alert">{message}</p>}
     </>
   );
 }
