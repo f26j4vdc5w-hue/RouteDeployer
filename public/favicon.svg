@@ -1,7 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#17131d"/>
-  <g transform="rotate(-6 32 34)" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="40" text-anchor="middle">
-    <text x="35" y="48" fill="#7134b5">K</text>
-    <text x="32" y="45" fill="#a45cff" stroke="#17131d" stroke-width="1.5">K</text>
-  </g>
+  <path fill="#7134b5" d="M19 12h10v17l13-17h13L40 31l16 21H43L31 39v13H19z"/>
+  <path fill="#a45cff" d="M16 10h10v17L39 10h13L36 29l16 21H39L27 37v13H16z"/>
 </svg>
