@@ -389,6 +389,8 @@
 }
 
 .community__submit {
+  box-sizing: border-box;
+  width: 100%;
   min-height: 42px;
   padding: 9px 14px;
   display: inline-flex;

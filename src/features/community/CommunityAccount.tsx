@@ -9,6 +9,7 @@ import {
   type CommunityMember,
 } from './useCommunityAuth';
 import { usePendingMemberCount } from './usePendingMemberCount';
+import { PushNotificationSettings } from './PushNotificationSettings';
 import './community.css';
 
 interface Props {
@@ -297,9 +298,9 @@ export function CommunityAccount({
       });
       if (updateError) throw new Error(updateError.message);
       onRefresh();
-      setNotice('Dein Profil wurde gespeichert.');
+      setNotice('Deine Einstellungen wurden gespeichert.');
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : 'Dein Profil konnte nicht gespeichert werden.');
+      setFormError(cause instanceof Error ? cause.message : 'Deine Einstellungen konnten nicht gespeichert werden.');
     } finally {
       setBusy(false);
     }
@@ -391,7 +392,7 @@ export function CommunityAccount({
                 onClick={() => setMenuOpen(false)}
               >
                 <UserRound size={17} aria-hidden="true" />
-                {email ? 'Profil anzeigen' : 'Anmelden oder registrieren'}
+                {email ? 'Einstellungen' : 'Anmelden oder registrieren'}
                 {isProfile && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
               </a>
               {isAdmin && (
@@ -433,7 +434,7 @@ export function CommunityAccount({
               <header className="admin-header community__page-header">
                 <div>
                   <p className="admin-kicker">KLLKTV Community</p>
-                  <h1 id="community-title">{email ? 'Community-Profil' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}</h1>
+                  <h1 id="community-title">{email ? 'Einstellungen' : mode === 'signup' ? 'Konto erstellen' : 'Anmelden'}</h1>
                 </div>
                 <div className="nav__menu" ref={menuRef}>
                   <button
@@ -468,7 +469,7 @@ export function CommunityAccount({
                         </a>
                       )}
                       <a className="nav__menu-link nav__menu-link--active" href={`${import.meta.env.BASE_URL}profil/`} role="menuitem" aria-current="page">
-                        <UserRound size={17} aria-hidden="true" /> Profil anzeigen
+                        <UserRound size={17} aria-hidden="true" /> Einstellungen
                         <Check className="nav__menu-link-check" size={16} aria-hidden="true" />
                       </a>
                       {isAdmin && (
@@ -496,7 +497,7 @@ export function CommunityAccount({
                     <p className="community__email">{email}</p>
                   </section>
                   <section className="admin-card" aria-labelledby="profile-details-title">
-                    <h2 className="community-profile-card__title" id="profile-details-title">Profilangaben</h2>
+                    <h2 className="community-profile-card__title" id="profile-details-title">Persönliche Angaben</h2>
                     <form className="community__form" onSubmit={saveProfile}>
                       <label>
                         Anzeigename
@@ -550,7 +551,7 @@ export function CommunityAccount({
                     {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
                     {notice && <p className="community__message" role="status">{notice}</p>}
                     <button className="community__submit" type="submit" disabled={busy || passkeyBusy || !member}>
-                      {busy ? 'Wird gespeichert …' : 'Profil speichern'}
+                      {busy ? 'Wird gespeichert …' : 'Einstellungen speichern'}
                     </button>
                   </form>
                   </section>
@@ -564,6 +565,7 @@ export function CommunityAccount({
                       <KeyRound size={16} aria-hidden="true" /> {passkeyBusy ? 'Wird eingerichtet …' : 'Passkey einrichten'}
                     </button>
                   </section>
+                  <PushNotificationSettings />
                   <section className="admin-card" aria-label="Mitgliedschaft">
                     {!error && member?.status === 'approved' && member.email_confirmed_at ? (
                       <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
@@ -715,7 +717,7 @@ export function CommunityAccount({
                   {formError && <p className="community__message community__message--error" role="alert">{formError}</p>}
                   {notice && <p className="community__message" role="status">{notice}</p>}
                   <button className="community__submit" type="submit" disabled={busy || passkeyBusy || !member}>
-                    {busy ? 'Wird gespeichert …' : 'Profil speichern'}
+                    {busy ? 'Wird gespeichert …' : 'Einstellungen speichern'}
                   </button>
                 </form>
                 <section className="community__section" aria-labelledby="passkey-title">
@@ -734,6 +736,7 @@ export function CommunityAccount({
                     {passkeyBusy ? 'Wird eingerichtet …' : 'Passkey einrichten'}
                   </button>
                 </section>
+                <PushNotificationSettings />
                 {!error && member?.status === 'approved' && member.email_confirmed_at ? (
                   <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
                 ) : !error && member?.status === 'rejected' ? (

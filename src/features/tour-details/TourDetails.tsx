@@ -558,8 +558,8 @@ export function TourDetails({
         <div className="events__consent" role="group" aria-label="Einwilligung">
           {missingFields.length > 0 ? (
             <p className="attendance__error" role="alert">
-              Für die Zusage fehlen plausible Angaben in deinem Profil:{' '}
-              {missingFields.map(personalFieldLabel).join(', ')}. Bitte ergänze sie im Community-Profil.
+              Für die Zusage fehlen plausible Angaben in deinen Einstellungen:{' '}
+              {missingFields.map(personalFieldLabel).join(', ')}. Bitte ergänze sie unter Community-Einstellungen.
             </p>
           ) : (
             <>

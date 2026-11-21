@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
 
       <h2>5. Persönliche Angaben (optional)</h2>
       <p>
-        Im Profil kannst du freiwillig vollständigen Namen, Adresse, Geburtsdatum, Kleidergröße
+        In den Einstellungen kannst du freiwillig vollständigen Namen, Adresse, Geburtsdatum, Kleidergröße
         und Telefonnummer hinterlegen.
         Sie sind zunächst nur für dich selbst sichtbar. Sie können künftig für die Buchung von
         Unterkünften, Flügen und Startplätzen genutzt werden. Eine Weitergabe an andere Personen
@@ -66,9 +66,9 @@ export default function PrivacyPolicy() {
         löschen.
       </p>
       <p>
-        Wenn du deinen Geburtstag im Profil ausdrücklich für den Kalender freigibst, sehen
+        Wenn du deinen Geburtstag in den Einstellungen ausdrücklich für den Kalender freigibst, sehen
         freigegebene Mitglieder dort deinen Anzeigenamen, Geburtstag und das Alter, das du
-        erreichst. Die Freigabe ist freiwillig und kann im Profil jederzeit zurückgenommen werden.
+        erreichst. Die Freigabe ist freiwillig und kann in den Einstellungen jederzeit zurückgenommen werden.
         Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
       </p>
 
