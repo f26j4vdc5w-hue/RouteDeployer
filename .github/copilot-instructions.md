@@ -12,3 +12,5 @@ behavior.
   and the `supabase-migration` skill.
 - For a read-only review of Supabase access-control changes, use the
   `supabase-reviewer` agent.
+- For dashboard-style pages, follow
+  [the dashboard-page convention](instructions/dashboard-pages.instructions.md).
