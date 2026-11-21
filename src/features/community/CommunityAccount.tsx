@@ -491,11 +491,11 @@ export function CommunityAccount({
               ) : email ? (
                 <div className="community__content">
                   {error && <p className="community__message community__message--error" role="alert">{error}</p>}
-                  <section className="community-profile-card" aria-label="Konto">
+                  <section className="admin-card" aria-label="Konto">
                     <p className="community__name">{member?.display_name ?? email}</p>
                     <p className="community__email">{email}</p>
                   </section>
-                  <section className="community-profile-card" aria-labelledby="profile-details-title">
+                  <section className="admin-card" aria-labelledby="profile-details-title">
                     <h2 className="community-profile-card__title" id="profile-details-title">Profilangaben</h2>
                     <form className="community__form" onSubmit={saveProfile}>
                       <label>
@@ -554,7 +554,7 @@ export function CommunityAccount({
                     </button>
                   </form>
                   </section>
-                  <section className="community-profile-card" aria-labelledby="passkey-title">
+                  <section className="admin-card" aria-labelledby="passkey-title">
                     <h2 className="community__section-title" id="passkey-title">Passkey</h2>
                     <p className="community__hint">Richte einen Passkey ein, um dich künftig ohne Passwort anzumelden.</p>
                     {!passkeySupported && <p className="community__hint">Passkeys benötigen einen unterstützten Browser und eine sichere Verbindung.</p>}
@@ -564,7 +564,7 @@ export function CommunityAccount({
                       <KeyRound size={16} aria-hidden="true" /> {passkeyBusy ? 'Wird eingerichtet …' : 'Passkey einrichten'}
                     </button>
                   </section>
-                  <section className="community-profile-card" aria-label="Mitgliedschaft">
+                  <section className="admin-card" aria-label="Mitgliedschaft">
                     {!error && member?.status === 'approved' && member.email_confirmed_at ? (
                       <p className="community__message" role="status">Dein Community-Zugang ist freigeschaltet.</p>
                     ) : !error && member?.status === 'rejected' ? (

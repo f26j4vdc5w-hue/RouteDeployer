@@ -1,6 +1,6 @@
 .admin-shell {
   min-height: 100vh;
-  padding: 32px 20px;
+  padding: 0 20px 32px;
   color: var(--ink);
 }
 
@@ -25,6 +25,26 @@
 .admin-dashboard {
   display: grid;
   gap: 20px;
+}
+
+.admin-dashboard > .admin-header {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  padding: 32px 0 12px;
+  background: var(--bg);
+}
+
+.admin-dashboard > .admin-header::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--bg);
 }
 
 .admin-header,
@@ -501,7 +521,11 @@
 
 @media (max-width: 720px) {
   .admin-shell {
-    padding: 16px 12px;
+    padding: 0 12px 16px;
+  }
+
+  .admin-dashboard > .admin-header {
+    padding: 16px 0 12px;
   }
 
   .admin-card,
@@ -518,7 +542,6 @@
   }
 
   .admin-dashboard__header {
-    position: relative;
     min-height: 52px;
     padding-right: 84px;
     flex-direction: row;

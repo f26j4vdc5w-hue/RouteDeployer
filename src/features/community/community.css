@@ -153,28 +153,19 @@
   padding: 0;
 }
 
-.community-profile-card {
-  padding: 22px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-.community-profile-card__title,
-.community-profile-card .community__section-title {
+.community__page-panel .admin-card h2 {
   margin: 0 0 18px;
-  color: var(--ink);
   font-size: 24px;
   line-height: 1.2;
 }
 
-.community-profile-card .community__section {
+.community__page-panel .community__section {
   border: 0;
   background: transparent;
   padding: 14px 0 0;
 }
 
-.community-profile-card .community__form {
+.community__page-panel .community__form {
   gap: 16px;
 }
 
