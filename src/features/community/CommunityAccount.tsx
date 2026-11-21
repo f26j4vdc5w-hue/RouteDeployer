@@ -8,6 +8,10 @@ import {
   COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY,
   type CommunityMember,
 } from './useCommunityAuth';
+import {
+  redirectAfterCommunityLogin,
+  rememberCommunityAuthReturnTo,
+} from './authRedirect';
 import { usePendingMemberCount } from './usePendingMemberCount';
 import { PushNotificationSettings } from './PushNotificationSettings';
 import './community.css';
@@ -51,9 +55,9 @@ export function CommunityAccount({
   const basePath = import.meta.env.BASE_URL.replace(/\/+$/, '');
   const drinksPath = `${basePath}/getraenke`.replace(/\/+$/, '');
   const adminPath = `${basePath}/admin`.replace(/\/+$/, '');
-  const profilePath = `${basePath}/profil`.replace(/\/+$/, '');
-  const isProfile = currentPath === profilePath;
-  const isRoadbook = currentPath !== drinksPath && currentPath !== adminPath && currentPath !== profilePath;
+  const settingsPath = `${basePath}/einstellungen`.replace(/\/+$/, '');
+  const isSettings = currentPath === settingsPath;
+  const isRoadbook = currentPath !== drinksPath && currentPath !== adminPath && currentPath !== settingsPath;
   const isDrinks = currentPath === drinksPath;
   const isAdminPage = currentPath === adminPath;
   const [mode, setMode] = useState<Mode>('signin');
@@ -136,12 +140,13 @@ export function CommunityAccount({
     try {
       const client = requireSupabase();
       if (mode === 'signup') {
+        const redirectTarget = rememberCommunityAuthReturnTo(basePath) ?? new URL(basePath, window.location.origin).pathname;
         const { data, error: signupError } = await client.auth.signUp({
           email: formEmail.trim(),
           password,
           options: {
             data: { display_name: displayName.trim() },
-            emailRedirectTo: window.location.href,
+            emailRedirectTo: new URL(redirectTarget, window.location.origin).toString(),
           },
         });
         if (signupError) throw signupError;
@@ -153,6 +158,7 @@ export function CommunityAccount({
             : 'Bitte bestätige zuerst deine E-Mail-Adresse. Danach prüft ein Admin deine Mitgliedschaft.',
         );
       } else {
+        rememberCommunityAuthReturnTo(basePath);
         const { error: signinError } = await client.auth.signInWithPassword({
           email: formEmail.trim(),
           password,
@@ -166,6 +172,7 @@ export function CommunityAccount({
           throw signinError;
         }
         setNotice('Anmeldung erfolgreich.');
+        redirectAfterCommunityLogin(basePath);
       }
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : 'Die Anfrage ist fehlgeschlagen.');
@@ -180,11 +187,13 @@ export function CommunityAccount({
     setNotice(null);
     setBusy(true);
     try {
+      const redirectTarget = rememberCommunityAuthReturnTo(basePath) ??
+        new URL(basePath, window.location.origin).pathname;
       const { error: resendError } = await requireSupabase().auth.resend({
         type: 'signup',
         email: confirmationEmail,
         options: {
-          emailRedirectTo: window.location.href,
+          emailRedirectTo: new URL(redirectTarget, window.location.origin).toString(),
         },
       });
       if (resendError) throw resendError;
@@ -201,11 +210,13 @@ export function CommunityAccount({
     setNotice(null);
     setPasskeyBusy(true);
     try {
+      rememberCommunityAuthReturnTo(basePath);
       const { data, error: passkeySignInError } = await requireSupabase().auth.signInWithPasskey();
       if (passkeySignInError) throw passkeySignInError;
       if (!data?.session) throw new Error('Die Passkey-Anmeldung hat keine Sitzung erstellt.');
       setConfirmationEmail(null);
       setNotice('Anmeldung erfolgreich.');
+      redirectAfterCommunityLogin(basePath);
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : 'Die Passkey-Anmeldung ist fehlgeschlagen.');
     } finally {
@@ -233,14 +244,11 @@ export function CommunityAccount({
     setFormError(null);
     setNotice(null);
     setBusy(true);
-    sessionStorage.setItem(
-      COMMUNITY_AUTH_RETURN_TO_KEY,
-      `${window.location.pathname}${window.location.search}${window.location.hash}`,
-    );
-    sessionStorage.setItem(COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY, String(Date.now()));
+    const redirectTarget = rememberCommunityAuthReturnTo(basePath) ??
+      new URL(basePath, window.location.origin).pathname;
     const { error: oauthError } = await requireSupabase().auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href },
+      options: { redirectTo: new URL(redirectTarget, window.location.origin).toString() },
     });
     if (oauthError) {
       sessionStorage.removeItem(COMMUNITY_AUTH_RETURN_TO_KEY);
@@ -385,15 +393,15 @@ export function CommunityAccount({
                 </a>
               )}
               <a
-                className={`nav__menu-link${isProfile ? ' nav__menu-link--active' : ''}`}
-                href={`${import.meta.env.BASE_URL}profil/`}
+                className={`nav__menu-link${isSettings ? ' nav__menu-link--active' : ''}`}
+                href={`${import.meta.env.BASE_URL}einstellungen/`}
                 role="menuitem"
-                aria-current={isProfile ? 'page' : undefined}
+                aria-current={isSettings ? 'page' : undefined}
                 onClick={() => setMenuOpen(false)}
               >
                 <UserRound size={17} aria-hidden="true" />
                 {email ? 'Einstellungen' : 'Anmelden oder registrieren'}
-                {isProfile && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
+                {isSettings && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
               </a>
               {isAdmin && (
                 <a
@@ -468,7 +476,7 @@ export function CommunityAccount({
                           {isDrinks && <Check className="nav__menu-link-check" size={16} aria-hidden="true" />}
                         </a>
                       )}
-                      <a className="nav__menu-link nav__menu-link--active" href={`${import.meta.env.BASE_URL}profil/`} role="menuitem" aria-current="page">
+                      <a className="nav__menu-link nav__menu-link--active" href={`${import.meta.env.BASE_URL}einstellungen/`} role="menuitem" aria-current="page">
                         <UserRound size={17} aria-hidden="true" /> Einstellungen
                         <Check className="nav__menu-link-check" size={16} aria-hidden="true" />
                       </a>

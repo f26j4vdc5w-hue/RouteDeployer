@@ -23,7 +23,7 @@ const AdminApp = lazy(() => import('./features/admin/AdminApp'));
 const PrivacyPolicy = lazy(() => import('./features/legal/PrivacyPolicy'));
 const DrinksApp = lazy(() => import('./features/drinks/DrinksApp'));
 
-function ProfileApp() {
+function SettingsApp() {
   const community = useCommunityAuth();
   return (
     <CommunityAccount
@@ -49,7 +49,8 @@ function Root() {
   const adminPath = `${import.meta.env.BASE_URL}admin`.replace(/\/+$/, '');
   const privacyPath = `${import.meta.env.BASE_URL}datenschutz`.replace(/\/+$/, '');
   const drinksPath = `${import.meta.env.BASE_URL}getraenke`.replace(/\/+$/, '');
-  const profilePath = `${import.meta.env.BASE_URL}profil`.replace(/\/+$/, '');
+  const settingsPath = `${import.meta.env.BASE_URL}einstellungen`.replace(/\/+$/, '');
+  const oldProfilePath = `${import.meta.env.BASE_URL}profil`.replace(/\/+$/, '');
   const currentPath = window.location.pathname.replace(/\/+$/, '');
   const baseOnly = import.meta.env.BASE_URL.replace(/\/+$/, '');
   
@@ -67,8 +68,14 @@ function Root() {
       </Suspense>
     );
   }
-  if (currentPath === profilePath) {
-    return <ProfileApp />;
+  if (currentPath === oldProfilePath) {
+    const query = window.location.search;
+    const hash = window.location.hash;
+    window.history.replaceState(null, '', `${settingsPath}${query}${hash}`);
+    return <SettingsApp />;
+  }
+  if (currentPath === settingsPath) {
+    return <SettingsApp />;
   }
   return currentPath === adminPath ? (
     <Suspense fallback={<main className="backend-state" aria-live="polite">Admin-Bereich wird geladen …</main>}>
