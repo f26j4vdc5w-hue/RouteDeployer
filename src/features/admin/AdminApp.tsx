@@ -964,7 +964,9 @@ function AdminDashboard({ session }: { session: Session }) {
     setError(null);
     setNotice(null);
     try {
-      const { error: deleteError } = await client.auth.admin.deleteUser(userId);
+      const { error: deleteError } = await client.rpc('delete_rejected_community_member', {
+        p_user_id: userId,
+      });
       if (deleteError) throw deleteError;
       setRejectedMembers((members) => members.filter((member) => member.user_id !== userId));
       setNotice(`${displayName} wurde vollständig gelöscht.`);
