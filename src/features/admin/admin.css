@@ -41,6 +41,18 @@
   padding: 8px 0 12px;
 }
 
+.admin-dashboard__header {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.admin-dashboard__header .admin-account {
+  flex: 0 0 auto;
+  margin-left: auto;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .admin-kicker {
   margin: 0 0 6px;
   color: var(--muted);
@@ -503,6 +515,29 @@
   .admin-member {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-dashboard__header {
+    position: relative;
+    min-height: 52px;
+    padding-right: 84px;
+    flex-direction: row;
+  }
+
+  .admin-dashboard__header .admin-account {
+    position: absolute;
+    top: 8px;
+    right: 0;
+    margin: 0;
+    flex-wrap: nowrap;
+  }
+
+  .admin-dashboard__header .admin-account > .admin-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
   }
 
   .admin-organizers__add,

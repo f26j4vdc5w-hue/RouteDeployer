@@ -984,7 +984,6 @@ function AdminDashboard({ session }: { session: Session }) {
             <h1>Touren verwalten</h1>
           </div>
           <div className="admin-account">
-            <span>{session.user.email}</span>
             <AdminPushToggle userId={session.user.id} />
             <CommunityAccount
               email={session.user.email ?? null}
