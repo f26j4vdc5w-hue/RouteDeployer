@@ -118,8 +118,7 @@ export default function DrinksApp() {
       <div className="admin-dashboard">
         <header className="admin-header">
           <div><p className="admin-kicker">KLLKTV Community</p><h1>Getränkekasse</h1></div>
-          <a className="admin-link" href={import.meta.env.BASE_URL}>Zum Roadbook</a>
-          <CommunityAccount email={community.session?.user.email ?? null} member={community.member} isAdmin={isAdmin} loading={community.loading} error={community.error} onRefresh={community.refresh} />
+          <CommunityAccount email={community.session?.user.email ?? null} member={community.member} isAdmin={isAdmin} loading={community.loading} error={community.error} onRefresh={community.refresh} showDrinks />
         </header>
         {!supabase ? <section className="admin-card" role="alert">Die Getränkekasse ist nicht verfügbar: Supabase ist nicht konfiguriert.</section> : !community.authReady ? <p>Mitgliedschaft wird geladen …</p> : !approved ? (
           <section className="admin-card"><h2>Nur für freigegebene Mitglieder</h2><p>Bitte melde dich mit einem freigegebenen Community-Konto an.</p></section>
