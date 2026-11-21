@@ -556,11 +556,22 @@
   }
 
   .admin-dashboard__header .admin-account > .admin-button {
+    box-sizing: border-box;
     width: 36px;
     height: 36px;
     padding: 0;
+    display: inline-grid;
+    place-items: center;
     justify-content: center;
+    align-content: center;
+    gap: 0;
+    line-height: 1;
     font-size: 0;
+  }
+
+  .admin-dashboard__header .admin-account > .admin-button svg {
+    width: 16px;
+    height: 16px;
   }
 
   .admin-organizers__add,
