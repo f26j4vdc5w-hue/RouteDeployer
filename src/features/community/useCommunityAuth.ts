@@ -2,8 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 
-export const COMMUNITY_AUTH_RETURN_TO_KEY = 'community-auth-return-to';
-export const COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY = 'community-auth-return-to-saved-at';
+export {
+  COMMUNITY_AUTH_RETURN_TO_KEY,
+  COMMUNITY_AUTH_RETURN_TO_SAVED_AT_KEY,
+  getCommunityRouteReturnTo,
+} from './authRedirect';
 
 export interface CommunityMember {
   user_id: string;
